@@ -13,7 +13,7 @@ On Kubernetes and Kubernetes-based environments, the image uses the k8-etcd, oth
 ## Build Images
 
 <p>To create the images via Makefile, you need the following environment variables and Go on your system.</p>
-`
+```
 export GOPATH=$HOME/cdev
 export GOBIN=$GOPATH/bin
 export PATH=$PATH:$GOBIN
@@ -28,12 +28,12 @@ export PG_MAJOR=14
 export PG_VERSION=14.6
 export OLD_PG_VERSIONS="10 11 12 13"
 export BUILD=1
-`
+```
 <p>You can build all images with make
 - make all
 - make base/postgres/pgbackrest</p>
 <p><>Run Images locally:</p>
-`docker run -it IMAGEPATH:IMAGETAG`
+```docker run -it IMAGEPATH:IMAGETAG```
 
 <p><>Take a look inside:</p>
-`docker exec -it CONTAINERID /bin/bash`
+```docker exec -it CONTAINERID /bin/bash```

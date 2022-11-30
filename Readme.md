@@ -33,7 +33,10 @@ export BUILD=1
 - make all
 - make base/postgres/pgbackrest</p>
 <p><>Run Images locally:</p>
-~~~docker run -it IMAGEPATH:IMAGETAG~~~
-
+<p>
+```ruby 
+docker run -it IMAGEPATH:IMAGETAG
+```
+</p>
 <p><>Take a look inside:</p>
 ```docker exec -it CONTAINERID /bin/bash```

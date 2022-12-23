@@ -25,6 +25,7 @@ RUN ${PACKAGER} -y install --nodocs \
         less \
         openssl \
         vim \
+        glibc-langpack-en \
      && ${PACKAGER} -y clean all ;
 
 #Add PostgreSQL-Repo to Base

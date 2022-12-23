@@ -6,7 +6,7 @@ IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-os-container
 PG_MAJOR ?= 15
 PG_VERSION ?= 15.0
-OLD_PG_VERSIONS = 10 11 12 13 14
+OLD_PG_VERSIONS ?= 10 11 12 13 14
 PATRONI_VERSION ?= 2.1.4
 PGBACKREST_VERSION ?= 2.41
 POSTGIS_VERSION ?= 3.2
@@ -50,7 +50,8 @@ pgbackrest-build:
 			--build-arg PACKAGER 							\
 			--build-arg CONTAINERSUITE 						\
 			--build-arg BUILD 								\
-			--build-arg PGBACKREST_VERSION 					
+			--build-arg PGBACKREST_VERSION 					\
+			--build-arg PG_MAJOR 												
 
 pgbackrest: pgbackrest-build;	
 			

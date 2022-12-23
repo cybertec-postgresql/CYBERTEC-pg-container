@@ -39,7 +39,7 @@ WALG_SSH_NAMES = ['WALG_SSH_PREFIX', 'SSH_PRIVATE_KEY_PATH', 'SSH_USERNAME', 'SS
 
 
 def parse_args():
-    sections = ['all', 'patroni', 'pgqd', 'certificate', 'wal-e', 'crontab',
+    sections = ['all', 'patroni', 'certificate', 'wal-e', 'crontab',
                 'pam-oauth2', 'pgbouncer', 'bootstrap', 'standby-cluster', 'log']
     argp = argparse.ArgumentParser(description='Configures Spilo',
                                    epilog="Choose from the following sections:\n\t{}".format('\n\t'.join(sections)),

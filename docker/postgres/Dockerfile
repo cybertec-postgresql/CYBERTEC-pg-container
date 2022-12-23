@@ -11,8 +11,8 @@ ARG PATRONI_VERSION
 ARG PG_VERSION
 ARG PG_MAJOR
 ARG OLD_PG_VERSIONS
-#ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
-ARG PG_SUPPORTED_VERSIONS="$PG_MAJOR"
+#ARG PG_SUPPORTED_VERSIONS="$PG_MAJOR"
+ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
 
 # Spilo-specific
@@ -48,7 +48,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         make \
         cmake \
         gcc \
-        curl \
+        #curl \
         libcurl-devel \
         pam-devel \
         wget \
@@ -60,6 +60,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         krb5-devel \
         busybox \
         dpkg \
+        jq \
     && ${PACKAGER} -y clean all;
 
 
@@ -92,8 +93,9 @@ RUN ${PACKAGER} -y install python3-etcd python3-consul  \
 RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
 
 RUN mkdir /usr/lib/postgresql
-ENV PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin
-RUN echo $PATH
+ENV PATHBACKUP = $PATH
+#ENV PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin
+#RUN echo $PATH
 # Install pam_oauth2.so
 RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     && make -C pam-oauth2 install \
@@ -145,6 +147,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
                     #postgresql-${version}-pg-stat-kcache $EXTRAS \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version \
+            && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin  \
 \
             # Install TimescaleDB           
             && cd /timescaledb \
@@ -152,14 +155,10 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
                     git checkout $v \
                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/lib/postgresql/$version/bin/pg_config \
-                        -DAPACHE_ONLY=true -DSEND_TELEMETRY_DEFAULT=NO; then \
+                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
+                        -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
                             make -C build install \
-                            && strip /usr/lib/postgresql/$version/lib/timescaledb*.so; \
-                        #-DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
-                        #-DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
-                        #    make -C build install \
-                        #    && strip /usr/pgsql-$version/lib/timescaledb*.so; \
+                            && strip /usr/pgsql-$version/lib/timescaledb*.so; \
                     fi \
                     && git reset --hard \
                     && git clean -f -d; \
@@ -168,8 +167,8 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do \
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
-            && cd /pgextwlist && make && make install \
-            && cd /pg_stat_kcache && make && make install \
+            && cd /pgextwlist && make clean && make && make install \
+            && cd /pg_stat_kcache && make clean && make && make install \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
         && ${PACKAGER} -y clean all; \
     done
@@ -245,7 +244,7 @@ RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
 RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 
 COPY scripts bootstrap major_upgrade /scripts/
-COPY launch.sh /
+COPY launcher/postgres/launch.sh /
 
 RUN dnf -y install 'dnf-command(config-manager)'
 RUN dnf -y config-manager --set-enabled crb
@@ -255,6 +254,7 @@ RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.
 
 # Modify for using origial-spilo scripts
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
 USER 26
 

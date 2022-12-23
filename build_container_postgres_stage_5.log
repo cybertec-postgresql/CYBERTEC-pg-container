@@ -1,0 +1,1379 @@
+docker build /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container								\
+		--file /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container/docker/postgres_stage/Dockerfile 		\
+		--tag cybertec-os-container/postgres-stage:14.0.1	\
+		--build-arg BASE_IMAGE								\
+		--build-arg IMAGE_REPOSITORY 						\
+		--build-arg BASEOS 									\
+		--build-arg PACKAGER 								\
+		--build-arg CONTAINERSUITE 							\
+		--build-arg BUILD 									\
+		--build-arg PATRONI_VERSION 						\
+		--build-arg PGBACKREST_VERSION 						\
+		--build-arg PG_VERSION 								\
+		--build-arg OLD_PG_VERSION 							\
+		--build-arg PG_MAJOR 							
+Sending build context to Docker daemon  5.744MB
+Step 1/48 : ARG CONTAINERSUITE
+Step 2/48 : ARG BUILD
+Step 3/48 : FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
+ ---> 49e5d6c54201
+Step 4/48 : ARG PACKAGER
+ ---> Using cache
+ ---> 8ff9e0b3f884
+Step 5/48 : ARG BASEOS
+ ---> Using cache
+ ---> d4838da21009
+Step 6/48 : ARG PGBACKREST_VERSION
+ ---> Using cache
+ ---> 1d8202c5a82a
+Step 7/48 : ARG PATRONI_VERSION
+ ---> Using cache
+ ---> 74a8a8a031d1
+Step 8/48 : ARG PG_VERSION
+ ---> Using cache
+ ---> 1e3caee15d64
+Step 9/48 : ARG PG_MAJOR
+ ---> Using cache
+ ---> 6e5f34cfa995
+Step 10/48 : ARG OLD_PG_VERSIONS
+ ---> Using cache
+ ---> c4360eb81613
+Step 11/48 : ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ ---> Using cache
+ ---> 986cb87d671f
+Step 12/48 : ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ ---> Using cache
+ ---> 99287b9e5a80
+Step 13/48 : ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996     PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5     PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58     SET_USER=REL3_0_0     PLPROFILER=REL4_1     PG_PROFILE=0.3.6     PAM_OAUTH2=v1.0.1     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+ ---> Using cache
+ ---> 03da82e29e27
+Step 14/48 : RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs         openssh-clients         openssh-server         shadow-utils         tar         bzip2         lz4         python3         python3-pip         python3-psycopg2         python3-psutil         python3-requests         python3-etcd         git         patchutils         binutils         make         cmake         gcc         curl         libcurl-devel         pam-devel         wget         mlocate         git-clang-format         openssl-devel         ccache         redhat-rpm-config         krb5-devel         busybox         dpkg     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> db5949aeb26a
+Step 15/48 : RUN if [ "$BASEOS" = "ubi8" ] ; then 	${PACKAGER} -y install --nodocs 		pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; else 	${PACKAGER} -y install --nodocs  		--setopt=skip_missing_names_on_install=False         pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; fi
+ ---> Using cache
+ ---> c1f0029418f0
+Step 16/48 : RUN ETCDVERSION=3.3.27     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+ ---> Using cache
+ ---> 4f3b46acdfb0
+Step 17/48 : RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
+ ---> Using cache
+ ---> 83455ad07096
+Step 18/48 : RUN ${PACKAGER} -y install python3-etcd python3-consul                           python3-gevent python3-greenlet python3-cachetools                         python3-rsa python3-pyasn1-modules  python3-cffi     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> 0ea191404cf1
+Step 19/48 : RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
+ ---> Using cache
+ ---> 45605dba63b3
+Step 20/48 : RUN mkdir /usr/lib/postgresql
+ ---> Using cache
+ ---> 29acddd2382e
+Step 21/48 : ENV PATHBACKUP = $PATH
+ ---> Using cache
+ ---> 40b91ba6e13c
+Step 22/48 : RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git     && make -C pam-oauth2 install     && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git     && git clone https://github.com/timescale/timescaledb.git     && git clone https://github.com/dimitri/pgextwlist.git     && git clone https://github.com/powa-team/pg_stat_kcache.git     && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli     && ${PACKAGER} -y clean all    && for version in $PG_SUPPORTED_VERSIONS; do         ${PACKAGER} -y update &&         ${PACKAGER} -y install postgresql${version}-pltcl                             pgaudit1*_${version}             && ${PACKAGER} -y install -y postgresql${version}-contrib                     postgresql${version}-plpython3 postgresql${version}-devel                     pg_cron_${version}             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version             && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin              && cd /timescaledb             && for v in $TIMESCALEDB; do                     git checkout $v                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF                         -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config                         -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then                             make -C build install                             && strip /usr/pgsql-$version/lib/timescaledb*.so;                     fi                     && git reset --hard                     && git clean -f -d;                 done             && cd ..             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do                 make -C $n USE_PGXS=1 clean install-strip;             done             && cd /pgextwlist && make && make install             && cd /pg_stat_kcache && make clean && make && make install         && ${PACKAGER} -y clean all;     done     && ${PACKAGER} -y remove postgresql postgresql-all postgresql-server-dev-* libpq-dev=* libmagic1 bsdmainutils     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all         && rm -rf /var/lib/apt/lists/*             /var/cache/debconf/*             /builddeps             /usr/share/doc             /usr/share/man             /usr/share/info             /usr/share/locale/??             /usr/share/locale/??_??             /usr/share/postgresql/*/man             /etc/pgbouncer/*             /usr/lib/postgresql/*/bin/createdb             /usr/lib/postgresql/*/bin/createlang             /usr/lib/postgresql/*/bin/createuser             /usr/lib/postgresql/*/bin/dropdb             /usr/lib/postgresql/*/bin/droplang             /usr/lib/postgresql/*/bin/dropuser             /usr/lib/postgresql/*/bin/pg_standby             /usr/lib/postgresql/*/bin/pltcl_*     && find /var/log -type f -exec truncate --size 0 {} \;
+ ---> Using cache
+ ---> b396ff940a52
+Step 23/48 : RUN dnf -y install 'dnf-command(config-manager)'
+ ---> Using cache
+ ---> da598cc480b2
+Step 24/48 : RUN dnf -y config-manager --set-enabled crb
+ ---> Using cache
+ ---> 66c7c6fc676c
+Step 25/48 : RUN dnf -y install glibc-devel glibc-static
+ ---> Using cache
+ ---> 5dfb1c1621a1
+Step 26/48 : RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+ ---> Using cache
+ ---> 8c55f70d65b8
+Step 27/48 : RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+ ---> Using cache
+ ---> e1882fbedcb6
+Step 28/48 : RUN rm -rf /pgextwlist /pg_stat_kcache /package     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+ ---> Using cache
+ ---> 88605f606ce4
+Step 29/48 : RUN ${PACKAGER} update --refresh -y     && ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils binutils glibc*     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all;
+ ---> Running in 17405a670812
+Extra Packages for Enterprise Linux 9 - x86_64   28 kB/s |  24 kB     00:00    
+PostgreSQL common RPMs for RHEL / Rocky 9 - x86 494  B/s | 195  B     00:00    
+PostgreSQL 15 for RHEL / Rocky 9 - x86_64       444  B/s | 195  B     00:00    
+PostgreSQL 14 for RHEL / Rocky 9 - x86_64        12  B/s | 195  B     00:15    
+PostgreSQL 13 for RHEL / Rocky 9 - x86_64       441  B/s | 195  B     00:00    
+PostgreSQL 12 for RHEL / Rocky 9 - x86_64       440  B/s | 195  B     00:00    
+PostgreSQL 11 for RHEL / Rocky 9 - x86_64       529  B/s | 195  B     00:00    
+PostgreSQL 10 for RHEL / Rocky 9 - x86_64       456  B/s | 195  B     00:00    
+Rocky Linux 9 - BaseOS                          9.6 kB/s | 3.6 kB     00:00    
+Rocky Linux 9 - AppStream                        10 kB/s | 4.1 kB     00:00    
+Rocky Linux 9 - CRB                             6.1 kB/s | 3.6 kB     00:00    
+Rocky Linux 9 - Extras                          6.9 kB/s | 2.9 kB     00:00    
+Dependencies resolved.
+Nothing to do.
+Complete!
+No match for argument: python3-wheel
+No match for argument: python3-dev
+(try to add '--skip-broken' to skip uninstallable packages or '--nobest' to use not only best candidate packages)
+[91mError: 
+ Problem: The operation would result in removing the following protected packages: dnf, systemd, yum
+[0mdocker build /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container								\
+		--file /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container/docker/postgres_stage/Dockerfile 		\
+		--tag cybertec-os-container/postgres-stage:14.0.1	\
+		--build-arg BASE_IMAGE								\
+		--build-arg IMAGE_REPOSITORY 						\
+		--build-arg BASEOS 									\
+		--build-arg PACKAGER 								\
+		--build-arg CONTAINERSUITE 							\
+		--build-arg BUILD 									\
+		--build-arg PATRONI_VERSION 						\
+		--build-arg PGBACKREST_VERSION 						\
+		--build-arg PG_VERSION 								\
+		--build-arg OLD_PG_VERSION 							\
+		--build-arg PG_MAJOR 							
+Sending build context to Docker daemon  5.754MB
+Step 1/48 : ARG CONTAINERSUITE
+Step 2/48 : ARG BUILD
+Step 3/48 : FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
+ ---> 49e5d6c54201
+Step 4/48 : ARG PACKAGER
+ ---> Using cache
+ ---> 8ff9e0b3f884
+Step 5/48 : ARG BASEOS
+ ---> Using cache
+ ---> d4838da21009
+Step 6/48 : ARG PGBACKREST_VERSION
+ ---> Using cache
+ ---> 1d8202c5a82a
+Step 7/48 : ARG PATRONI_VERSION
+ ---> Using cache
+ ---> 74a8a8a031d1
+Step 8/48 : ARG PG_VERSION
+ ---> Using cache
+ ---> 1e3caee15d64
+Step 9/48 : ARG PG_MAJOR
+ ---> Using cache
+ ---> 6e5f34cfa995
+Step 10/48 : ARG OLD_PG_VERSIONS
+ ---> Using cache
+ ---> c4360eb81613
+Step 11/48 : ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ ---> Using cache
+ ---> 986cb87d671f
+Step 12/48 : ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ ---> Using cache
+ ---> 99287b9e5a80
+Step 13/48 : ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996     PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5     PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58     SET_USER=REL3_0_0     PLPROFILER=REL4_1     PG_PROFILE=0.3.6     PAM_OAUTH2=v1.0.1     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+ ---> Using cache
+ ---> 03da82e29e27
+Step 14/48 : RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs         openssh-clients         openssh-server         shadow-utils         tar         bzip2         lz4         python3         python3-pip         python3-psycopg2         python3-psutil         python3-requests         python3-etcd         git         patchutils         binutils         make         cmake         gcc         curl         libcurl-devel         pam-devel         wget         mlocate         git-clang-format         openssl-devel         ccache         redhat-rpm-config         krb5-devel         busybox         dpkg     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> db5949aeb26a
+Step 15/48 : RUN if [ "$BASEOS" = "ubi8" ] ; then 	${PACKAGER} -y install --nodocs 		pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; else 	${PACKAGER} -y install --nodocs  		--setopt=skip_missing_names_on_install=False         pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; fi
+ ---> Using cache
+ ---> c1f0029418f0
+Step 16/48 : RUN ETCDVERSION=3.3.27     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+ ---> Using cache
+ ---> 4f3b46acdfb0
+Step 17/48 : RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
+ ---> Using cache
+ ---> 83455ad07096
+Step 18/48 : RUN ${PACKAGER} -y install python3-etcd python3-consul                           python3-gevent python3-greenlet python3-cachetools                         python3-rsa python3-pyasn1-modules  python3-cffi     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> 0ea191404cf1
+Step 19/48 : RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
+ ---> Using cache
+ ---> 45605dba63b3
+Step 20/48 : RUN mkdir /usr/lib/postgresql
+ ---> Using cache
+ ---> 29acddd2382e
+Step 21/48 : ENV PATHBACKUP = $PATH
+ ---> Using cache
+ ---> 40b91ba6e13c
+Step 22/48 : RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git     && make -C pam-oauth2 install     && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git     && git clone https://github.com/timescale/timescaledb.git     && git clone https://github.com/dimitri/pgextwlist.git     && git clone https://github.com/powa-team/pg_stat_kcache.git     && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli     && ${PACKAGER} -y clean all    && for version in $PG_SUPPORTED_VERSIONS; do         ${PACKAGER} -y update &&         ${PACKAGER} -y install postgresql${version}-pltcl                             pgaudit1*_${version}             && ${PACKAGER} -y install -y postgresql${version}-contrib                     postgresql${version}-plpython3 postgresql${version}-devel                     pg_cron_${version}             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version             && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin              && cd /timescaledb             && for v in $TIMESCALEDB; do                     git checkout $v                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF                         -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config                         -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then                             make -C build install                             && strip /usr/pgsql-$version/lib/timescaledb*.so;                     fi                     && git reset --hard                     && git clean -f -d;                 done             && cd ..             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do                 make -C $n USE_PGXS=1 clean install-strip;             done             && cd /pgextwlist && make && make install             && cd /pg_stat_kcache && make clean && make && make install         && ${PACKAGER} -y clean all;     done     && ${PACKAGER} -y remove postgresql postgresql-all postgresql-server-dev-* libpq-dev=* libmagic1 bsdmainutils     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all         && rm -rf /var/lib/apt/lists/*             /var/cache/debconf/*             /builddeps             /usr/share/doc             /usr/share/man             /usr/share/info             /usr/share/locale/??             /usr/share/locale/??_??             /usr/share/postgresql/*/man             /etc/pgbouncer/*             /usr/lib/postgresql/*/bin/createdb             /usr/lib/postgresql/*/bin/createlang             /usr/lib/postgresql/*/bin/createuser             /usr/lib/postgresql/*/bin/dropdb             /usr/lib/postgresql/*/bin/droplang             /usr/lib/postgresql/*/bin/dropuser             /usr/lib/postgresql/*/bin/pg_standby             /usr/lib/postgresql/*/bin/pltcl_*     && find /var/log -type f -exec truncate --size 0 {} \;
+ ---> Using cache
+ ---> b396ff940a52
+Step 23/48 : RUN dnf -y install 'dnf-command(config-manager)'
+ ---> Using cache
+ ---> da598cc480b2
+Step 24/48 : RUN dnf -y config-manager --set-enabled crb
+ ---> Using cache
+ ---> 66c7c6fc676c
+Step 25/48 : RUN dnf -y install glibc-devel glibc-static
+ ---> Using cache
+ ---> 5dfb1c1621a1
+Step 26/48 : RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+ ---> Using cache
+ ---> 8c55f70d65b8
+Step 27/48 : RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+ ---> Using cache
+ ---> e1882fbedcb6
+Step 28/48 : RUN rm -rf /pgextwlist /pg_stat_kcache /package     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+ ---> Using cache
+ ---> 88605f606ce4
+Step 29/48 : RUN ${PACKAGER} update --refresh -y     && ${PACKAGER} -y remove python3-pip git patchutils binutils glibc*     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all;
+ ---> Running in f856daf95ac5
+Extra Packages for Enterprise Linux 9 - x86_64   42 kB/s |  24 kB     00:00    
+PostgreSQL common RPMs for RHEL / Rocky 9 - x86 488  B/s | 195  B     00:00    
+PostgreSQL 15 for RHEL / Rocky 9 - x86_64       480  B/s | 195  B     00:00    
+PostgreSQL 14 for RHEL / Rocky 9 - x86_64       474  B/s | 195  B     00:00    
+PostgreSQL 13 for RHEL / Rocky 9 - x86_64       488  B/s | 195  B     00:00    
+PostgreSQL 12 for RHEL / Rocky 9 - x86_64       357  B/s | 195  B     00:00    
+PostgreSQL 11 for RHEL / Rocky 9 - x86_64       378  B/s | 195  B     00:00    
+PostgreSQL 10 for RHEL / Rocky 9 - x86_64       357  B/s | 195  B     00:00    
+Rocky Linux 9 - BaseOS                          7.9 kB/s | 3.6 kB     00:00    
+Rocky Linux 9 - AppStream                       9.8 kB/s | 4.1 kB     00:00    
+Rocky Linux 9 - CRB                             9.3 kB/s | 3.6 kB     00:00    
+Rocky Linux 9 - Extras                          7.1 kB/s | 2.9 kB     00:00    
+Dependencies resolved.
+Nothing to do.
+Complete!
+[91mError: 
+ Problem: The operation would result in removing the following protected packages: dnf, systemd, yum
+[0m(try to add '--skip-broken' to skip uninstallable packages or '--nobest' to use not only best candidate packages)
+docker build /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container								\
+		--file /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container/docker/postgres_stage/Dockerfile 		\
+		--tag cybertec-os-container/postgres-stage:14.0.1	\
+		--build-arg BASE_IMAGE								\
+		--build-arg IMAGE_REPOSITORY 						\
+		--build-arg BASEOS 									\
+		--build-arg PACKAGER 								\
+		--build-arg CONTAINERSUITE 							\
+		--build-arg BUILD 									\
+		--build-arg PATRONI_VERSION 						\
+		--build-arg PGBACKREST_VERSION 						\
+		--build-arg PG_VERSION 								\
+		--build-arg OLD_PG_VERSION 							\
+		--build-arg PG_MAJOR 							
+Sending build context to Docker daemon  5.764MB
+Step 1/48 : ARG CONTAINERSUITE
+Step 2/48 : ARG BUILD
+Step 3/48 : FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
+ ---> 49e5d6c54201
+Step 4/48 : ARG PACKAGER
+ ---> Using cache
+ ---> 8ff9e0b3f884
+Step 5/48 : ARG BASEOS
+ ---> Using cache
+ ---> d4838da21009
+Step 6/48 : ARG PGBACKREST_VERSION
+ ---> Using cache
+ ---> 1d8202c5a82a
+Step 7/48 : ARG PATRONI_VERSION
+ ---> Using cache
+ ---> 74a8a8a031d1
+Step 8/48 : ARG PG_VERSION
+ ---> Using cache
+ ---> 1e3caee15d64
+Step 9/48 : ARG PG_MAJOR
+ ---> Using cache
+ ---> 6e5f34cfa995
+Step 10/48 : ARG OLD_PG_VERSIONS
+ ---> Using cache
+ ---> c4360eb81613
+Step 11/48 : ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ ---> Using cache
+ ---> 986cb87d671f
+Step 12/48 : ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ ---> Using cache
+ ---> 99287b9e5a80
+Step 13/48 : ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996     PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5     PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58     SET_USER=REL3_0_0     PLPROFILER=REL4_1     PG_PROFILE=0.3.6     PAM_OAUTH2=v1.0.1     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+ ---> Using cache
+ ---> 03da82e29e27
+Step 14/48 : RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs         openssh-clients         openssh-server         shadow-utils         tar         bzip2         lz4         python3         python3-pip         python3-psycopg2         python3-psutil         python3-requests         python3-etcd         git         patchutils         binutils         make         cmake         gcc         curl         libcurl-devel         pam-devel         wget         mlocate         git-clang-format         openssl-devel         ccache         redhat-rpm-config         krb5-devel         busybox         dpkg     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> db5949aeb26a
+Step 15/48 : RUN if [ "$BASEOS" = "ubi8" ] ; then 	${PACKAGER} -y install --nodocs 		pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; else 	${PACKAGER} -y install --nodocs  		--setopt=skip_missing_names_on_install=False         pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; fi
+ ---> Using cache
+ ---> c1f0029418f0
+Step 16/48 : RUN ETCDVERSION=3.3.27     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+ ---> Using cache
+ ---> 4f3b46acdfb0
+Step 17/48 : RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
+ ---> Using cache
+ ---> 83455ad07096
+Step 18/48 : RUN ${PACKAGER} -y install python3-etcd python3-consul                           python3-gevent python3-greenlet python3-cachetools                         python3-rsa python3-pyasn1-modules  python3-cffi     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> 0ea191404cf1
+Step 19/48 : RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
+ ---> Using cache
+ ---> 45605dba63b3
+Step 20/48 : RUN mkdir /usr/lib/postgresql
+ ---> Using cache
+ ---> 29acddd2382e
+Step 21/48 : ENV PATHBACKUP = $PATH
+ ---> Using cache
+ ---> 40b91ba6e13c
+Step 22/48 : RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git     && make -C pam-oauth2 install     && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git     && git clone https://github.com/timescale/timescaledb.git     && git clone https://github.com/dimitri/pgextwlist.git     && git clone https://github.com/powa-team/pg_stat_kcache.git     && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli     && ${PACKAGER} -y clean all    && for version in $PG_SUPPORTED_VERSIONS; do         ${PACKAGER} -y update &&         ${PACKAGER} -y install postgresql${version}-pltcl                             pgaudit1*_${version}             && ${PACKAGER} -y install -y postgresql${version}-contrib                     postgresql${version}-plpython3 postgresql${version}-devel                     pg_cron_${version}             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version             && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin              && cd /timescaledb             && for v in $TIMESCALEDB; do                     git checkout $v                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF                         -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config                         -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then                             make -C build install                             && strip /usr/pgsql-$version/lib/timescaledb*.so;                     fi                     && git reset --hard                     && git clean -f -d;                 done             && cd ..             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do                 make -C $n USE_PGXS=1 clean install-strip;             done             && cd /pgextwlist && make && make install             && cd /pg_stat_kcache && make clean && make && make install         && ${PACKAGER} -y clean all;     done     && ${PACKAGER} -y remove postgresql postgresql-all postgresql-server-dev-* libpq-dev=* libmagic1 bsdmainutils     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all         && rm -rf /var/lib/apt/lists/*             /var/cache/debconf/*             /builddeps             /usr/share/doc             /usr/share/man             /usr/share/info             /usr/share/locale/??             /usr/share/locale/??_??             /usr/share/postgresql/*/man             /etc/pgbouncer/*             /usr/lib/postgresql/*/bin/createdb             /usr/lib/postgresql/*/bin/createlang             /usr/lib/postgresql/*/bin/createuser             /usr/lib/postgresql/*/bin/dropdb             /usr/lib/postgresql/*/bin/droplang             /usr/lib/postgresql/*/bin/dropuser             /usr/lib/postgresql/*/bin/pg_standby             /usr/lib/postgresql/*/bin/pltcl_*     && find /var/log -type f -exec truncate --size 0 {} \;
+ ---> Using cache
+ ---> b396ff940a52
+Step 23/48 : RUN dnf -y install 'dnf-command(config-manager)'
+ ---> Using cache
+ ---> da598cc480b2
+Step 24/48 : RUN dnf -y config-manager --set-enabled crb
+ ---> Using cache
+ ---> 66c7c6fc676c
+Step 25/48 : RUN dnf -y install glibc-devel glibc-static
+ ---> Using cache
+ ---> 5dfb1c1621a1
+Step 26/48 : RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+ ---> Using cache
+ ---> 8c55f70d65b8
+Step 27/48 : RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+ ---> Using cache
+ ---> e1882fbedcb6
+Step 28/48 : RUN rm -rf /pgextwlist /pg_stat_kcache /package     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+ ---> Using cache
+ ---> 88605f606ce4
+Step 29/48 : RUN ${PACKAGER} -y remove python3-pip git patchutils binutils glibc*     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all;
+ ---> Running in 64fe0d8acf8b
+[91mError: 
+ Problem: The operation would result in removing the following protected packages: dnf, systemd, yum
+[0m(try to add '--skip-broken' to skip uninstallable packages or '--nobest' to use not only best candidate packages)
+docker build /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container								\
+		--file /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container/docker/postgres_stage/Dockerfile 		\
+		--tag cybertec-os-container/postgres-stage:14.0.1	\
+		--build-arg BASE_IMAGE								\
+		--build-arg IMAGE_REPOSITORY 						\
+		--build-arg BASEOS 									\
+		--build-arg PACKAGER 								\
+		--build-arg CONTAINERSUITE 							\
+		--build-arg BUILD 									\
+		--build-arg PATRONI_VERSION 						\
+		--build-arg PGBACKREST_VERSION 						\
+		--build-arg PG_VERSION 								\
+		--build-arg OLD_PG_VERSION 							\
+		--build-arg PG_MAJOR 							
+Sending build context to Docker daemon  5.773MB
+Step 1/48 : ARG CONTAINERSUITE
+Step 2/48 : ARG BUILD
+Step 3/48 : FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
+ ---> 49e5d6c54201
+Step 4/48 : ARG PACKAGER
+ ---> Using cache
+ ---> 8ff9e0b3f884
+Step 5/48 : ARG BASEOS
+ ---> Using cache
+ ---> d4838da21009
+Step 6/48 : ARG PGBACKREST_VERSION
+ ---> Using cache
+ ---> 1d8202c5a82a
+Step 7/48 : ARG PATRONI_VERSION
+ ---> Using cache
+ ---> 74a8a8a031d1
+Step 8/48 : ARG PG_VERSION
+ ---> Using cache
+ ---> 1e3caee15d64
+Step 9/48 : ARG PG_MAJOR
+ ---> Using cache
+ ---> 6e5f34cfa995
+Step 10/48 : ARG OLD_PG_VERSIONS
+ ---> Using cache
+ ---> c4360eb81613
+Step 11/48 : ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ ---> Using cache
+ ---> 986cb87d671f
+Step 12/48 : ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ ---> Using cache
+ ---> 99287b9e5a80
+Step 13/48 : ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996     PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5     PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58     SET_USER=REL3_0_0     PLPROFILER=REL4_1     PG_PROFILE=0.3.6     PAM_OAUTH2=v1.0.1     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+ ---> Using cache
+ ---> 03da82e29e27
+Step 14/48 : RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs         openssh-clients         openssh-server         shadow-utils         tar         bzip2         lz4         python3         python3-pip         python3-psycopg2         python3-psutil         python3-requests         python3-etcd         git         patchutils         binutils         make         cmake         gcc         curl         libcurl-devel         pam-devel         wget         mlocate         git-clang-format         openssl-devel         ccache         redhat-rpm-config         krb5-devel         busybox         dpkg     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> db5949aeb26a
+Step 15/48 : RUN if [ "$BASEOS" = "ubi8" ] ; then 	${PACKAGER} -y install --nodocs 		pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; else 	${PACKAGER} -y install --nodocs  		--setopt=skip_missing_names_on_install=False         pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; fi
+ ---> Using cache
+ ---> c1f0029418f0
+Step 16/48 : RUN ETCDVERSION=3.3.27     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+ ---> Using cache
+ ---> 4f3b46acdfb0
+Step 17/48 : RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
+ ---> Using cache
+ ---> 83455ad07096
+Step 18/48 : RUN ${PACKAGER} -y install python3-etcd python3-consul                           python3-gevent python3-greenlet python3-cachetools                         python3-rsa python3-pyasn1-modules  python3-cffi     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> 0ea191404cf1
+Step 19/48 : RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
+ ---> Using cache
+ ---> 45605dba63b3
+Step 20/48 : RUN mkdir /usr/lib/postgresql
+ ---> Using cache
+ ---> 29acddd2382e
+Step 21/48 : ENV PATHBACKUP = $PATH
+ ---> Using cache
+ ---> 40b91ba6e13c
+Step 22/48 : RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git     && make -C pam-oauth2 install     && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git     && git clone https://github.com/timescale/timescaledb.git     && git clone https://github.com/dimitri/pgextwlist.git     && git clone https://github.com/powa-team/pg_stat_kcache.git     && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli     && ${PACKAGER} -y clean all    && for version in $PG_SUPPORTED_VERSIONS; do         ${PACKAGER} -y update &&         ${PACKAGER} -y install postgresql${version}-pltcl                             pgaudit1*_${version}             && ${PACKAGER} -y install -y postgresql${version}-contrib                     postgresql${version}-plpython3 postgresql${version}-devel                     pg_cron_${version}             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version             && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin              && cd /timescaledb             && for v in $TIMESCALEDB; do                     git checkout $v                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF                         -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config                         -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then                             make -C build install                             && strip /usr/pgsql-$version/lib/timescaledb*.so;                     fi                     && git reset --hard                     && git clean -f -d;                 done             && cd ..             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do                 make -C $n USE_PGXS=1 clean install-strip;             done             && cd /pgextwlist && make && make install             && cd /pg_stat_kcache && make clean && make && make install         && ${PACKAGER} -y clean all;     done     && ${PACKAGER} -y remove postgresql postgresql-all postgresql-server-dev-* libpq-dev=* libmagic1 bsdmainutils     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all         && rm -rf /var/lib/apt/lists/*             /var/cache/debconf/*             /builddeps             /usr/share/doc             /usr/share/man             /usr/share/info             /usr/share/locale/??             /usr/share/locale/??_??             /usr/share/postgresql/*/man             /etc/pgbouncer/*             /usr/lib/postgresql/*/bin/createdb             /usr/lib/postgresql/*/bin/createlang             /usr/lib/postgresql/*/bin/createuser             /usr/lib/postgresql/*/bin/dropdb             /usr/lib/postgresql/*/bin/droplang             /usr/lib/postgresql/*/bin/dropuser             /usr/lib/postgresql/*/bin/pg_standby             /usr/lib/postgresql/*/bin/pltcl_*     && find /var/log -type f -exec truncate --size 0 {} \;
+ ---> Using cache
+ ---> b396ff940a52
+Step 23/48 : RUN dnf -y install 'dnf-command(config-manager)'
+ ---> Using cache
+ ---> da598cc480b2
+Step 24/48 : RUN dnf -y config-manager --set-enabled crb
+ ---> Using cache
+ ---> 66c7c6fc676c
+Step 25/48 : RUN dnf -y install glibc-devel glibc-static
+ ---> Using cache
+ ---> 5dfb1c1621a1
+Step 26/48 : RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+ ---> Using cache
+ ---> 8c55f70d65b8
+Step 27/48 : RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+ ---> Using cache
+ ---> e1882fbedcb6
+Step 28/48 : RUN rm -rf /pgextwlist /pg_stat_kcache /package     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+ ---> Using cache
+ ---> 88605f606ce4
+Step 29/48 : RUN ${PACKAGER} -y remove python3-pip git patchutils binutils     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all;
+ ---> Running in 1d2df2c7e660
+Dependencies resolved.
+================================================================================
+ Package                          Arch     Version           Repository    Size
+================================================================================
+Removing:
+ binutils                         x86_64   2.35.2-24.el9     @baseos       24 M
+ git                              x86_64   2.31.1-2.el9.2    @appstream   365 k
+ patchutils                       x86_64   0.4.2-7.el9       @appstream   210 k
+ python3-pip                      noarch   21.2.3-6.el9      @appstream   8.7 M
+Removing dependent packages:
+ annobin                          x86_64   10.73-3.el9       @appstream   1.0 M
+ binutils-gold                    x86_64   2.35.2-24.el9     @baseos      2.0 M
+ gcc                              x86_64   11.3.1-2.1.el9    @appstream    85 M
+ gcc-plugin-annobin               x86_64   11.3.1-2.1.el9    @appstream    52 k
+ git-clang-format                 x86_64   14.0.6-1.el9      @appstream    23 k
+Removing unused dependencies:
+ checkpolicy                      x86_64   3.4-1.el9         @appstream   1.4 M
+ clang-libs                       x86_64   14.0.6-1.el9      @appstream    97 M
+ clang-resource-filesystem        x86_64   14.0.6-1.el9      @appstream     6  
+ clang-tools-extra                x86_64   14.0.6-1.el9      @appstream    66 M
+ compiler-rt                      x86_64   14.0.6-1.el9      @appstream    45 M
+ cpp                              x86_64   11.3.1-2.1.el9    @appstream    29 M
+ diffutils                        x86_64   3.7-12.el9        @baseos      1.4 M
+ ed                               x86_64   1.14.2-12.el9     @baseos      127 k
+ environment-modules              x86_64   5.0.1-1.el9       @baseos      2.4 M
+ gcc-toolset-12-binutils          x86_64   2.38-16.el9       @appstream    24 M
+ gcc-toolset-12-binutils-gold     x86_64   2.38-16.el9       @appstream   2.1 M
+ gcc-toolset-12-gcc               x86_64   12.1.1-3.2.el9    @appstream   111 M
+ gcc-toolset-12-gcc-c++           x86_64   12.1.1-3.2.el9    @appstream    35 M
+ gcc-toolset-12-libstdc++-devel   x86_64   12.1.1-3.2.el9    @appstream    19 M
+ gcc-toolset-12-runtime           x86_64   12.0-5.el9        @appstream   3.6 k
+ git-core                         x86_64   2.31.1-2.el9.2    @appstream    16 M
+ git-core-doc                     noarch   2.31.1-2.el9.2    @appstream    15 M
+ info                             x86_64   6.7-15.el9        @baseos      496 k
+ libmpc                           x86_64   1.2.1-4.el9       @appstream   135 k
+ libomp                           x86_64   14.0.6-1.el9      @appstream   2.5 M
+ libomp-devel                     x86_64   14.0.6-1.el9      @appstream   180 k
+ libpipeline                      x86_64   1.5.3-4.el9       @baseos      113 k
+ libselinux-utils                 x86_64   3.4-3.el9         @baseos      385 k
+ llvm-libs                        x86_64   14.0.6-1.el9      @appstream    85 M
+ man-db                           x86_64   2.9.3-6.el9       @baseos      2.5 M
+ patch                            x86_64   2.7.6-16.el9      @appstream   259 k
+ perl-DynaLoader                  x86_64   1.47-479.el9      @appstream    32 k
+ perl-Error                       noarch   1:0.17029-7.el9   @appstream    78 k
+ perl-Git                         noarch   2.31.1-2.el9.2    @appstream    64 k
+ perl-TermReadKey                 x86_64   2.38-11.el9       @appstream    65 k
+ perl-lib                         x86_64   0.65-479.el9      @appstream   9.4 k
+ policycoreutils                  x86_64   3.4-4.el9         @baseos      690 k
+ policycoreutils-python-utils     noarch   3.4-4.el9         @appstream   117 k
+ python3-audit                    x86_64   3.0.7-103.el9     @appstream   337 k
+ python3-libselinux               x86_64   3.4-3.el9         @appstream   601 k
+ python3-libsemanage              x86_64   3.4-2.el9         @appstream   416 k
+ python3-policycoreutils          noarch   3.4-4.el9         @appstream   5.4 M
+ python3-setools                  x86_64   4.4.0-5.el9       @baseos      2.3 M
+ scl-utils                        x86_64   1:2.0.3-2.el9     @appstream    66 k
+ tcl                              x86_64   1:8.6.10-7.el9    @baseos      4.4 M
+
+Transaction Summary
+================================================================================
+Remove  49 Packages
+
+Freed space: 691 M
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Erasing          : annobin-10.73-3.el9.x86_64                            1/49 
+  Running scriptlet: annobin-10.73-3.el9.x86_64                            1/49 
+  Erasing          : git-clang-format-14.0.6-1.el9.x86_64                  2/49 
+  Erasing          : git-2.31.1-2.el9.2.x86_64                             3/49 
+  Erasing          : clang-tools-extra-14.0.6-1.el9.x86_64                 4/49 
+  Erasing          : git-core-doc-2.31.1-2.el9.2.noarch                    5/49 
+  Erasing          : perl-Git-2.31.1-2.el9.2.noarch                        6/49 
+  Erasing          : clang-libs-14.0.6-1.el9.x86_64                        7/49 
+  Erasing          : libomp-devel-14.0.6-1.el9.x86_64                      8/49 
+  Erasing          : gcc-toolset-12-gcc-c++-12.1.1-3.2.el9.x86_64          9/49 
+  Erasing          : gcc-toolset-12-gcc-12.1.1-3.2.el9.x86_64             10/49 
+  Running scriptlet: gcc-toolset-12-binutils-2.38-16.el9.x86_64           11/49 
+  Erasing          : gcc-toolset-12-binutils-2.38-16.el9.x86_64           11/49 
+  Running scriptlet: gcc-toolset-12-binutils-2.38-16.el9.x86_64           11/49 
+  Erasing          : libomp-14.0.6-1.el9.x86_64                           12/49 
+  Erasing          : gcc-toolset-12-libstdc++-devel-12.1.1-3.2.el9.x86_   13/49 
+  Running scriptlet: gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64      14/49 
+  Erasing          : gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64      14/49 
+  Running scriptlet: gcc-toolset-12-runtime-12.0-5.el9.x86_64             15/49 
+  Erasing          : gcc-toolset-12-runtime-12.0-5.el9.x86_64             15/49 
+  Running scriptlet: gcc-toolset-12-runtime-12.0-5.el9.x86_64             15/49 
+ValueError: SELinux policy is not managed or store cannot be accessed.
+
+  Erasing          : policycoreutils-python-utils-3.4-4.el9.noarch        16/49 
+  Erasing          : python3-policycoreutils-3.4-4.el9.noarch             17/49 
+warning: file /usr/share/locale/en_GB/LC_MESSAGES/selinux-python.mo: remove failed: No such file or directory
+
+  Running scriptlet: policycoreutils-3.4-4.el9.x86_64                     18/49 
+Removed "/etc/systemd/system/sysinit.target.wants/selinux-autorelabel-mark.service".
+
+  Erasing          : policycoreutils-3.4-4.el9.x86_64                     18/49 
+warning: file /usr/share/locale/en_GB/LC_MESSAGES/policycoreutils.mo: remove failed: No such file or directory
+warning: file /usr/share/doc/policycoreutils: remove failed: No such file or directory
+
+  Erasing          : python3-libsemanage-3.4-2.el9.x86_64                 19/49 
+  Erasing          : scl-utils-1:2.0.3-2.el9.x86_64                       20/49 
+  Erasing          : environment-modules-5.0.1-1.el9.x86_64               21/49 
+  Running scriptlet: environment-modules-5.0.1-1.el9.x86_64               21/49 
+  Running scriptlet: man-db-2.9.3-6.el9.x86_64                            22/49 
+  Erasing          : man-db-2.9.3-6.el9.x86_64                            22/49 
+  Running scriptlet: man-db-2.9.3-6.el9.x86_64                            22/49 
+  Erasing          : compiler-rt-14.0.6-1.el9.x86_64                      23/49 
+  Erasing          : perl-TermReadKey-2.38-11.el9.x86_64                  24/49 
+  Erasing          : patchutils-0.4.2-7.el9.x86_64                        25/49 
+  Erasing          : patch-2.7.6-16.el9.x86_64                            26/49 
+  Erasing          : ed-1.14.2-12.el9.x86_64                              27/49 
+  Erasing          : gcc-plugin-annobin-11.3.1-2.1.el9.x86_64             28/49 
+  Erasing          : perl-DynaLoader-1.47-479.el9.x86_64                  29/49 
+  Erasing          : clang-resource-filesystem-14.0.6-1.el9.x86_64        30/49 
+  Erasing          : perl-Error-1:0.17029-7.el9.noarch                    31/49 
+  Erasing          : perl-lib-0.65-479.el9.x86_64                         32/49 
+  Erasing          : python3-pip-21.2.3-6.el9.noarch                      33/49 
+  Erasing          : gcc-11.3.1-2.1.el9.x86_64                            34/49 
+  Running scriptlet: gcc-11.3.1-2.1.el9.x86_64                            34/49 
+  Running scriptlet: binutils-2.35.2-24.el9.x86_64                        35/49 
+  Erasing          : binutils-2.35.2-24.el9.x86_64                        35/49 
+warning: file /usr/share/man/man1/strip.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/strings.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/size.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/readelf.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/ranlib.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/objdump.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/objcopy.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/nm.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/ld.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/gprof.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/elfedit.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/c++filt.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/as.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/ar.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/addr2line.1.gz: remove failed: No such file or directory
+warning: file /usr/share/info/ld.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/gprof.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/binutils.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/bfd.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/as.info.gz: remove failed: No such file or directory
+warning: file /usr/share/doc/binutils/README: remove failed: No such file or directory
+warning: file /usr/share/doc/binutils: remove failed: No such file or directory
+
+  Running scriptlet: binutils-2.35.2-24.el9.x86_64                        35/49 
+  Erasing          : cpp-11.3.1-2.1.el9.x86_64                            36/49 
+  Erasing          : libmpc-1.2.1-4.el9.x86_64                            37/49 
+  Erasing          : binutils-gold-2.35.2-24.el9.x86_64                   38/49 
+  Erasing          : info-6.7-15.el9.x86_64                               39/49 
+  Erasing          : libpipeline-1.5.3-4.el9.x86_64                       40/49 
+  Erasing          : tcl-1:8.6.10-7.el9.x86_64                            41/49 
+  Erasing          : python3-libselinux-3.4-3.el9.x86_64                  42/49 
+  Erasing          : diffutils-3.7-12.el9.x86_64                          43/49 
+  Erasing          : libselinux-utils-3.4-3.el9.x86_64                    44/49 
+  Erasing          : python3-audit-3.0.7-103.el9.x86_64                   45/49 
+  Erasing          : checkpolicy-3.4-1.el9.x86_64                         46/49 
+  Erasing          : python3-setools-4.4.0-5.el9.x86_64                   47/49 
+  Erasing          : llvm-libs-14.0.6-1.el9.x86_64                        48/49 
+  Erasing          : git-core-2.31.1-2.el9.2.x86_64                       49/49 
+  Verifying        : annobin-10.73-3.el9.x86_64                            1/49 
+  Verifying        : binutils-2.35.2-24.el9.x86_64                         2/49 
+  Verifying        : binutils-gold-2.35.2-24.el9.x86_64                    3/49 
+  Verifying        : checkpolicy-3.4-1.el9.x86_64                          4/49 
+  Verifying        : clang-libs-14.0.6-1.el9.x86_64                        5/49 
+  Verifying        : clang-resource-filesystem-14.0.6-1.el9.x86_64         6/49 
+  Verifying        : clang-tools-extra-14.0.6-1.el9.x86_64                 7/49 
+  Verifying        : compiler-rt-14.0.6-1.el9.x86_64                       8/49 
+  Verifying        : cpp-11.3.1-2.1.el9.x86_64                             9/49 
+  Verifying        : diffutils-3.7-12.el9.x86_64                          10/49 
+  Verifying        : ed-1.14.2-12.el9.x86_64                              11/49 
+  Verifying        : environment-modules-5.0.1-1.el9.x86_64               12/49 
+  Verifying        : gcc-11.3.1-2.1.el9.x86_64                            13/49 
+  Verifying        : gcc-plugin-annobin-11.3.1-2.1.el9.x86_64             14/49 
+  Verifying        : gcc-toolset-12-binutils-2.38-16.el9.x86_64           15/49 
+  Verifying        : gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64      16/49 
+  Verifying        : gcc-toolset-12-gcc-12.1.1-3.2.el9.x86_64             17/49 
+  Verifying        : gcc-toolset-12-gcc-c++-12.1.1-3.2.el9.x86_64         18/49 
+  Verifying        : gcc-toolset-12-libstdc++-devel-12.1.1-3.2.el9.x86_   19/49 
+  Verifying        : gcc-toolset-12-runtime-12.0-5.el9.x86_64             20/49 
+  Verifying        : git-2.31.1-2.el9.2.x86_64                            21/49 
+  Verifying        : git-clang-format-14.0.6-1.el9.x86_64                 22/49 
+  Verifying        : git-core-2.31.1-2.el9.2.x86_64                       23/49 
+  Verifying        : git-core-doc-2.31.1-2.el9.2.noarch                   24/49 
+  Verifying        : info-6.7-15.el9.x86_64                               25/49 
+  Verifying        : libmpc-1.2.1-4.el9.x86_64                            26/49 
+  Verifying        : libomp-14.0.6-1.el9.x86_64                           27/49 
+  Verifying        : libomp-devel-14.0.6-1.el9.x86_64                     28/49 
+  Verifying        : libpipeline-1.5.3-4.el9.x86_64                       29/49 
+  Verifying        : libselinux-utils-3.4-3.el9.x86_64                    30/49 
+  Verifying        : llvm-libs-14.0.6-1.el9.x86_64                        31/49 
+  Verifying        : man-db-2.9.3-6.el9.x86_64                            32/49 
+  Verifying        : patch-2.7.6-16.el9.x86_64                            33/49 
+  Verifying        : patchutils-0.4.2-7.el9.x86_64                        34/49 
+  Verifying        : perl-DynaLoader-1.47-479.el9.x86_64                  35/49 
+  Verifying        : perl-Error-1:0.17029-7.el9.noarch                    36/49 
+  Verifying        : perl-Git-2.31.1-2.el9.2.noarch                       37/49 
+  Verifying        : perl-TermReadKey-2.38-11.el9.x86_64                  38/49 
+  Verifying        : perl-lib-0.65-479.el9.x86_64                         39/49 
+  Verifying        : policycoreutils-3.4-4.el9.x86_64                     40/49 
+  Verifying        : policycoreutils-python-utils-3.4-4.el9.noarch        41/49 
+  Verifying        : python3-audit-3.0.7-103.el9.x86_64                   42/49 
+  Verifying        : python3-libselinux-3.4-3.el9.x86_64                  43/49 
+  Verifying        : python3-libsemanage-3.4-2.el9.x86_64                 44/49 
+  Verifying        : python3-pip-21.2.3-6.el9.noarch                      45/49 
+  Verifying        : python3-policycoreutils-3.4-4.el9.noarch             46/49 
+  Verifying        : python3-setools-4.4.0-5.el9.x86_64                   47/49 
+  Verifying        : scl-utils-1:2.0.3-2.el9.x86_64                       48/49 
+  Verifying        : tcl-1:8.6.10-7.el9.x86_64                            49/49 
+
+Removed:
+  annobin-10.73-3.el9.x86_64                                                    
+  binutils-2.35.2-24.el9.x86_64                                                 
+  binutils-gold-2.35.2-24.el9.x86_64                                            
+  checkpolicy-3.4-1.el9.x86_64                                                  
+  clang-libs-14.0.6-1.el9.x86_64                                                
+  clang-resource-filesystem-14.0.6-1.el9.x86_64                                 
+  clang-tools-extra-14.0.6-1.el9.x86_64                                         
+  compiler-rt-14.0.6-1.el9.x86_64                                               
+  cpp-11.3.1-2.1.el9.x86_64                                                     
+  diffutils-3.7-12.el9.x86_64                                                   
+  ed-1.14.2-12.el9.x86_64                                                       
+  environment-modules-5.0.1-1.el9.x86_64                                        
+  gcc-11.3.1-2.1.el9.x86_64                                                     
+  gcc-plugin-annobin-11.3.1-2.1.el9.x86_64                                      
+  gcc-toolset-12-binutils-2.38-16.el9.x86_64                                    
+  gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64                               
+  gcc-toolset-12-gcc-12.1.1-3.2.el9.x86_64                                      
+  gcc-toolset-12-gcc-c++-12.1.1-3.2.el9.x86_64                                  
+  gcc-toolset-12-libstdc++-devel-12.1.1-3.2.el9.x86_64                          
+  gcc-toolset-12-runtime-12.0-5.el9.x86_64                                      
+  git-2.31.1-2.el9.2.x86_64                                                     
+  git-clang-format-14.0.6-1.el9.x86_64                                          
+  git-core-2.31.1-2.el9.2.x86_64                                                
+  git-core-doc-2.31.1-2.el9.2.noarch                                            
+  info-6.7-15.el9.x86_64                                                        
+  libmpc-1.2.1-4.el9.x86_64                                                     
+  libomp-14.0.6-1.el9.x86_64                                                    
+  libomp-devel-14.0.6-1.el9.x86_64                                              
+  libpipeline-1.5.3-4.el9.x86_64                                                
+  libselinux-utils-3.4-3.el9.x86_64                                             
+  llvm-libs-14.0.6-1.el9.x86_64                                                 
+  man-db-2.9.3-6.el9.x86_64                                                     
+  patch-2.7.6-16.el9.x86_64                                                     
+  patchutils-0.4.2-7.el9.x86_64                                                 
+  perl-DynaLoader-1.47-479.el9.x86_64                                           
+  perl-Error-1:0.17029-7.el9.noarch                                             
+  perl-Git-2.31.1-2.el9.2.noarch                                                
+  perl-TermReadKey-2.38-11.el9.x86_64                                           
+  perl-lib-0.65-479.el9.x86_64                                                  
+  policycoreutils-3.4-4.el9.x86_64                                              
+  policycoreutils-python-utils-3.4-4.el9.noarch                                 
+  python3-audit-3.0.7-103.el9.x86_64                                            
+  python3-libselinux-3.4-3.el9.x86_64                                           
+  python3-libsemanage-3.4-2.el9.x86_64                                          
+  python3-pip-21.2.3-6.el9.noarch                                               
+  python3-policycoreutils-3.4-4.el9.noarch                                      
+  python3-setools-4.4.0-5.el9.x86_64                                            
+  scl-utils-1:2.0.3-2.el9.x86_64                                                
+  tcl-1:8.6.10-7.el9.x86_64                                                     
+
+Complete!
+Last metadata expiration check: 0:07:02 ago on Fri Dec 16 11:09:11 2022.
+Dependencies resolved.
+Nothing to do.
+Complete!
+87 files removed
+Removing intermediate container 1d2df2c7e660
+ ---> 3c64686f4559
+Step 30/48 : FROM builder-false
+ ---> 3c64686f4559
+Step 31/48 : ARG PG_VERSION
+ ---> Running in de08fa240c7f
+Removing intermediate container de08fa240c7f
+ ---> 183f27ecddad
+Step 32/48 : ARG PG_MAJOR
+ ---> Running in 516d6b0b98e5
+Removing intermediate container 516d6b0b98e5
+ ---> 4989b27ca50e
+Step 33/48 : ARG TIMESCALEDB
+ ---> Running in 1c88817bffb1
+Removing intermediate container 1c88817bffb1
+ ---> ced072c604ab
+Step 34/48 : ARG COMPRESS
+ ---> Running in 65aa7d7ce75e
+Removing intermediate container 65aa7d7ce75e
+ ---> 0b9307f3ec48
+Step 35/48 : EXPOSE 5432 8008 8080
+ ---> Running in 6a94fe2927c0
+Removing intermediate container 6a94fe2927c0
+ ---> 7b338be2d1c8
+Step 36/48 : ENV LC_ALL=en_US.utf-8     PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin     PGHOME=/home/postgres     RW_DIR=/run     TIMESCALEDB=$TIMESCALEDB     DEMO=$DEMO
+ ---> Running in ec6fc44b0592
+Removing intermediate container ec6fc44b0592
+ ---> 33956307a365
+Step 37/48 : ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env     PGROOT=$PGHOME/pgdata/pgroot
+ ---> Running in bb038ae93754
+Removing intermediate container bb038ae93754
+ ---> 950b8054948a
+Step 38/48 : ENV PGDATA=$PGROOT/data     PGLOG=$PGROOT/pg_log
+ ---> Running in fcefc9a5ae50
+Removing intermediate container fcefc9a5ae50
+ ---> 9bb26711e4f9
+Step 39/48 : WORKDIR $PGHOME
+ ---> Running in f0e81b763f1a
+Removing intermediate container f0e81b763f1a
+ ---> f3b1a5549bd8
+Step 40/48 : COPY motd /etc/
+ ---> e2b07ac52359
+Step 41/48 : COPY runit /etc/runit/runsvdir/default/
+ ---> 5cbb78e249fb
+Step 42/48 : COPY pgq_ticker.ini $PGHOME/
+ ---> 649a11d4de66
+Step 43/48 : RUN rm -rf /etc/service
+ ---> Running in b885c0c8c2e2
+Removing intermediate container b885c0c8c2e2
+ ---> 9b939dca7aa4
+Step 44/48 : RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd         && chown -R postgres:postgres $PGHOME $RW_DIR         && rm -fr /var/spool/cron /var/tmp         && mkdir -p /var/spool         && ln -s $RW_DIR/cron /var/spool/cron         && ln -s $RW_DIR/tmp /var/tmp         && for d in /etc/runit/runsvdir/default/*; do             chmod 755 $d/*             && ln -s /run/supervise/$(basename $d) $d/supervise;         done         && ln -snf $RW_DIR/service /etc/service         && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml         && ln -s $RW_DIR/.bash_history /root/.bash_history         && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history         && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history         && ln -s $RW_DIR/etc $PGHOME/etc         && for d in $PGHOME /root; do             d=$d/.config/patroni             && mkdir -p $d             && ln -s $PGHOME/postgres.yml $d/patronictl.yaml;         done         && sed -i 's/set compatible/set nocompatible/' /etc/vimrc         && echo "PATH=\"$PATH\"" > /etc/environment         && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor;             do echo "export $e" >> /etc/bash.bashrc;         done         && ln -s /etc/skel/.bashrc $PGHOME/.bashrc         && echo "source /etc/motd" >> /root/.bashrc         && if [ "$COMPRESS" != "true" ]; then            chmod 664 /etc/passwd            && chmod o+r /etc/shadow            && chgrp -R 0 $PGHOME $RW_DIR            && chmod -R g=u $PGHOME $RW_DIR            && usermod -a -G root postgres;         fi
+ ---> Running in ce28ac7375d4
+Removing intermediate container ce28ac7375d4
+ ---> eacaa0d9b045
+Step 45/48 : COPY scripts bootstrap major_upgrade /scripts/
+ ---> 61e0a2ee1563
+Step 46/48 : COPY launcher/postgres/launch.sh /
+ ---> a2ca78050cd7
+Step 47/48 : USER 26
+ ---> Running in e778b573d127
+Removing intermediate container e778b573d127
+ ---> 0bab36f2b211
+Step 48/48 : CMD ["/bin/sh", "/launch.sh", "init"]
+ ---> Running in 761c9a6bb495
+Removing intermediate container 761c9a6bb495
+ ---> 0c61832bdb3a
+[Warning] One or more build-args [IMAGE_REPOSITORY BASE_IMAGE OLD_PG_VERSION] were not consumed
+Successfully built 0c61832bdb3a
+Successfully tagged cybertec-os-container/postgres-stage:14.0.1
+docker build /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container								\
+		--file /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container/docker/postgres_stage/Dockerfile 		\
+		--tag cybertec-os-container/postgres-stage:14.0.1	\
+		--build-arg BASE_IMAGE								\
+		--build-arg IMAGE_REPOSITORY 						\
+		--build-arg BASEOS 									\
+		--build-arg PACKAGER 								\
+		--build-arg CONTAINERSUITE 							\
+		--build-arg BUILD 									\
+		--build-arg PATRONI_VERSION 						\
+		--build-arg PGBACKREST_VERSION 						\
+		--build-arg PG_VERSION 								\
+		--build-arg OLD_PG_VERSION 							\
+		--build-arg PG_MAJOR 							
+Sending build context to Docker daemon  5.806MB
+Step 1/48 : ARG CONTAINERSUITE
+Step 2/48 : ARG BUILD
+Step 3/48 : FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
+ ---> 49e5d6c54201
+Step 4/48 : ARG PACKAGER
+ ---> Using cache
+ ---> 8ff9e0b3f884
+Step 5/48 : ARG BASEOS
+ ---> Using cache
+ ---> d4838da21009
+Step 6/48 : ARG PGBACKREST_VERSION
+ ---> Using cache
+ ---> 1d8202c5a82a
+Step 7/48 : ARG PATRONI_VERSION
+ ---> Using cache
+ ---> 74a8a8a031d1
+Step 8/48 : ARG PG_VERSION
+ ---> Using cache
+ ---> 1e3caee15d64
+Step 9/48 : ARG PG_MAJOR
+ ---> Using cache
+ ---> 6e5f34cfa995
+Step 10/48 : ARG OLD_PG_VERSIONS
+ ---> Using cache
+ ---> c4360eb81613
+Step 11/48 : ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ ---> Using cache
+ ---> 986cb87d671f
+Step 12/48 : ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ ---> Using cache
+ ---> 99287b9e5a80
+Step 13/48 : ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996     PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5     PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58     SET_USER=REL3_0_0     PLPROFILER=REL4_1     PG_PROFILE=0.3.6     PAM_OAUTH2=v1.0.1     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+ ---> Using cache
+ ---> 03da82e29e27
+Step 14/48 : RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs         openssh-clients         openssh-server         shadow-utils         tar         bzip2         lz4         python3         python3-pip         python3-psycopg2         python3-psutil         python3-requests         python3-etcd         git         patchutils         binutils         make         cmake         gcc         curl         libcurl-devel         pam-devel         wget         mlocate         git-clang-format         openssl-devel         ccache         redhat-rpm-config         krb5-devel         busybox         dpkg     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> db5949aeb26a
+Step 15/48 : RUN if [ "$BASEOS" = "ubi8" ] ; then 	${PACKAGER} -y install --nodocs 		pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; else 	${PACKAGER} -y install --nodocs  		--setopt=skip_missing_names_on_install=False         pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; fi
+ ---> Using cache
+ ---> c1f0029418f0
+Step 16/48 : RUN ETCDVERSION=3.3.27     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+ ---> Using cache
+ ---> 4f3b46acdfb0
+Step 17/48 : RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
+ ---> Using cache
+ ---> 83455ad07096
+Step 18/48 : RUN ${PACKAGER} -y install python3-etcd python3-consul                           python3-gevent python3-greenlet python3-cachetools                         python3-rsa python3-pyasn1-modules  python3-cffi     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> 0ea191404cf1
+Step 19/48 : RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
+ ---> Using cache
+ ---> 45605dba63b3
+Step 20/48 : RUN mkdir /usr/lib/postgresql
+ ---> Using cache
+ ---> 29acddd2382e
+Step 21/48 : ENV PATHBACKUP = $PATH
+ ---> Using cache
+ ---> 40b91ba6e13c
+Step 22/48 : RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git     && make -C pam-oauth2 install     && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git     && git clone https://github.com/timescale/timescaledb.git     && git clone https://github.com/dimitri/pgextwlist.git     && git clone https://github.com/powa-team/pg_stat_kcache.git     && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli     && ${PACKAGER} -y clean all    && for version in $PG_SUPPORTED_VERSIONS; do         ${PACKAGER} -y update &&         ${PACKAGER} -y install postgresql${version}-pltcl                             pgaudit1*_${version}             && ${PACKAGER} -y install -y postgresql${version}-contrib                     postgresql${version}-plpython3 postgresql${version}-devel                     pg_cron_${version}             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version             && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin              && cd /timescaledb             && for v in $TIMESCALEDB; do                     git checkout $v                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF                         -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config                         -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then                             make -C build install                             && strip /usr/pgsql-$version/lib/timescaledb*.so;                     fi                     && git reset --hard                     && git clean -f -d;                 done             && cd ..             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do                 make -C $n USE_PGXS=1 clean install-strip;             done             && cd /pgextwlist && make && make install             && cd /pg_stat_kcache && make clean && make && make install         && ${PACKAGER} -y clean all;     done     && ${PACKAGER} -y remove postgresql postgresql-all postgresql-server-dev-* libpq-dev=* libmagic1 bsdmainutils     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all         && rm -rf /var/lib/apt/lists/*             /var/cache/debconf/*             /builddeps             /usr/share/doc             /usr/share/man             /usr/share/info             /usr/share/locale/??             /usr/share/locale/??_??             /usr/share/postgresql/*/man             /etc/pgbouncer/*             /usr/lib/postgresql/*/bin/createdb             /usr/lib/postgresql/*/bin/createlang             /usr/lib/postgresql/*/bin/createuser             /usr/lib/postgresql/*/bin/dropdb             /usr/lib/postgresql/*/bin/droplang             /usr/lib/postgresql/*/bin/dropuser             /usr/lib/postgresql/*/bin/pg_standby             /usr/lib/postgresql/*/bin/pltcl_*     && find /var/log -type f -exec truncate --size 0 {} \;
+ ---> Using cache
+ ---> b396ff940a52
+Step 23/48 : RUN dnf -y install 'dnf-command(config-manager)'
+ ---> Using cache
+ ---> da598cc480b2
+Step 24/48 : RUN dnf -y config-manager --set-enabled crb
+ ---> Using cache
+ ---> 66c7c6fc676c
+Step 25/48 : RUN dnf -y install glibc-devel glibc-static
+ ---> Using cache
+ ---> 5dfb1c1621a1
+Step 26/48 : RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+ ---> Using cache
+ ---> 8c55f70d65b8
+Step 27/48 : RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+ ---> Using cache
+ ---> e1882fbedcb6
+Step 28/48 : RUN rm -rf /pgextwlist /pg_stat_kcache /package     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+ ---> Using cache
+ ---> 88605f606ce4
+Step 29/48 : RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils binutils flatpak glibc-devel glibc-static     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all;
+ ---> Running in eb03b36073e7
+No match for argument: python3-wheel
+No match for argument: python3-dev
+No match for argument: flatpak
+Dependencies resolved.
+================================================================================
+ Package                       Arch   Version                  Repository  Size
+================================================================================
+Removing:
+ binutils                      x86_64 2.35.2-24.el9            @baseos     24 M
+ git                           x86_64 2.31.1-2.el9.2           @appstream 365 k
+ glibc-devel                   x86_64 2.34-40.el9              @appstream 157 k
+ glibc-static                  x86_64 2.34-40.el9              @crb        25 M
+ patchutils                    x86_64 0.4.2-7.el9              @appstream 210 k
+ python3-pip                   noarch 21.2.3-6.el9             @appstream 8.7 M
+Removing dependent packages:
+ annobin                       x86_64 10.73-3.el9              @appstream 1.0 M
+ binutils-gold                 x86_64 2.35.2-24.el9            @baseos    2.0 M
+ gcc                           x86_64 11.3.1-2.1.el9           @appstream  85 M
+ gcc-plugin-annobin            x86_64 11.3.1-2.1.el9           @appstream  52 k
+ gcc-toolset-12-gcc            x86_64 12.1.1-3.2.el9           @appstream 111 M
+ git-clang-format              x86_64 14.0.6-1.el9             @appstream  23 k
+Removing unused dependencies:
+ checkpolicy                   x86_64 3.4-1.el9                @appstream 1.4 M
+ clang-libs                    x86_64 14.0.6-1.el9             @appstream  97 M
+ clang-resource-filesystem     x86_64 14.0.6-1.el9             @appstream   6  
+ clang-tools-extra             x86_64 14.0.6-1.el9             @appstream  66 M
+ compiler-rt                   x86_64 14.0.6-1.el9             @appstream  45 M
+ cpp                           x86_64 11.3.1-2.1.el9           @appstream  29 M
+ diffutils                     x86_64 3.7-12.el9               @baseos    1.4 M
+ ed                            x86_64 1.14.2-12.el9            @baseos    127 k
+ environment-modules           x86_64 5.0.1-1.el9              @baseos    2.4 M
+ gcc-toolset-12-binutils       x86_64 2.38-16.el9              @appstream  24 M
+ gcc-toolset-12-binutils-gold  x86_64 2.38-16.el9              @appstream 2.1 M
+ gcc-toolset-12-gcc-c++        x86_64 12.1.1-3.2.el9           @appstream  35 M
+ gcc-toolset-12-libstdc++-devel
+                               x86_64 12.1.1-3.2.el9           @appstream  19 M
+ gcc-toolset-12-runtime        x86_64 12.0-5.el9               @appstream 3.6 k
+ git-core                      x86_64 2.31.1-2.el9.2           @appstream  16 M
+ git-core-doc                  noarch 2.31.1-2.el9.2           @appstream  15 M
+ glibc-headers                 x86_64 2.34-40.el9              @appstream 2.1 M
+ info                          x86_64 6.7-15.el9               @baseos    496 k
+ kernel-headers                x86_64 5.14.0-162.6.1.el9_1.0.1 @appstream 5.6 M
+ libmpc                        x86_64 1.2.1-4.el9              @appstream 135 k
+ libomp                        x86_64 14.0.6-1.el9             @appstream 2.5 M
+ libomp-devel                  x86_64 14.0.6-1.el9             @appstream 180 k
+ libpipeline                   x86_64 1.5.3-4.el9              @baseos    113 k
+ libselinux-utils              x86_64 3.4-3.el9                @baseos    385 k
+ libxcrypt-devel               x86_64 4.4.18-3.el9             @appstream  30 k
+ libxcrypt-static              x86_64 4.4.18-3.el9             @crb       479 k
+ llvm-libs                     x86_64 14.0.6-1.el9             @appstream  85 M
+ man-db                        x86_64 2.9.3-6.el9              @baseos    2.5 M
+ patch                         x86_64 2.7.6-16.el9             @appstream 259 k
+ perl-DynaLoader               x86_64 1.47-479.el9             @appstream  32 k
+ perl-Error                    noarch 1:0.17029-7.el9          @appstream  78 k
+ perl-Git                      noarch 2.31.1-2.el9.2           @appstream  64 k
+ perl-TermReadKey              x86_64 2.38-11.el9              @appstream  65 k
+ perl-lib                      x86_64 0.65-479.el9             @appstream 9.4 k
+ policycoreutils               x86_64 3.4-4.el9                @baseos    690 k
+ policycoreutils-python-utils  noarch 3.4-4.el9                @appstream 117 k
+ python3-audit                 x86_64 3.0.7-103.el9            @appstream 337 k
+ python3-libselinux            x86_64 3.4-3.el9                @appstream 601 k
+ python3-libsemanage           x86_64 3.4-2.el9                @appstream 416 k
+ python3-policycoreutils       noarch 3.4-4.el9                @appstream 5.4 M
+ python3-setools               x86_64 4.4.0-5.el9              @baseos    2.3 M
+ scl-utils                     x86_64 1:2.0.3-2.el9            @appstream  66 k
+ tcl                           x86_64 1:8.6.10-7.el9           @baseos    4.4 M
+
+Transaction Summary
+================================================================================
+Remove  55 Packages
+
+Freed space: 724 M
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Erasing          : annobin-10.73-3.el9.x86_64                            1/55 
+  Running scriptlet: annobin-10.73-3.el9.x86_64                            1/55 
+  Erasing          : glibc-static-2.34-40.el9.x86_64                       2/55 
+  Erasing          : libxcrypt-static-4.4.18-3.el9.x86_64                  3/55 
+  Erasing          : git-clang-format-14.0.6-1.el9.x86_64                  4/55 
+  Erasing          : git-2.31.1-2.el9.2.x86_64                             5/55 
+  Erasing          : clang-tools-extra-14.0.6-1.el9.x86_64                 6/55 
+  Erasing          : git-core-doc-2.31.1-2.el9.2.noarch                    7/55 
+  Erasing          : perl-Git-2.31.1-2.el9.2.noarch                        8/55 
+  Erasing          : clang-libs-14.0.6-1.el9.x86_64                        9/55 
+  Erasing          : libomp-devel-14.0.6-1.el9.x86_64                     10/55 
+  Erasing          : gcc-toolset-12-gcc-c++-12.1.1-3.2.el9.x86_64         11/55 
+  Erasing          : gcc-toolset-12-gcc-12.1.1-3.2.el9.x86_64             12/55 
+  Running scriptlet: gcc-toolset-12-binutils-2.38-16.el9.x86_64           13/55 
+  Erasing          : gcc-toolset-12-binutils-2.38-16.el9.x86_64           13/55 
+  Running scriptlet: gcc-toolset-12-binutils-2.38-16.el9.x86_64           13/55 
+  Erasing          : libomp-14.0.6-1.el9.x86_64                           14/55 
+  Erasing          : gcc-toolset-12-libstdc++-devel-12.1.1-3.2.el9.x86_   15/55 
+  Running scriptlet: gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64      16/55 
+  Erasing          : gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64      16/55 
+  Running scriptlet: gcc-toolset-12-runtime-12.0-5.el9.x86_64             17/55 
+  Erasing          : gcc-toolset-12-runtime-12.0-5.el9.x86_64             17/55 
+  Running scriptlet: gcc-toolset-12-runtime-12.0-5.el9.x86_64             17/55 
+ValueError: SELinux policy is not managed or store cannot be accessed.
+
+  Erasing          : policycoreutils-python-utils-3.4-4.el9.noarch        18/55 
+  Erasing          : python3-policycoreutils-3.4-4.el9.noarch             19/55 
+warning: file /usr/share/locale/en_GB/LC_MESSAGES/selinux-python.mo: remove failed: No such file or directory
+
+  Running scriptlet: policycoreutils-3.4-4.el9.x86_64                     20/55 
+Removed "/etc/systemd/system/sysinit.target.wants/selinux-autorelabel-mark.service".
+
+  Erasing          : policycoreutils-3.4-4.el9.x86_64                     20/55 
+warning: file /usr/share/locale/en_GB/LC_MESSAGES/policycoreutils.mo: remove failed: No such file or directory
+warning: file /usr/share/doc/policycoreutils: remove failed: No such file or directory
+
+  Erasing          : python3-libsemanage-3.4-2.el9.x86_64                 21/55 
+  Erasing          : scl-utils-1:2.0.3-2.el9.x86_64                       22/55 
+  Erasing          : environment-modules-5.0.1-1.el9.x86_64               23/55 
+  Running scriptlet: environment-modules-5.0.1-1.el9.x86_64               23/55 
+  Running scriptlet: man-db-2.9.3-6.el9.x86_64                            24/55 
+  Erasing          : man-db-2.9.3-6.el9.x86_64                            24/55 
+  Running scriptlet: man-db-2.9.3-6.el9.x86_64                            24/55 
+  Erasing          : compiler-rt-14.0.6-1.el9.x86_64                      25/55 
+  Erasing          : perl-TermReadKey-2.38-11.el9.x86_64                  26/55 
+  Erasing          : patchutils-0.4.2-7.el9.x86_64                        27/55 
+  Erasing          : patch-2.7.6-16.el9.x86_64                            28/55 
+  Erasing          : ed-1.14.2-12.el9.x86_64                              29/55 
+  Erasing          : gcc-plugin-annobin-11.3.1-2.1.el9.x86_64             30/55 
+  Erasing          : perl-DynaLoader-1.47-479.el9.x86_64                  31/55 
+  Erasing          : clang-resource-filesystem-14.0.6-1.el9.x86_64        32/55 
+  Erasing          : perl-Error-1:0.17029-7.el9.noarch                    33/55 
+  Erasing          : perl-lib-0.65-479.el9.x86_64                         34/55 
+  Erasing          : python3-pip-21.2.3-6.el9.noarch                      35/55 
+  Erasing          : gcc-11.3.1-2.1.el9.x86_64                            36/55 
+  Running scriptlet: gcc-11.3.1-2.1.el9.x86_64                            36/55 
+  Erasing          : glibc-devel-2.34-40.el9.x86_64                       37/55 
+  Running scriptlet: binutils-2.35.2-24.el9.x86_64                        38/55 
+  Erasing          : binutils-2.35.2-24.el9.x86_64                        38/55 
+warning: file /usr/share/man/man1/strip.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/strings.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/size.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/readelf.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/ranlib.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/objdump.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/objcopy.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/nm.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/ld.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/gprof.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/elfedit.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/c++filt.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/as.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/ar.1.gz: remove failed: No such file or directory
+warning: file /usr/share/man/man1/addr2line.1.gz: remove failed: No such file or directory
+warning: file /usr/share/info/ld.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/gprof.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/binutils.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/bfd.info.gz: remove failed: No such file or directory
+warning: file /usr/share/info/as.info.gz: remove failed: No such file or directory
+warning: file /usr/share/doc/binutils/README: remove failed: No such file or directory
+warning: file /usr/share/doc/binutils: remove failed: No such file or directory
+
+  Running scriptlet: binutils-2.35.2-24.el9.x86_64                        38/55 
+  Erasing          : cpp-11.3.1-2.1.el9.x86_64                            39/55 
+  Erasing          : glibc-headers-2.34-40.el9.x86_64                     40/55 
+  Erasing          : kernel-headers-5.14.0-162.6.1.el9_1.0.1.x86_64       41/55 
+  Erasing          : libxcrypt-devel-4.4.18-3.el9.x86_64                  42/55 
+  Erasing          : libmpc-1.2.1-4.el9.x86_64                            43/55 
+  Erasing          : binutils-gold-2.35.2-24.el9.x86_64                   44/55 
+  Erasing          : info-6.7-15.el9.x86_64                               45/55 
+  Erasing          : libpipeline-1.5.3-4.el9.x86_64                       46/55 
+  Erasing          : tcl-1:8.6.10-7.el9.x86_64                            47/55 
+  Erasing          : python3-libselinux-3.4-3.el9.x86_64                  48/55 
+  Erasing          : diffutils-3.7-12.el9.x86_64                          49/55 
+  Erasing          : libselinux-utils-3.4-3.el9.x86_64                    50/55 
+  Erasing          : python3-audit-3.0.7-103.el9.x86_64                   51/55 
+  Erasing          : checkpolicy-3.4-1.el9.x86_64                         52/55 
+  Erasing          : python3-setools-4.4.0-5.el9.x86_64                   53/55 
+  Erasing          : llvm-libs-14.0.6-1.el9.x86_64                        54/55 
+  Erasing          : git-core-2.31.1-2.el9.2.x86_64                       55/55 
+  Verifying        : annobin-10.73-3.el9.x86_64                            1/55 
+  Verifying        : binutils-2.35.2-24.el9.x86_64                         2/55 
+  Verifying        : binutils-gold-2.35.2-24.el9.x86_64                    3/55 
+  Verifying        : checkpolicy-3.4-1.el9.x86_64                          4/55 
+  Verifying        : clang-libs-14.0.6-1.el9.x86_64                        5/55 
+  Verifying        : clang-resource-filesystem-14.0.6-1.el9.x86_64         6/55 
+  Verifying        : clang-tools-extra-14.0.6-1.el9.x86_64                 7/55 
+  Verifying        : compiler-rt-14.0.6-1.el9.x86_64                       8/55 
+  Verifying        : cpp-11.3.1-2.1.el9.x86_64                             9/55 
+  Verifying        : diffutils-3.7-12.el9.x86_64                          10/55 
+  Verifying        : ed-1.14.2-12.el9.x86_64                              11/55 
+  Verifying        : environment-modules-5.0.1-1.el9.x86_64               12/55 
+  Verifying        : gcc-11.3.1-2.1.el9.x86_64                            13/55 
+  Verifying        : gcc-plugin-annobin-11.3.1-2.1.el9.x86_64             14/55 
+  Verifying        : gcc-toolset-12-binutils-2.38-16.el9.x86_64           15/55 
+  Verifying        : gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64      16/55 
+  Verifying        : gcc-toolset-12-gcc-12.1.1-3.2.el9.x86_64             17/55 
+  Verifying        : gcc-toolset-12-gcc-c++-12.1.1-3.2.el9.x86_64         18/55 
+  Verifying        : gcc-toolset-12-libstdc++-devel-12.1.1-3.2.el9.x86_   19/55 
+  Verifying        : gcc-toolset-12-runtime-12.0-5.el9.x86_64             20/55 
+  Verifying        : git-2.31.1-2.el9.2.x86_64                            21/55 
+  Verifying        : git-clang-format-14.0.6-1.el9.x86_64                 22/55 
+  Verifying        : git-core-2.31.1-2.el9.2.x86_64                       23/55 
+  Verifying        : git-core-doc-2.31.1-2.el9.2.noarch                   24/55 
+  Verifying        : glibc-devel-2.34-40.el9.x86_64                       25/55 
+  Verifying        : glibc-headers-2.34-40.el9.x86_64                     26/55 
+  Verifying        : glibc-static-2.34-40.el9.x86_64                      27/55 
+  Verifying        : info-6.7-15.el9.x86_64                               28/55 
+  Verifying        : kernel-headers-5.14.0-162.6.1.el9_1.0.1.x86_64       29/55 
+  Verifying        : libmpc-1.2.1-4.el9.x86_64                            30/55 
+  Verifying        : libomp-14.0.6-1.el9.x86_64                           31/55 
+  Verifying        : libomp-devel-14.0.6-1.el9.x86_64                     32/55 
+  Verifying        : libpipeline-1.5.3-4.el9.x86_64                       33/55 
+  Verifying        : libselinux-utils-3.4-3.el9.x86_64                    34/55 
+  Verifying        : libxcrypt-devel-4.4.18-3.el9.x86_64                  35/55 
+  Verifying        : libxcrypt-static-4.4.18-3.el9.x86_64                 36/55 
+  Verifying        : llvm-libs-14.0.6-1.el9.x86_64                        37/55 
+  Verifying        : man-db-2.9.3-6.el9.x86_64                            38/55 
+  Verifying        : patch-2.7.6-16.el9.x86_64                            39/55 
+  Verifying        : patchutils-0.4.2-7.el9.x86_64                        40/55 
+  Verifying        : perl-DynaLoader-1.47-479.el9.x86_64                  41/55 
+  Verifying        : perl-Error-1:0.17029-7.el9.noarch                    42/55 
+  Verifying        : perl-Git-2.31.1-2.el9.2.noarch                       43/55 
+  Verifying        : perl-TermReadKey-2.38-11.el9.x86_64                  44/55 
+  Verifying        : perl-lib-0.65-479.el9.x86_64                         45/55 
+  Verifying        : policycoreutils-3.4-4.el9.x86_64                     46/55 
+  Verifying        : policycoreutils-python-utils-3.4-4.el9.noarch        47/55 
+  Verifying        : python3-audit-3.0.7-103.el9.x86_64                   48/55 
+  Verifying        : python3-libselinux-3.4-3.el9.x86_64                  49/55 
+  Verifying        : python3-libsemanage-3.4-2.el9.x86_64                 50/55 
+  Verifying        : python3-pip-21.2.3-6.el9.noarch                      51/55 
+  Verifying        : python3-policycoreutils-3.4-4.el9.noarch             52/55 
+  Verifying        : python3-setools-4.4.0-5.el9.x86_64                   53/55 
+  Verifying        : scl-utils-1:2.0.3-2.el9.x86_64                       54/55 
+  Verifying        : tcl-1:8.6.10-7.el9.x86_64                            55/55 
+
+Removed:
+  annobin-10.73-3.el9.x86_64                                                    
+  binutils-2.35.2-24.el9.x86_64                                                 
+  binutils-gold-2.35.2-24.el9.x86_64                                            
+  checkpolicy-3.4-1.el9.x86_64                                                  
+  clang-libs-14.0.6-1.el9.x86_64                                                
+  clang-resource-filesystem-14.0.6-1.el9.x86_64                                 
+  clang-tools-extra-14.0.6-1.el9.x86_64                                         
+  compiler-rt-14.0.6-1.el9.x86_64                                               
+  cpp-11.3.1-2.1.el9.x86_64                                                     
+  diffutils-3.7-12.el9.x86_64                                                   
+  ed-1.14.2-12.el9.x86_64                                                       
+  environment-modules-5.0.1-1.el9.x86_64                                        
+  gcc-11.3.1-2.1.el9.x86_64                                                     
+  gcc-plugin-annobin-11.3.1-2.1.el9.x86_64                                      
+  gcc-toolset-12-binutils-2.38-16.el9.x86_64                                    
+  gcc-toolset-12-binutils-gold-2.38-16.el9.x86_64                               
+  gcc-toolset-12-gcc-12.1.1-3.2.el9.x86_64                                      
+  gcc-toolset-12-gcc-c++-12.1.1-3.2.el9.x86_64                                  
+  gcc-toolset-12-libstdc++-devel-12.1.1-3.2.el9.x86_64                          
+  gcc-toolset-12-runtime-12.0-5.el9.x86_64                                      
+  git-2.31.1-2.el9.2.x86_64                                                     
+  git-clang-format-14.0.6-1.el9.x86_64                                          
+  git-core-2.31.1-2.el9.2.x86_64                                                
+  git-core-doc-2.31.1-2.el9.2.noarch                                            
+  glibc-devel-2.34-40.el9.x86_64                                                
+  glibc-headers-2.34-40.el9.x86_64                                              
+  glibc-static-2.34-40.el9.x86_64                                               
+  info-6.7-15.el9.x86_64                                                        
+  kernel-headers-5.14.0-162.6.1.el9_1.0.1.x86_64                                
+  libmpc-1.2.1-4.el9.x86_64                                                     
+  libomp-14.0.6-1.el9.x86_64                                                    
+  libomp-devel-14.0.6-1.el9.x86_64                                              
+  libpipeline-1.5.3-4.el9.x86_64                                                
+  libselinux-utils-3.4-3.el9.x86_64                                             
+  libxcrypt-devel-4.4.18-3.el9.x86_64                                           
+  libxcrypt-static-4.4.18-3.el9.x86_64                                          
+  llvm-libs-14.0.6-1.el9.x86_64                                                 
+  man-db-2.9.3-6.el9.x86_64                                                     
+  patch-2.7.6-16.el9.x86_64                                                     
+  patchutils-0.4.2-7.el9.x86_64                                                 
+  perl-DynaLoader-1.47-479.el9.x86_64                                           
+  perl-Error-1:0.17029-7.el9.noarch                                             
+  perl-Git-2.31.1-2.el9.2.noarch                                                
+  perl-TermReadKey-2.38-11.el9.x86_64                                           
+  perl-lib-0.65-479.el9.x86_64                                                  
+  policycoreutils-3.4-4.el9.x86_64                                              
+  policycoreutils-python-utils-3.4-4.el9.noarch                                 
+  python3-audit-3.0.7-103.el9.x86_64                                            
+  python3-libselinux-3.4-3.el9.x86_64                                           
+  python3-libsemanage-3.4-2.el9.x86_64                                          
+  python3-pip-21.2.3-6.el9.noarch                                               
+  python3-policycoreutils-3.4-4.el9.noarch                                      
+  python3-setools-4.4.0-5.el9.x86_64                                            
+  scl-utils-1:2.0.3-2.el9.x86_64                                                
+  tcl-1:8.6.10-7.el9.x86_64                                                     
+
+Complete!
+Last metadata expiration check: 0:07:30 ago on Fri Dec 16 11:09:11 2022.
+Dependencies resolved.
+Nothing to do.
+Complete!
+87 files removed
+Removing intermediate container eb03b36073e7
+ ---> 49636e72e8c0
+Step 30/48 : FROM builder-false
+ ---> 49636e72e8c0
+Step 31/48 : ARG PG_VERSION
+ ---> Running in c6583fda1fa5
+Removing intermediate container c6583fda1fa5
+ ---> 10ee1f10756c
+Step 32/48 : ARG PG_MAJOR
+ ---> Running in 027d4975cb00
+Removing intermediate container 027d4975cb00
+ ---> 21073fc8d30d
+Step 33/48 : ARG TIMESCALEDB
+ ---> Running in f445b7182237
+Removing intermediate container f445b7182237
+ ---> ef4b550729ef
+Step 34/48 : ARG COMPRESS
+ ---> Running in 95a187e3d207
+Removing intermediate container 95a187e3d207
+ ---> ef18f039877d
+Step 35/48 : EXPOSE 5432 8008 8080
+ ---> Running in fdfff334df9f
+Removing intermediate container fdfff334df9f
+ ---> 1e37947ee3a6
+Step 36/48 : ENV LC_ALL=en_US.utf-8     PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin     PGHOME=/home/postgres     RW_DIR=/run     TIMESCALEDB=$TIMESCALEDB     DEMO=$DEMO
+ ---> Running in 395bdb7e4bf8
+Removing intermediate container 395bdb7e4bf8
+ ---> 21116d41c68e
+Step 37/48 : ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env     PGROOT=$PGHOME/pgdata/pgroot
+ ---> Running in e5e3d093073a
+Removing intermediate container e5e3d093073a
+ ---> f5b4dc2a7388
+Step 38/48 : ENV PGDATA=$PGROOT/data     PGLOG=$PGROOT/pg_log
+ ---> Running in 8a57c921993e
+Removing intermediate container 8a57c921993e
+ ---> fd85e56fc2ac
+Step 39/48 : WORKDIR $PGHOME
+ ---> Running in f22c06b8614b
+Removing intermediate container f22c06b8614b
+ ---> cf88727d3ed8
+Step 40/48 : COPY motd /etc/
+ ---> d392ef00a58e
+Step 41/48 : COPY runit /etc/runit/runsvdir/default/
+ ---> c511a75eb1b1
+Step 42/48 : COPY pgq_ticker.ini $PGHOME/
+ ---> 04c5b282bec4
+Step 43/48 : RUN rm -rf /etc/service
+ ---> Running in 4014689704a0
+Removing intermediate container 4014689704a0
+ ---> a1dfb84c0431
+Step 44/48 : RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd         && chown -R postgres:postgres $PGHOME $RW_DIR         && rm -fr /var/spool/cron /var/tmp         && mkdir -p /var/spool         && ln -s $RW_DIR/cron /var/spool/cron         && ln -s $RW_DIR/tmp /var/tmp         && for d in /etc/runit/runsvdir/default/*; do             chmod 755 $d/*             && ln -s /run/supervise/$(basename $d) $d/supervise;         done         && ln -snf $RW_DIR/service /etc/service         && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml         && ln -s $RW_DIR/.bash_history /root/.bash_history         && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history         && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history         && ln -s $RW_DIR/etc $PGHOME/etc         && for d in $PGHOME /root; do             d=$d/.config/patroni             && mkdir -p $d             && ln -s $PGHOME/postgres.yml $d/patronictl.yaml;         done         && sed -i 's/set compatible/set nocompatible/' /etc/vimrc         && echo "PATH=\"$PATH\"" > /etc/environment         && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor;             do echo "export $e" >> /etc/bash.bashrc;         done         && ln -s /etc/skel/.bashrc $PGHOME/.bashrc         && echo "source /etc/motd" >> /root/.bashrc         && if [ "$COMPRESS" != "true" ]; then            chmod 664 /etc/passwd            && chmod o+r /etc/shadow            && chgrp -R 0 $PGHOME $RW_DIR            && chmod -R g=u $PGHOME $RW_DIR            && usermod -a -G root postgres;         fi
+ ---> Running in 9b9ec510b88f
+Removing intermediate container 9b9ec510b88f
+ ---> eae4dff56b95
+Step 45/48 : COPY scripts bootstrap major_upgrade /scripts/
+ ---> 73c08101a3da
+Step 46/48 : COPY launcher/postgres/launch.sh /
+ ---> f5f7595cad2f
+Step 47/48 : USER 26
+ ---> Running in ab4510543dc0
+Removing intermediate container ab4510543dc0
+ ---> e1adbd39d960
+Step 48/48 : CMD ["/bin/sh", "/launch.sh", "init"]
+ ---> Running in c9b17c906706
+Removing intermediate container c9b17c906706
+ ---> 895243b494d3
+[Warning] One or more build-args [IMAGE_REPOSITORY BASE_IMAGE OLD_PG_VERSION] were not consumed
+Successfully built 895243b494d3
+Successfully tagged cybertec-os-container/postgres-stage:14.0.1
+docker build /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container								\
+		--file /home/matthias/cdev/src/github.com/cybertec/cybertec-os-container/docker/postgres_stage/Dockerfile 		\
+		--tag cybertec-os-container/postgres-stage:14.0.1	\
+		--build-arg BASE_IMAGE								\
+		--build-arg IMAGE_REPOSITORY 						\
+		--build-arg BASEOS 									\
+		--build-arg PACKAGER 								\
+		--build-arg CONTAINERSUITE 							\
+		--build-arg BUILD 									\
+		--build-arg PATRONI_VERSION 						\
+		--build-arg PGBACKREST_VERSION 						\
+		--build-arg PG_VERSION 								\
+		--build-arg OLD_PG_VERSION 							\
+		--build-arg PG_MAJOR 							
+Sending build context to Docker daemon   5.84MB
+Step 1/47 : ARG CONTAINERSUITE
+Step 2/47 : ARG BUILD
+Step 3/47 : FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
+ ---> 49e5d6c54201
+Step 4/47 : ARG PACKAGER
+ ---> Using cache
+ ---> 8ff9e0b3f884
+Step 5/47 : ARG BASEOS
+ ---> Using cache
+ ---> d4838da21009
+Step 6/47 : ARG PGBACKREST_VERSION
+ ---> Using cache
+ ---> 1d8202c5a82a
+Step 7/47 : ARG PATRONI_VERSION
+ ---> Using cache
+ ---> 74a8a8a031d1
+Step 8/47 : ARG PG_VERSION
+ ---> Using cache
+ ---> 1e3caee15d64
+Step 9/47 : ARG PG_MAJOR
+ ---> Using cache
+ ---> 6e5f34cfa995
+Step 10/47 : ARG OLD_PG_VERSIONS
+ ---> Using cache
+ ---> c4360eb81613
+Step 11/47 : ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ ---> Using cache
+ ---> 986cb87d671f
+Step 12/47 : ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ ---> Using cache
+ ---> 99287b9e5a80
+Step 13/47 : ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996     PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5     PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58     SET_USER=REL3_0_0     PLPROFILER=REL4_1     PG_PROFILE=0.3.6     PAM_OAUTH2=v1.0.1     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+ ---> Using cache
+ ---> 03da82e29e27
+Step 14/47 : RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs         openssh-clients         openssh-server         shadow-utils         tar         bzip2         lz4         python3         python3-pip         python3-psycopg2         python3-psutil         python3-requests         python3-etcd         git         patchutils         binutils         make         cmake         gcc         curl         libcurl-devel         pam-devel         wget         mlocate         git-clang-format         openssl-devel         ccache         redhat-rpm-config         krb5-devel         busybox         dpkg     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> db5949aeb26a
+Step 15/47 : RUN if [ "$BASEOS" = "ubi8" ] ; then 	${PACKAGER} -y install --nodocs 		pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; else 	${PACKAGER} -y install --nodocs  		--setopt=skip_missing_names_on_install=False         pgbackrest-${PGBACKREST_VERSION} 		&& ${PACKAGER} -y clean all ; fi
+ ---> Using cache
+ ---> c1f0029418f0
+Step 16/47 : RUN ETCDVERSION=3.3.27     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+ ---> Using cache
+ ---> 4f3b46acdfb0
+Step 17/47 : RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
+ ---> Using cache
+ ---> 83455ad07096
+Step 18/47 : RUN ${PACKAGER} -y install python3-etcd python3-consul                           python3-gevent python3-greenlet python3-cachetools                         python3-rsa python3-pyasn1-modules  python3-cffi     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> 0ea191404cf1
+Step 19/47 : RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
+ ---> Using cache
+ ---> 45605dba63b3
+Step 20/47 : RUN mkdir /usr/lib/postgresql
+ ---> Using cache
+ ---> 29acddd2382e
+Step 21/47 : ENV PATHBACKUP = $PATH
+ ---> Using cache
+ ---> 40b91ba6e13c
+Step 22/47 : RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git     && make -C pam-oauth2 install     && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git     && git clone https://github.com/timescale/timescaledb.git     && git clone https://github.com/dimitri/pgextwlist.git     && git clone https://github.com/powa-team/pg_stat_kcache.git     && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli     && ${PACKAGER} -y clean all    && for version in $PG_SUPPORTED_VERSIONS; do         ${PACKAGER} -y update &&         ${PACKAGER} -y install postgresql${version}-pltcl                             pgaudit1*_${version}             && ${PACKAGER} -y install -y postgresql${version}-contrib                     postgresql${version}-plpython3 postgresql${version}-devel                     pg_cron_${version}             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version             && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin              && cd /timescaledb             && for v in $TIMESCALEDB; do                     git checkout $v                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF                         -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config                         -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then                             make -C build install                             && strip /usr/pgsql-$version/lib/timescaledb*.so;                     fi                     && git reset --hard                     && git clean -f -d;                 done             && cd ..             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do                 make -C $n USE_PGXS=1 clean install-strip;             done             && cd /pgextwlist && make && make install             && cd /pg_stat_kcache && make clean && make && make install         && ${PACKAGER} -y clean all;     done     && ${PACKAGER} -y remove postgresql postgresql-all postgresql-server-dev-* libpq-dev=* libmagic1 bsdmainutils     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all         && rm -rf /var/lib/apt/lists/*             /var/cache/debconf/*             /builddeps             /usr/share/doc             /usr/share/man             /usr/share/info             /usr/share/locale/??             /usr/share/locale/??_??             /usr/share/postgresql/*/man             /etc/pgbouncer/*             /usr/lib/postgresql/*/bin/createdb             /usr/lib/postgresql/*/bin/createlang             /usr/lib/postgresql/*/bin/createuser             /usr/lib/postgresql/*/bin/dropdb             /usr/lib/postgresql/*/bin/droplang             /usr/lib/postgresql/*/bin/dropuser             /usr/lib/postgresql/*/bin/pg_standby             /usr/lib/postgresql/*/bin/pltcl_*     && find /var/log -type f -exec truncate --size 0 {} \;
+ ---> Using cache
+ ---> b396ff940a52
+Step 23/47 : RUN dnf -y install 'dnf-command(config-manager)'
+ ---> Using cache
+ ---> da598cc480b2
+Step 24/47 : RUN dnf -y config-manager --set-enabled crb
+ ---> Using cache
+ ---> 66c7c6fc676c
+Step 25/47 : RUN dnf -y install glibc-devel glibc-static
+ ---> Using cache
+ ---> 5dfb1c1621a1
+Step 26/47 : RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+ ---> Using cache
+ ---> 8c55f70d65b8
+Step 27/47 : RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+ ---> Using cache
+ ---> e1882fbedcb6
+Step 28/47 : RUN rm -rf /pgextwlist /pg_stat_kcache /package     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+ ---> Using cache
+ ---> 88605f606ce4
+Step 29/47 : RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils binutils flatpak glibc-devel glibc-static     && ${PACKAGER} -y autoremove     && ${PACKAGER} -y clean all;
+ ---> Using cache
+ ---> 49636e72e8c0
+Step 30/47 : FROM builder-false
+ ---> 49636e72e8c0
+Step 31/47 : ARG PG_VERSION
+ ---> Using cache
+ ---> 10ee1f10756c
+Step 32/47 : ARG PG_MAJOR
+ ---> Using cache
+ ---> 21073fc8d30d
+Step 33/47 : ARG TIMESCALEDB
+ ---> Using cache
+ ---> ef4b550729ef
+Step 34/47 : ARG COMPRESS
+ ---> Using cache
+ ---> ef18f039877d
+Step 35/47 : EXPOSE 5432 8008 8080
+ ---> Using cache
+ ---> 1e37947ee3a6
+Step 36/47 : ENV LC_ALL=en_US.utf-8     PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin     PGHOME=/home/postgres     RW_DIR=/run     TIMESCALEDB=$TIMESCALEDB     DEMO=$DEMO
+ ---> Using cache
+ ---> 21116d41c68e
+Step 37/47 : ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env     PGROOT=$PGHOME/pgdata/pgroot
+ ---> Using cache
+ ---> f5b4dc2a7388
+Step 38/47 : ENV PGDATA=$PGROOT/data     PGLOG=$PGROOT/pg_log
+ ---> Using cache
+ ---> fd85e56fc2ac
+Step 39/47 : WORKDIR $PGHOME
+ ---> Using cache
+ ---> cf88727d3ed8
+Step 40/47 : COPY motd /etc/
+ ---> Using cache
+ ---> d392ef00a58e
+Step 41/47 : COPY runit /etc/runit/runsvdir/default/
+ ---> Using cache
+ ---> c511a75eb1b1
+Step 42/47 : COPY pgq_ticker.ini $PGHOME/
+ ---> Using cache
+ ---> 04c5b282bec4
+Step 43/47 : RUN rm -rf /etc/service
+ ---> Using cache
+ ---> a1dfb84c0431
+Step 44/47 : RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd         && chown -R postgres:postgres $PGHOME $RW_DIR         && rm -fr /var/spool/cron /var/tmp         && mkdir -p /var/spool         && ln -s $RW_DIR/cron /var/spool/cron         && ln -s $RW_DIR/tmp /var/tmp         && for d in /etc/runit/runsvdir/default/*; do             chmod 755 $d/*             && ln -s /run/supervise/$(basename $d) $d/supervise;         done         && ln -snf $RW_DIR/service /etc/service         && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml         && ln -s $RW_DIR/.bash_history /root/.bash_history         && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history         && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history         && ln -s $RW_DIR/etc $PGHOME/etc         && for d in $PGHOME /root; do             d=$d/.config/patroni             && mkdir -p $d             && ln -s $PGHOME/postgres.yml $d/patronictl.yaml;         done         && sed -i 's/set compatible/set nocompatible/' /etc/vimrc         && echo "PATH=\"$PATH\"" > /etc/environment         && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor;             do echo "export $e" >> /etc/bash.bashrc;         done         && ln -s /etc/skel/.bashrc $PGHOME/.bashrc         && echo "source /etc/motd" >> /root/.bashrc         && if [ "$COMPRESS" != "true" ]; then            chmod 664 /etc/passwd            && chmod o+r /etc/shadow            && chgrp -R 0 $PGHOME $RW_DIR            && chmod -R g=u $PGHOME $RW_DIR            && usermod -a -G root postgres;         fi
+ ---> Using cache
+ ---> eae4dff56b95
+Step 45/47 : COPY scripts bootstrap major_upgrade /scripts/
+ ---> Using cache
+ ---> 73c08101a3da
+Step 46/47 : COPY launcher/postgres/launch.sh /
+ ---> Using cache
+ ---> f5f7595cad2f
+Step 47/47 : CMD ["/bin/sh", "/launch.sh", "init"]
+ ---> Running in aa44d0c7a30c
+Removing intermediate container aa44d0c7a30c
+ ---> 7bda4a3b8530
+[Warning] One or more build-args [OLD_PG_VERSION BASE_IMAGE IMAGE_REPOSITORY] were not consumed
+Successfully built 7bda4a3b8530
+Successfully tagged cybertec-os-container/postgres-stage:14.0.1

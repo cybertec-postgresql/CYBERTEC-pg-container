@@ -1,11 +1,11 @@
 #!/bin/bash
 # Check Structure
 echo "Initialise pgBackRest ... "
-if [ -d "/home/postgres/pgdata/pgbackrest" ]; then
+if [ -d "/home/postgres/pgdata/pgbackrest/log" ]; then
     echo "Skip: Folder structure already exists ... "
 else
-    mkdir /home/postgres/pgdata/pgbackrest /home/postgres/pgdata/pgbackrest/log
-    echo "Folder structure was created"
+    mkdir -p /home/postgres/pgdata/pgbackrest/log
+    echo "Created: Folder structure was created"
 fi
 # Create Stanza and run Init-Backup
 pgbackrest stanza-create --stanza=db

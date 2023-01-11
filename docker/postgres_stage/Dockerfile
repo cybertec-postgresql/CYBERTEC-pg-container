@@ -1,7 +1,7 @@
 ARG CONTAINERSUITE
 ARG BUILD
  
-FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder
+FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
 
 # Dockerfile specific informations
 ARG PACKAGER
@@ -10,9 +10,9 @@ ARG PGBACKREST_VERSION
 ARG PATRONI_VERSION
 ARG PG_VERSION
 ARG PG_MAJOR
-ARG OLD_PG_VERSION
-#ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSION $PG_MAJOR"
-ARG PG_SUPPORTED_VERSIONS="$PG_MAJOR"
+ARG OLD_PG_VERSIONS
+#ARG PG_SUPPORTED_VERSIONS="$PG_MAJOR"
+ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
 
 # Spilo-specific
@@ -79,10 +79,6 @@ RUN ETCDVERSION=3.3.27 \
     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz \
     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
-# Remove default pgbackrest-config and spool-path
-RUN rm /etc/pgbackrest.conf
-RUN rm -rf /var/spool/pgbackrest
-
 # Install Patroni
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
 #swiftclient
@@ -96,8 +92,9 @@ RUN ${PACKAGER} -y install python3-etcd python3-consul  \
 RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
 
 RUN mkdir /usr/lib/postgresql
-ENV PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin
-RUN echo $PATH
+ENV PATHBACKUP = $PATH
+#ENV PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin
+#RUN echo $PATH
 # Install pam_oauth2.so
 RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     && make -C pam-oauth2 install \
@@ -110,6 +107,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/timescale/timescaledb.git \
     && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/powa-team/pg_stat_kcache.git \
+    #&& git clone https://github.com/pgq/pgqd.git \
 \    
     && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all\
@@ -148,6 +146,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
                     #postgresql-${version}-pg-stat-kcache $EXTRAS \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version \
+            && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin  \
 \
             # Install TimescaleDB           
             && cd /timescaledb \
@@ -155,14 +154,10 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
                     git checkout $v \
                     && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
                     && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/lib/postgresql/$version/bin/pg_config \
+                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
                         -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
                             make -C build install \
-                            && strip /usr/lib/postgresql/$version/lib/timescaledb*.so; \
-                        #-DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
-                        #-DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
-                        #    make -C build install \
-                        #    && strip /usr/pgsql-$version/lib/timescaledb*.so; \
+                            && strip /usr/pgsql-$version/lib/timescaledb*.so; \
                     fi \
                     && git reset --hard \
                     && git clean -f -d; \
@@ -171,37 +166,62 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do \
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
-            && cd pgextwlist && make && make install && cd / && rm -rf /pgextwlist \
-            && cd pg_stat_kcache && make && make install && cd / && rm -rf /pg_stat_kcache \
+            && cd /pgextwlist && make && make install \
+            && cd /pg_stat_kcache && make clean && make && make install \
+            #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
         && ${PACKAGER} -y clean all; \
-    done
-
-    RUN dnf -y install 'dnf-command(config-manager)'
-    RUN dnf -y config-manager --set-enabled crb
-    RUN dnf -y install glibc-devel glibc-static
-
-    RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
-
-    # Modify for using origial-spilo scripts
-    RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
-
-    # clean-up
-    RUN ${PACKAGER} -y remove glibc-devel glibc-static libevent-devel brotli-devel gcc cmake git libcurl-devel pam-devel openssl-devel redhat-rpm-config krb5-devel \
+    done \
+    # Remove unnecessary packages
+    && ${PACKAGER} -y remove postgresql postgresql-all postgresql-server-dev-* libpq-dev=* libmagic1 bsdmainutils \
     && ${PACKAGER} -y autoremove \
-    && ${PACKAGER} -y clean all;
+    && ${PACKAGER} -y clean all \
+    \
+    # Clean up
+    && rm -rf /var/lib/apt/lists/* \
+            /var/cache/debconf/* \
+            /builddeps \
+            /usr/share/doc \
+            /usr/share/man \
+            /usr/share/info \
+            /usr/share/locale/?? \
+            /usr/share/locale/??_?? \
+            /usr/share/postgresql/*/man \
+            /etc/pgbouncer/* \
+            /usr/lib/postgresql/*/bin/createdb \
+            /usr/lib/postgresql/*/bin/createlang \
+            /usr/lib/postgresql/*/bin/createuser \
+            /usr/lib/postgresql/*/bin/dropdb \
+            /usr/lib/postgresql/*/bin/droplang \
+            /usr/lib/postgresql/*/bin/dropuser \
+            /usr/lib/postgresql/*/bin/pg_standby \
+            /usr/lib/postgresql/*/bin/pltcl_* \
+    && find /var/log -type f -exec truncate --size 0 {} \;
 
-FROM builder
-#COPY --from=builder / /
+# Install runit
+RUN dnf -y install 'dnf-command(config-manager)'
+RUN dnf -y config-manager --set-enabled crb
+RUN dnf -y install glibc-devel glibc-static
 
-MAINTAINER CYBERTEC PostgreSQL International GmbH
-LABEL vendor="CYBERTEC PostgreSQL International GmbH" url="https://www.cybertec-postgresql.com"
-LABEL maintainer="Matthias Groemmer <matthias.groemmer@cybertec.at>"
+RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+
+# Modify for using origial-spilo scripts
+RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+
+# Clean Up git-repos
+RUN rm -rf /pgextwlist /pg_stat_kcache /package \
+    && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+
+# Clean Up Packages
+RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils binutils flatpak glibc-devel glibc-static \
+    && ${PACKAGER} -y autoremove \
+    && ${PACKAGER} -y clean all; 
 
 
-ARG PGVERSION
+FROM builder-false
+
+ARG PG_VERSION
+ARG PG_MAJOR
 ARG TIMESCALEDB
-ARG DEMO
-ARG COMPRESS
 
 EXPOSE 5432 8008 8080
 
@@ -211,6 +231,8 @@ ENV LC_ALL=en_US.utf-8 \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
+
+
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
@@ -222,13 +244,12 @@ WORKDIR $PGHOME
 
 COPY motd /etc/
 #COPY runit /etc/service/
-COPY pgq_ticker.ini $PGHOME/
 
 COPY runit /etc/runit/runsvdir/default/
 COPY pgq_ticker.ini $PGHOME/
 RUN rm -rf /etc/service
 
-RUN sed -i "s|/var/lib/postgresql.*|$PGHOME:/bin/bash|" /etc/passwd \
+RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && chown -R postgres:postgres $PGHOME $RW_DIR \
         && rm -fr /var/spool/cron /var/tmp \
         && mkdir -p /var/spool \
@@ -265,9 +286,12 @@ RUN sed -i "s|/var/lib/postgresql.*|$PGHOME:/bin/bash|" /etc/passwd \
            && chmod -R g=u $PGHOME $RW_DIR \
            && usermod -a -G root postgres; \
         fi
+        
 
 
 COPY scripts bootstrap major_upgrade /scripts/
-COPY launch.sh /
+COPY launcher/postgres/launch.sh /
+
 USER 26
+
 CMD ["/bin/sh", "/launch.sh", "init"]

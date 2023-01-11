@@ -1,6 +1,6 @@
 # CYBERTEC-OS-Container: PostgreSQL-HA-Cluster based on Rocky-Linux
 
-<p>CYBERTEC-OS-Container is a Docker suite that combines PostgreSQL, Patroni and etcd to create HA-PostgreSQL clusters based on containers. This suite is also the imagebase for the CYBERTEC-OS operator.</p>
+<p>CYBERTEC-OS-Container is a Docker suite that combines PostgreSQL, Patroni and etcd to create HA-PostgreSQL clusters based on containers. This suite is also the imagebase for the CYBERTEC-pg-operator(cpo).</p>
 
 ## Documentation
 

@@ -26,7 +26,7 @@ endif
 
 all: base pgbackrest postgres
 base: base
-pgbackrest: base pgbackrest
+pgbackrest: pgbackrest
 postgres: base postgres
 postgres-stage: postgres-stage
 

@@ -7,6 +7,12 @@ else
     mkdir -p /home/postgres/pgdata/pgbackrest/log
     echo "Created: Folder structure was created"
 fi
+if [ -d "/home/postgres/pgdata/pgbackrest/spool-path" ]; then
+    echo "Skip: Spool-Folder already exists ... "
+else
+    mkdir -p /home/postgres/pgdata/pgbackrest/spool-path
+    echo "Created: Spool-Folder was created"
+fi
 # Create Stanza and run Init-Backup
 stanza=$(pgbackrest info --output=json)
 if [ "$stanza" == "[]" ]; then

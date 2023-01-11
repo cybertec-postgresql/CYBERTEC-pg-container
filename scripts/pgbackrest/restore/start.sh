@@ -23,11 +23,11 @@ if [ -d "$pgroot/data_bootstrap" ]; then
 fi
 
 # Add Path
-restore_command="$restore_opts --stanza=db --pg1-path=$pgdata --delta --link-map=pg_wal=$pgroot/data_wal"
+restore_command="$restore_opts --stanza=db --pg1-path=$pgdata --delta --link-map=pg_wal=$pgroot/data_wal --target-action=promote"
 
 # Do Restore
 output_info "pgBackRest: start restore: Defined options: $restore_command"
-pgbackrest restore $restore_command || { output_error "pgBackRest: Restore failed"; exit 0; } #<< /home/postgres/pgdata/pgbackrest/log/restore-pod.log
+bash -xc "pgbackrest restore ${restore_command}" || { output_error "pgBackRest: Restore failed"; exit 0; } #<< /home/postgres/pgdata/pgbackrest/log/restore-pod.log
 output_info "Defined Data-DIR: $pgdata"
 # Check Restore
 until [ "${recovery=}" = 'f' ]; do

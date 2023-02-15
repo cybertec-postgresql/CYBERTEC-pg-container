@@ -28,6 +28,8 @@ RUN ${PACKAGER} -y install --nodocs \
         glibc-langpack-en \
      && ${PACKAGER} -y clean all ;
 
+#Enable CRB-Repo (Powertools)
+RUN ${PACKAGER} -y config-manager --set-enabled crb
 #Add PostgreSQL-Repo to Base
 RUN ${PACKAGER} install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && ${PACKAGER} -y update && ${PACKAGER} -y clean all
 #RUN dnf -qy module disable postgresql

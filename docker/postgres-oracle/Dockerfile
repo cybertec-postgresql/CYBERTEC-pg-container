@@ -109,6 +109,13 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/powa-team/pg_stat_kcache.git \
     && git clone https://github.com/crunchydata/pgnodemx \
+    # Oracle-Client for oracle_fdw
+    && git clone https://github.com/laurenz/oracle_fdw.git \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-basic-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-sqlplus-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-devel-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-jdbc-21.9.0.0.0-1.el8.x86_64.rpm \
+    && ${PACKAGER} install -y oracle-*.rpm \
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
     && ${PACKAGER} -y install postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
@@ -171,6 +178,8 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             && cd /pgextwlist && make clean && make && make install \
             && cd /pg_stat_kcache && make clean && make && make install \
             && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
+            #oracle_fdw
+            && cd /oracle_fdw && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
         && ${PACKAGER} -y clean all; \
     done
@@ -249,14 +258,15 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
+#RUN dnf -y install 'dnf-command(config-manager)'
+#RUN dnf -y config-manager --set-enabled crb
 RUN ${PACKAGER} -y install glibc-devel glibc-static
 
 RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
 
 # Modify for using origial-spilo scripts
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
-
-#RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
+RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
 USER 26
 

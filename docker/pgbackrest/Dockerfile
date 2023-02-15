@@ -7,7 +7,7 @@ FROM ${CONTAINERSUITE}/base:0.0.${BUILD}
 ARG PACKAGER
 ARG BASEOS
 ARG PGBACKREST_VERSION
-ARG PG_MAJOR
+ARG PGVERSION
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
 	${PACKAGER} -y install --nodocs \
@@ -26,7 +26,7 @@ else \
 		openssh-server \
 		bzip2 \
 		lz4 \
-		postgresql${PG_MAJOR}-server \
+		postgresql${PGVERSION}-server \
 		pgbackrest-${PGBACKREST_VERSION} \
 		nano \
 		&& ${PACKAGER} -y clean all ; \
@@ -67,7 +67,7 @@ RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod 
 RUN chown -R postgres:postgres /opt/pgbackrest  \
 	/backrestrepo /home/postgres/pgdata
 
-ENV PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin
+ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 COPY launcher/pgbackrest/launch.sh /
 	
 VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]

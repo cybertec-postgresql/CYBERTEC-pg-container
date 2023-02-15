@@ -1,0 +1,93 @@
+# Queries for Checking your Tables and Queries
+
+# PG 14 specific Queries
+# Top by mean_exec_time
+cpo_pg_statistics_statements_mean:
+  query: "SELECT queryid,pg_database.datname,rolname,max(calls),max(mean_exec_time) mean_exec_time,query,max(ROWS) rows FROM public.pg_stat_statements JOIN pg_database ON dbid = pg_database.oid JOIN pg_authid ON userid = pg_authid.oid GROUP BY 1,2,3,6 ORDER BY mean_exec_time DESC NULLS LAST LIMIT 10;"
+  metrics:
+    - queryid:
+        usage: "LABEL"
+        description: "Process-id"
+    - datname:
+        usage: "LABEL"
+        description: "usename"
+    - rolname:
+        usage: "LABEL"
+        description: "Connection-state"
+    - calls:
+        usage: "LABEL"
+        description: "Connection-state"
+    - mean_exec_time:
+        usage: "GAUGE"
+        description: "Connection-state"
+    - rows:
+        usage: "LABEL"
+        description: "starttime backend without timezone"
+    - query:
+        usage: "LABEL"
+        description: "starttime backend without timezone"
+
+# Top by total_exec_time
+cpo_pg_statistics_statements_total:
+  query: "SELECT queryid,pg_database.datname,rolname,max(calls),max(total_exec_time) total_exec_time,query,max(ROWS) rows FROM public.pg_stat_statements JOIN pg_database ON dbid = pg_database.oid JOIN pg_authid ON userid = pg_authid.oid GROUP BY 1,2,3,6 ORDER BY total_exec_time DESC NULLS LAST LIMIT 10;"
+  metrics:
+    - queryid:
+        usage: "LABEL"
+        description: "Process-id"
+    - datname:
+        usage: "LABEL"
+        description: "usename"
+    - rolname:
+        usage: "LABEL"
+        description: "Connection-state"
+    - calls:
+        usage: "LABEL"
+        description: "Connection-state"
+    - total_exec_time:
+        usage: "GAUGE"
+        description: "Connection-state"
+    - rows:
+        usage: "LABEL"
+        description: "starttime backend without timezone"
+    - query:
+        usage: "LABEL"
+        description: "starttime backend without timezone"
+
+# top statements order by 
+cpo_pg_statistics_statements_write:
+  query: "SELECT queryid,pg_database.datname,rolname,max(calls),max(shared_blks_read)blks_read,query,max(ROWS) rows FROM public.pg_stat_statements JOIN pg_database ON dbid = pg_database.oid JOIN pg_authid ON userid = pg_authid.oid GROUP BY 1,2,3,6 ORDER BY blks_read DESC NULLS LAST LIMIT 10;"
+  metrics:
+        - datname:
+            usage: "LABEL"
+            description: "tbd"
+        - rolname:
+            usage: "LABEL"
+            description: "tbd"
+        - calls:
+            usage: "LABEL"
+            description: "tbd"
+        - blks_read:
+            usage: "GAUGE"
+            description: "tbd"
+        - rows:
+            usage: "LABEL"
+            description: "starttime backend without timezone"
+        - query:
+            usage: "LABEL"
+            description: "tbd"
+
+cpo_pg_stat_database_info:
+    query: "select datname, blks_read, checksum_failures, checksum_last_failure from pg_stat_database;"
+    metrics:
+        - datname:
+            usage: "LABEL"
+            description: "tbd"
+        - blks_read:
+            usage: "GAUGE"
+            description: "tbd"
+        - checksum_failures:
+            usage: "LABEL"
+            description: "tbd"
+        - checksum_last_failure:
+            usage: "LABEL"
+            description: "tbd"

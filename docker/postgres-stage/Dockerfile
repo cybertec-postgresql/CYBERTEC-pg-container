@@ -1,5 +1,7 @@
 ARG CONTAINERSUITE
+ARG BASE_IMAGE
 ARG BUILD
+ARG PGVERSION
  
 FROM ${CONTAINERSUITE}/base:0.0.${BUILD} as builder-false
 
@@ -8,18 +10,17 @@ ARG PACKAGER
 ARG BASEOS
 ARG PGBACKREST_VERSION
 ARG PATRONI_VERSION
-ARG PG_VERSION
-ARG PG_MAJOR
+ARG PGVERSION
 ARG OLD_PG_VERSIONS
-#ARG PG_SUPPORTED_VERSIONS="$PG_MAJOR"
-ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
+ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
 
 # Spilo-specific
-ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
-    PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5 \
-    PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58 \
-    SET_USER=REL3_0_0 \
+ENV SET_USER=REL3_0_0 \
+    #BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
+    #PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5 \
+    #PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58 \
     PLPROFILER=REL4_1 \
     PG_PROFILE=0.3.6 \
     PAM_OAUTH2=v1.0.1 \
@@ -48,7 +49,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         make \
         cmake \
         gcc \
-        curl \
+        #curl \
         libcurl-devel \
         pam-devel \
         wget \
@@ -60,6 +61,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         krb5-devel \
         busybox \
         dpkg \
+        jq \
     && ${PACKAGER} -y clean all;
 
 
@@ -93,13 +95,13 @@ RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
 
 RUN mkdir /usr/lib/postgresql
 ENV PATHBACKUP = $PATH
-#ENV PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin
+#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 #RUN echo $PATH
 # Install pam_oauth2.so
 RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     && make -C pam-oauth2 install \
-    && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
@@ -107,9 +109,16 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/timescale/timescaledb.git \
     && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/powa-team/pg_stat_kcache.git \
+    && git clone https://github.com/crunchydata/pgnodemx \
+    && git clone https://github.com/laurenz/oracle_fdw.git \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-basic-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-sqlplus-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-devel-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-jdbc-21.9.0.0.0-1.el8.x86_64.rpm \
+    && ${PACKAGER} install -y oracle-*.rpm \
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
-    && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli \
+    && ${PACKAGER} -y install postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all\
 \
     # forbid creation of a main cluster when package is installed
@@ -124,7 +133,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                            pgaudit1*_${version} \
+                            pgaudit*${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
 #                            postgresql${version}-pglogical \
@@ -145,8 +154,8 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
                     #postgresql-${version}-pgq3 \
                     #postgresql-${version}-pg-stat-kcache $EXTRAS \
             # Modify for using origial-spilo scripts
-            && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version \
-            && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin  \
+            && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
+            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
 \
             # Install TimescaleDB           
             && cd /timescaledb \
@@ -168,6 +177,8 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             done \
             && cd /pgextwlist && make && make install \
             && cd /pg_stat_kcache && make clean && make && make install \
+            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
+            && cd /oracle_fdw && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
         && ${PACKAGER} -y clean all; \
     done \
@@ -198,8 +209,6 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && find /var/log -type f -exec truncate --size 0 {} \;
 
 # Install runit
-RUN dnf -y install 'dnf-command(config-manager)'
-RUN dnf -y config-manager --set-enabled crb
 RUN dnf -y install glibc-devel glibc-static
 
 RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
@@ -208,7 +217,7 @@ RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 # Clean Up git-repos
-RUN rm -rf /pgextwlist /pg_stat_kcache /package \
+RUN rm -rf /pgextwlist /pg_stat_kcache /package /oracle_fdw /pgnodemx \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 
 # Clean Up Packages
@@ -220,13 +229,12 @@ RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils b
 FROM builder-false
 
 ARG PG_VERSION
-ARG PG_MAJOR
+ARG PGVERSION
 ARG TIMESCALEDB
 
 EXPOSE 5432 8008 8080
-
 ENV LC_ALL=en_US.utf-8 \
-    PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin \
+    PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
     PGHOME=/home/postgres \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \
@@ -287,11 +295,24 @@ RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
            && usermod -a -G root postgres; \
         fi
         
-
+# Remove default pgbackrest-config and spool-path
+RUN rm -rf /var/spool/pgbackrest;
 
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
+#1RUN dnf -y install 'dnf-command(config-manager)'
+#RUN dnf -y config-manager --set-enabled crb
+#RUN dnf -y install glibc-devel glibc-static
+
+#RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+
+# Modify for using origial-spilo scripts
+#RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
+
+#RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
+
 USER 26
 
+#RUN chown -R postgres:root /var/lib/pgsql
 CMD ["/bin/sh", "/launch.sh", "init"]

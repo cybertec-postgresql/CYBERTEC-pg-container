@@ -1,10 +1,12 @@
 
 # User
+CREATE ROLE postgres_exporter with password 'password';
+ALTER ROLE postgres_exporter login;
 
 GRANT pg_monitor TO postgres_exporter;
 GRANT SELECT ON TABLE pg_authid TO postgres_exporter;
 
-# Structure
+// Structure
 
 CREATE SCHEMA exporter;
 

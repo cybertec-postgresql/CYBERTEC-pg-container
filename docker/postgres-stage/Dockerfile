@@ -62,6 +62,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         busybox \
         dpkg \
         jq \
+        rsync \
     && ${PACKAGER} -y clean all;
 
 
@@ -217,7 +218,7 @@ RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 # Clean Up git-repos
-RUN rm -rf /pgextwlist /pg_stat_kcache /package /oracle_fdw /pgnodemx \
+RUN rm -rf /pgextwlist /pg_stat_kcache /oracle_fdw /pgnodemx \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 
 # Clean Up Packages
@@ -234,7 +235,7 @@ ARG TIMESCALEDB
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
-    PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
+    PATH=$PATH:/usr/pgsql-$PGVERSION/bin \  
     PGHOME=/home/postgres \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \

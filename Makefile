@@ -6,12 +6,12 @@ IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
 PGVERSION ?= 15
 PGVERSION_FULL ?= 15.2
-OLD_PG_VERSIONS ?= 10 11 12 13 14
-PATRONI_VERSION ?= 2.1.4
-PGBACKREST_VERSION ?= 2.41
-POSTGIS_VERSION ?= 3.2
+OLD_PG_VERSIONS ?= 11 12 13 14
+PATRONI_VERSION ?= 3.0.1
+PGBACKREST_VERSION ?= 2.44
+POSTGIS_VERSION ?= 33
 PACKAGER ?= dnf
-BUILD ?= 0
+BUILD ?= 1
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 
@@ -29,12 +29,14 @@ base: base
 pgbackrest: pgbackrest
 postgres: base postgres
 postgres-stage: base postgres-stage
+postgres-gis: base postgres-gis
+postgres-oracle: base postgres-oracle
 exporter: exporter
 
 base-build:
 		docker build $(ROOTPATH)							\
 			--file $(ROOTPATH)/docker/base/Dockerfile 	\
-			--tag cybertec-pg-container/base:0.0.$(BUILD) 		\
+			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) 		\
 			--build-arg BASE_IMAGE							\
 			--build-arg IMAGE_REPOSITORY 					\
 			--build-arg BASEOS 								\
@@ -45,7 +47,7 @@ base: base-build;
 pgbackrest-build:
 		docker build $(ROOTPATH)							\
 			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 	\
-			--tag cybertec-pg-container/pgbackrest:0.0.$(BUILD) 		\
+			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-$(BUILD) 		\
 			--build-arg BASE_IMAGE							\
 			--build-arg IMAGE_REPOSITORY 					\
 			--build-arg BASEOS 								\
@@ -60,7 +62,7 @@ pgbackrest: pgbackrest-build;
 postgres-build:
 		docker build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/postgres/Dockerfile 		\
-			--tag cybertec-pg-container/postgres:$(PGVERSION_FULL)-$(BETA)$(BUILD)	\
+			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -90,6 +92,41 @@ postgres-stage-build:
 			--build-arg PGVERSION 							
 
 postgres-stage: postgres-stage-build
+
+postgres-gis-build:
+		docker build $(ROOTPATH)								\
+			--file $(ROOTPATH)/docker/postgres-gis/Dockerfile 		\
+			--tag cybertec-pg-container/postgres-gis:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
+			--build-arg BASE_IMAGE								\
+			--build-arg IMAGE_REPOSITORY 						\
+			--build-arg BASEOS 									\
+			--build-arg PACKAGER 								\
+			--build-arg CONTAINERSUITE 							\
+			--build-arg BUILD 									\
+			--build-arg PATRONI_VERSION 						\
+			--build-arg PGBACKREST_VERSION 						\
+			--build-arg OLD_PG_VERSIONS							\
+			--build-arg PGVERSION								\
+			--build-arg POSTGIS_VERSION							
+
+postgres-gis: postgres-gis-build
+
+postgres-oracle-build:
+		docker build $(ROOTPATH)								\
+			--file $(ROOTPATH)/docker/postgres-oracle/Dockerfile 		\
+			--tag cybertec-pg-container/postgres-oracle:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
+			--build-arg BASE_IMAGE								\
+			--build-arg IMAGE_REPOSITORY 						\
+			--build-arg BASEOS 									\
+			--build-arg PACKAGER 								\
+			--build-arg CONTAINERSUITE 							\
+			--build-arg BUILD 									\
+			--build-arg PATRONI_VERSION 						\
+			--build-arg PGBACKREST_VERSION 						\
+			--build-arg OLD_PG_VERSIONS							\
+			--build-arg PGVERSION 							
+
+postgres-oracle: postgres-oracle-build
 
 exporter-build:
 		docker build $(ROOTPATH)								\

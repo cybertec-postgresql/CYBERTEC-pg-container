@@ -11,39 +11,29 @@ ARG PG_MAJOR
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
 	${PACKAGER} -y install --nodocs \
-		openssh-clients \
-		openssh-server \
 		shadow-utils \
 		tar \
 		bzip2 \
 		lz4 \
+		#crunchy-backrest-${BACKREST_VER} \
 		&& ${PACKAGER} -y clean all ; \
 else \
 	${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
-		openssh-clients \
-		openssh-server \
 		bzip2 \
 		lz4 \
-		postgresql${PG_MAJOR}-server \
-		
 		nano \
+		git \
+		go \
+		dumb-init \ 
 		&& ${PACKAGER} -y clean all ; \
 fi
 
+RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build
+COPY launcher/exporter/launch.sh /
+COPY scripts/exporter/queries/ /postgres_exporter/queries
 
-# add benbchmark files
-#ADD scripts/benchmark/ /opt/benchmark/bin/
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-# set user and group ownership
-R#UN chown -R postgres:postgres /opt/benchmark
-
-#COPY launcher/benchmark/launch.sh /
-	
-USER 26
-
-#ENTRYPOINT ["/opt/pgbackrest/bin/uid_postgres.sh"]
-
-#CMD ["/opt/pgbackrest/bin/start.sh"]
-
-#CMD ["/bin/sh", "/launch.sh", "init"]
+CMD ["/bin/sh", "/launch.sh", "init"]
+#CMD ["/bin/sh", "/scripts/postgres/promote.sh"]

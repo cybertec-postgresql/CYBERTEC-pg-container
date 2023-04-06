@@ -1,25 +1,24 @@
 ARG CONTAINERSUITE
 ARG BUILD
+ARG BASEOS
  
-FROM ${CONTAINERSUITE}/base:0.0.${BUILD}
+FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD}
 
 # Dockerfile specific informations
 ARG PACKAGER
-ARG BASEOS
 ARG PGBACKREST_VERSION
 ARG PATRONI_VERSION
-ARG PG_VERSION
-ARG PG_MAJOR
+ARG PGVERSION
 ARG OLD_PG_VERSIONS
-#ARG PG_SUPPORTED_VERSIONS="$PG_MAJOR"
-ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PG_MAJOR"
+ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
+ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
 
 # Spilo-specific
-ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
-    PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5 \
-    PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58 \
-    SET_USER=REL3_0_0 \
+ENV SET_USER=REL3_0_0 \
+    #BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
+    #PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5 \
+    #PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58 \
     PLPROFILER=REL4_1 \
     PG_PROFILE=0.3.6 \
     PAM_OAUTH2=v1.0.1 \
@@ -28,7 +27,7 @@ ENV BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
 
 # Get some Standard-Stuff
-RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
+RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
         openssh-clients \
         openssh-server \
         shadow-utils \
@@ -61,15 +60,16 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         busybox \
         dpkg \
         jq \
+        rsync \
     && ${PACKAGER} -y clean all;
 
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
-	${PACKAGER} -y install --nodocs \		
+	${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \		
 		pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 else \
-	${PACKAGER} -y install --nodocs  \
+	${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0  \
 		--setopt=skip_missing_names_on_install=False \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
@@ -83,9 +83,10 @@ RUN ETCDVERSION=3.3.27 \
 # Install Patroni
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
 #swiftclient
-RUN ${PACKAGER} -y install python3-etcd python3-consul  \
-                         python3-gevent python3-greenlet python3-cachetools \
-                        python3-rsa python3-pyasn1-modules  python3-cffi \
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+                    python3-etcd python3-consul  \
+                    python3-gevent python3-greenlet python3-cachetools \
+                    python3-rsa python3-pyasn1-modules  python3-cffi \
     && ${PACKAGER} -y clean all;
 
     # python3-kazoo python3-meld3 python3-boto python3-swiftclient
@@ -94,13 +95,13 @@ RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
 
 RUN mkdir /usr/lib/postgresql
 ENV PATHBACKUP = $PATH
-#ENV PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin
+#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 #RUN echo $PATH
 # Install pam_oauth2.so
 RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     && make -C pam-oauth2 install \
-    && curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
@@ -108,9 +109,10 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/timescale/timescaledb.git \
     && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/powa-team/pg_stat_kcache.git \
+    && git clone https://github.com/crunchydata/pgnodemx \
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
-    && ${PACKAGER} -y install postgresql${PG_MAJOR} libevent-devel brotli-devel libbrotli \
+    && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all\
 \
     # forbid creation of a main cluster when package is installed
@@ -125,7 +127,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                            pgaudit1*_${version} \
+                            pgaudit*${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
 #                            postgresql${version}-pglogical \
@@ -137,7 +139,6 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-plproxy \
 #                            postgresql${version}-repack \
 #                            postgresql${version}-wal2json \
-#                            postgresql${version}-pgextwlist \
         #&& ${PACKAGER} -y clean all; \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
@@ -146,8 +147,8 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
                     #postgresql-${version}-pgq3 \
                     #postgresql-${version}-pg-stat-kcache $EXTRAS \
             # Modify for using origial-spilo scripts
-            && ln -s /usr/pgsql-$version /usr/lib/postgresql/$version \
-            && export PATH=$PATHBACKUP:/usr/pgsql-$version/bin  \
+            && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
+            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
 \
             # Install TimescaleDB           
             && cd /timescaledb \
@@ -169,23 +170,23 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             done \
             && cd /pgextwlist && make clean && make && make install \
             && cd /pg_stat_kcache && make clean && make && make install \
+            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
         && ${PACKAGER} -y clean all; \
     done
 
 # Clean Up git-repos
 RUN rm -rf /pgextwlist \
-    && rm -rf /pg_stat_kcache;
+    && rm -rf /pg_stat_kcache \
+    && rm -rf /pgnodemx ;
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
-    PATH=$PATH:/usr/pgsql-$PG_MAJOR/bin \
+    PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
     PGHOME=/home/postgres \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
-
-
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
@@ -246,15 +247,15 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
-RUN dnf -y install 'dnf-command(config-manager)'
-RUN dnf -y config-manager --set-enabled crb
-RUN dnf -y install glibc-devel glibc-static
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+                    glibc-devel glibc-static
 
 RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
 
 # Modify for using origial-spilo scripts
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
-RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
+
+#RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
 USER 26
 

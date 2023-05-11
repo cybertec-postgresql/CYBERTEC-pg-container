@@ -35,6 +35,7 @@ postgres-oracle: base postgres-oracle
 exporter: exporter
 etcd: etcd
 pgbouncer: pgbouncer
+proventa: base proventa
 
 base-build:
 		${BUILDWITH} build $(ROOTPATH)							\
@@ -174,3 +175,21 @@ pgbouncer-build:
 			--build-arg BUILD 							
 
 pgbouncer: pgbouncer-build
+
+proventa-build:
+		${BUILDWITH} build $(ROOTPATH)								\
+			--file $(ROOTPATH)/docker/proventa/Dockerfile 		\
+			--tag cybertec-pg-container/proventa:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
+			--build-arg BASE_IMAGE								\
+			--build-arg IMAGE_REPOSITORY 						\
+			--build-arg BASEOS 									\
+			--build-arg PACKAGER 								\
+			--build-arg CONTAINERSUITE 							\
+			--build-arg BUILD 									\
+			--build-arg PATRONI_VERSION 						\
+			--build-arg PGBACKREST_VERSION 						\
+			--build-arg OLD_PG_VERSIONS							\
+			--build-arg PGVERSION								\
+			--build-arg POSTGIS_VERSION							
+
+proventa: proventa-build

@@ -3,15 +3,16 @@
 BASE_IMAGE ?= rockylinux:9.1-minimal
 BASEOS ?= rocky9
 IMAGE_REPOSITORY ?= docker.io
-IMAGE_PATH ?= cybertec-pg-container
+IMAGE_PATH ?= cybertec-prov-container
 PGVERSION ?= 15
 PGVERSION_FULL ?= 15.2
 OLD_PG_VERSIONS ?= 11 12 13 14
 PATRONI_VERSION ?= 3.0.1
-PGBACKREST_VERSION ?= 2.45
+PGBACKREST_VERSION ?= 2.44
 POSTGIS_VERSION ?= 33
 PACKAGER ?= dnf
 BUILD ?= 1
+ETCDVERSION ?= v3.5.0
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 
@@ -32,6 +33,8 @@ postgres-stage: base postgres-stage
 postgres-gis: base postgres-gis
 postgres-oracle: base postgres-oracle
 exporter: exporter
+etcd: etcd
+pgbouncer: pgbouncer
 
 base-build:
 		${BUILDWITH} build $(ROOTPATH)							\
@@ -144,3 +147,30 @@ exporter-build:
 			--build-arg PGVERSION 							
 
 exporter: exporter-build
+
+etcd-build:
+		docker build $(ROOTPATH)								\
+			--file $(ROOTPATH)/docker/etcd/Dockerfile 		\
+			--tag cybertec-prov-container/etcd:0.1.$(BUILD)	\
+			--build-arg BASE_IMAGE								\
+			--build-arg IMAGE_REPOSITORY 						\
+			--build-arg BASEOS 									\
+			--build-arg PACKAGER 								\
+			--build-arg CONTAINERSUITE 							\
+			--build-arg BUILD 									\
+			--build-arg ETCDVERSION 							
+
+etcd: etcd-build
+
+pgbouncer-build:
+		docker build $(ROOTPATH)								\
+			--file $(ROOTPATH)/docker/pgbouncer/Dockerfile 		\
+			--tag cybertec-prov-container/pgbouncer:0.1.$(BUILD)	\
+			--build-arg BASE_IMAGE								\
+			--build-arg IMAGE_REPOSITORY 						\
+			--build-arg BASEOS 									\
+			--build-arg PACKAGER 								\
+			--build-arg CONTAINERSUITE 							\
+			--build-arg BUILD 							
+
+pgbouncer: pgbouncer-build

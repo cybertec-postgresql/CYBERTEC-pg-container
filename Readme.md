@@ -19,7 +19,7 @@ On Kubernetes and Kubernetes-based environments, the image uses the k8-etcd, oth
     export PATH=$PATH:$GOBIN
     export BASE_IMAGE=ubi8/ubi
     export IMAGE_REPOSITORY=registry.access.redhat.com
-    export BASEOS=rhel8
+    export BASEOS=ubi8
     export PACKAGER=yum
     export CONTAINERSUITE=cybertec-pg-container
     export PGBACKREST_VERSION=2.45

@@ -13,6 +13,7 @@ ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ARG POSTGIS_VERSION
 
 # Spilo-specific
 ENV SET_USER=REL3_0_0 \
@@ -27,7 +28,7 @@ ENV SET_USER=REL3_0_0 \
     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
 
 # Get some Standard-Stuff
-RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         openssh-clients \
         openssh-server \
         shadow-utils \
@@ -65,11 +66,11 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
 
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
-	${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \		
+	${PACKAGER} -y install --nodocs \		
 		pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 else \
-	${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0  \
+	${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
@@ -83,10 +84,9 @@ RUN ETCDVERSION=3.3.27 \
 # Install Patroni
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
 #swiftclient
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-                    python3-etcd python3-consul  \
-                    python3-gevent python3-greenlet python3-cachetools \
-                    python3-rsa python3-pyasn1-modules  python3-cffi \
+RUN ${PACKAGER} -y install python3-etcd python3-consul  \
+                         python3-gevent python3-greenlet python3-cachetools \
+                        python3-rsa python3-pyasn1-modules  python3-cffi \
     && ${PACKAGER} -y clean all;
 
     # python3-kazoo python3-meld3 python3-boto python3-swiftclient
@@ -112,7 +112,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/crunchydata/pgnodemx \
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
-    && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
+    && ${PACKAGER} -y install postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all\
 \
     # forbid creation of a main cluster when package is installed
@@ -127,7 +127,8 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                            pgaudit*${version} \
+                             postgis${POSTGIS_VERSION}_${version} \
+                             pgaudit*${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
 #                            postgresql${version}-pglogical \
@@ -139,6 +140,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-plproxy \
 #                            postgresql${version}-repack \
 #                            postgresql${version}-wal2json \
+#                            postgresql${version}-pgextwlist \
         #&& ${PACKAGER} -y clean all; \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
@@ -188,6 +190,8 @@ ENV LC_ALL=en_US.utf-8 \
     TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
 
+
+
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
 
@@ -202,8 +206,6 @@ COPY motd /etc/
 COPY runit /etc/runit/runsvdir/default/
 COPY pgq_ticker.ini $PGHOME/
 RUN rm -rf /etc/service
-
-RUN mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata
 
 RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && chown -R postgres:postgres $PGHOME $RW_DIR \
@@ -249,8 +251,7 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-                    glibc-devel glibc-static
+RUN ${PACKAGER} -y install glibc-devel glibc-static
 
 RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
 

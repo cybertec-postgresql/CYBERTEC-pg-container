@@ -203,8 +203,6 @@ COPY runit /etc/runit/runsvdir/default/
 COPY pgq_ticker.ini $PGHOME/
 RUN rm -rf /etc/service
 
-RUN mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata
-
 RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && chown -R postgres:postgres $PGHOME $RW_DIR \
         && rm -fr /var/spool/cron /var/tmp \

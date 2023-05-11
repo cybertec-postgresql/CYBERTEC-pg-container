@@ -149,7 +149,7 @@ exporter-build:
 exporter: exporter-build
 
 etcd-build:
-		docker build $(ROOTPATH)								\
+		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/etcd/Dockerfile 		\
 			--tag cybertec-prov-container/etcd:0.1.$(BUILD)	\
 			--build-arg BASE_IMAGE								\
@@ -163,7 +163,7 @@ etcd-build:
 etcd: etcd-build
 
 pgbouncer-build:
-		docker build $(ROOTPATH)								\
+		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/pgbouncer/Dockerfile 		\
 			--tag cybertec-prov-container/pgbouncer:0.1.$(BUILD)	\
 			--build-arg BASE_IMAGE								\

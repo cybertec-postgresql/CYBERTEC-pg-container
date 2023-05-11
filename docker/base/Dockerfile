@@ -1,7 +1,7 @@
 ARG BASE_IMAGE
 ARG IMAGE_REPOSITORY
 ARG PATH
-FROM $BASE_IMAGE
+FROM $IMAGE_REPOSITORY/$BASE_IMAGE
 #FROM ${IMAGE_REPOSITORY}${PATH}${BASE_IMAGE}
 
 # Arg for distinguish between ubi and rocky and other stuff
@@ -14,7 +14,7 @@ LABEL maintainer="Matthias Groemmer <matthias.groemmer@cybertec.at>"
 
 #RUN microdnf -y --nodocs --noplugins --setopt=install_weak_deps=0 install ${PACKAGER}
 
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm vim && ${PACKAGER} -y upgrade
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm vim && ${PACKAGER} -y upgrade
 
 RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
         bind-utils \

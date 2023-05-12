@@ -270,12 +270,14 @@ RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
 
 RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
 
+RUN usermod -u 10014 postgres && groupmod -g 10631 postgres
+
 # Modify for using origial-spilo scripts
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
-USER 26
+USER postgres
 
 #RUN chown -R postgres:root /var/lib/pgsql
 CMD ["/bin/sh", "/launch.sh", "init"]

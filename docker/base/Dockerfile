@@ -10,7 +10,6 @@ ARG PACKAGER
 
 MAINTAINER CYBERTEC PostgreSQL International GmbH
 LABEL vendor="CYBERTEC PostgreSQL International GmbH" url="https://www.cybertec-postgresql.com"
-LABEL maintainer="Matthias Groemmer <matthias.groemmer@cybertec.at>"
 
 #RUN microdnf -y --nodocs --noplugins --setopt=install_weak_deps=0 install ${PACKAGER}
 

@@ -256,8 +256,7 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-                    glibc-devel glibc-static
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static
 
 RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
 

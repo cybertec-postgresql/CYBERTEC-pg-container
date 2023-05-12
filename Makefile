@@ -35,6 +35,7 @@ postgres-oracle: base postgres-oracle
 exporter: exporter
 etcd: etcd
 pgbouncer: pgbouncer
+pg_timetable: pg_timetable
 proventa: base proventa
 
 base-build:
@@ -175,6 +176,19 @@ pgbouncer-build:
 			--build-arg BUILD 							
 
 pgbouncer: pgbouncer-build
+
+pg_timetable-build:
+		${BUILDWITH} build $(ROOTPATH)								\
+			--file $(ROOTPATH)/docker/pg_timetable/Dockerfile 		\
+			--tag cybertec-prov-container/pg_timetable:0.1.$(BUILD)	\
+			--build-arg BASE_IMAGE								\
+			--build-arg IMAGE_REPOSITORY 						\
+			--build-arg BASEOS 									\
+			--build-arg PACKAGER 								\
+			--build-arg CONTAINERSUITE 							\
+			--build-arg BUILD 							
+
+pg_timetable: pg_timetable-build
 
 proventa-build:
 		${BUILDWITH} build $(ROOTPATH)								\

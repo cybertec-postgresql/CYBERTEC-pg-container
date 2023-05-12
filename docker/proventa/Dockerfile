@@ -83,6 +83,8 @@ RUN ETCDVERSION=3.3.27 \
 
 # Install Patroni
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
+#ldap2pg psycopg2-binary
+
 #swiftclient
 RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
                     python3-etcd \
@@ -104,16 +106,18 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && make -C pam-oauth2 install \
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
-    && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
-    && git clone https://github.com/timescale/timescaledb.git \
-    && git clone https://github.com/dimitri/pgextwlist.git \
-    && git clone https://github.com/powa-team/pg_stat_kcache.git \
-    && git clone https://github.com/crunchydata/pgnodemx \
+    #&& curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
+    #&& git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
+    #&& git clone https://github.com/timescale/timescaledb.git \
+    #&& git clone https://github.com/dimitri/pgextwlist.git \
+    #&& git clone https://github.com/powa-team/pg_stat_kcache.git \
+    #&& git clone https://github.com/crunchydata/pgnodemx \
     #&& git clone https://github.com/pgq/pgqd.git \
-     # Oracle-Client for oracle_fdw
+    # orafce
+    && git clone https://github.com/orafce/orafce.git \
+    # Oracle-Client for oracle_fdw
     && git clone https://github.com/laurenz/oracle_fdw.git \
     && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-basic-21.9.0.0.0-1.el8.x86_64.rpm \
     && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-sqlplus-21.9.0.0.0-1.el8.x86_64.rpm \
@@ -141,6 +145,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
                              pgaudit*${version} \
+                             pg_partman_*${version} \
                              #postgis${POSTGIS_VERSION}_${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
@@ -165,7 +170,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
 \
             # Install TimescaleDB
-            && ${PACKAGER} -y install -y timescaledb_${version} \
+            #&& ${PACKAGER} -y install -y timescaledb_${version} \
             #&& cd /timescaledb \
             #&& for v in $TIMESCALEDB; do \
             #        git checkout $v \
@@ -186,6 +191,8 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             #&& cd /pgextwlist && make clean && make && make install \
             #&& cd /pg_stat_kcache && make clean && make && make install \
             #&& cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
+            #orafce
+            && cd /orafce && make USE_PGXS=0 clean && make USE_PGXS=0 && make USE_PGXS=0 install \
             #oracle_fdw
             && cd /oracle_fdw && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
@@ -195,7 +202,9 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 ## Clean Up git-repos
 RUN rm -rf /pgextwlist \
     && rm -rf /pg_stat_kcache \
-    && rm -rf /pgnodemx ;
+    && rm -rf /pgnodemx \
+    && rm -rf /orafce \
+    && rm -rf /oracle_fdw ;
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \

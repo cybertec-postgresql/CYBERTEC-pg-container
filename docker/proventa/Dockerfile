@@ -42,6 +42,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         python3-requests \
         python3-etcd \
         #python3-pyyaml \
+        python3-ldap2pg \
         git \
         http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/patchutils-0.3.4-10.el8.x86_64.rpm \
         binutils \
@@ -82,7 +83,7 @@ RUN ETCDVERSION=3.3.27 \
     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 # Install Patroni
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto ldap2pg psycopg2-binary
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
 
 #swiftclient
 RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \

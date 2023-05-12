@@ -41,6 +41,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         python3-requests \
         python3-etcd \
         #python3-pyyaml \
+        python3-ldap2pg \
         git \
         http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/patchutils-0.3.4-10.el8.x86_64.rpm \
         binutils \

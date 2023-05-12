@@ -82,8 +82,7 @@ RUN ETCDVERSION=3.3.27 \
     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 # Install Patroni
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
-#ldap2pg psycopg2-binary
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto ldap2pg psycopg2-binary
 
 #swiftclient
 RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \

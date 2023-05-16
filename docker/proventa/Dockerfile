@@ -211,7 +211,7 @@ ENV LC_ALL=en_US.utf-8 \
     PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
     PGHOME=/home/postgres \
     RW_DIR=/run \
-    TIMESCALEDB=$TIMESCALEDB \
+    #TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \

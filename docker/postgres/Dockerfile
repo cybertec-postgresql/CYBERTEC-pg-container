@@ -109,7 +109,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/timescale/timescaledb.git \
     && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/powa-team/pg_stat_kcache.git \
-    && git clone https://github.com/crunchydata/pgnodemx \
+    && git clone https://github.com/crunchydata/pgnodemx --branch 1.4 \
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \

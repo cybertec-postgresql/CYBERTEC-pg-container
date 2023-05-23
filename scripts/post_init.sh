@@ -211,7 +211,7 @@ GRANT SELECT ON TABLE pg_authid TO cpo_exporter;";
 
 echo "CREATE SCHEMA IF NOT EXISTS exporter;
 ALTER SCHEMA exporter OWNER TO cpo_exporter;
-CREATE EXTENSION IF NOT EXISTS pgnodemx SCHEMA public;
+CREATE EXTENSION IF NOT EXISTS pgnodemx SCHEMA exporter;
 ALTER EXTENSION pgnodemx UPDATE;
 
 CREATE TABLE exporter.pgbackrestbackupinfo (

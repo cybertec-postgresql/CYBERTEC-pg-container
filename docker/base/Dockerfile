@@ -26,6 +26,8 @@ RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0  \
         openssl \
         vim \
         glibc-langpack-en \
+        openssh-clients \
+        openssh-server \
         #dnf-command(config-manager) \
      && ${PACKAGER} -y clean all ;
 

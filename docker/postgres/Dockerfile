@@ -259,6 +259,14 @@ RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/ru
 
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
+# Cleanup
+RUN rm -rf /pgextwlist /pg_stat_kcache /oracle_fdw /pgnodemx;
+
+# Clean Up Packages binutils glibc-devel glibc-static
+RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils flatpak glibc-static \
+    && ${PACKAGER} -y autoremove \
+    && ${PACKAGER} -y clean all; 
+
 USER 26
 
 #RUN chown -R postgres:root /var/lib/pgsql

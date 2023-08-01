@@ -1,24 +1,29 @@
 ARG CONTAINERSUITE
+ARG BASEOS
 ARG BUILD
- 
-FROM ${CONTAINERSUITE}/base:0.0.${BUILD}
+
+FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD} AS builder
 
 # Dockerfile specific informations
 ARG PACKAGER
 ARG BASEOS
 ARG PGBACKREST_VERSION
-ARG PG_MAJOR
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
-	${PACKAGER} -y install --nodocs \
+	${PACKAGER} -y update \
+		&& ${PACKAGER} -y install --nodocs \
 		shadow-utils \
 		tar \
 		bzip2 \
 		lz4 \
-		#crunchy-backrest-${BACKREST_VER} \
+		git \
+		go \
+		make \
+		dumb-init \ 		
 		&& ${PACKAGER} -y clean all ; \
 else \
-	${PACKAGER} -y install --nodocs  \
+	${PACKAGER} -y update \
+		&& ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
 		bzip2 \
 		lz4 \
@@ -29,11 +34,21 @@ else \
 		&& ${PACKAGER} -y clean all ; \
 fi
 
-RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build
+RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build 
+
+FROM registry.access.redhat.com/ubi8/ubi 
+
+COPY --from=builder ./postgres_exporter/postgres_exporter /bin/postgres_exporter
+COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
 COPY launcher/exporter/launch.sh /
 COPY scripts/exporter/queries/ /postgres_exporter/queries
+
+RUN groupadd -g 10631 postgres && useradd postgres -u 10014 -g 10631
+
+USER   postgres
+
+EXPOSE 9187
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 CMD ["/bin/sh", "/launch.sh", "init"]
-#CMD ["/bin/sh", "/scripts/postgres/promote.sh"]

@@ -29,7 +29,9 @@ ENV SET_USER=REL3_0_0 \
     #PAM_VERSION=1.3.1-25.el8
 
 # Get some Standard-Stuff
-RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN --mount=type=cache,target=/var/cache/yum \
+     --mount=type=cache,target=/var/cache/dnf \
+        ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
         openssh-clients \
         openssh-server \
         shadow-utils \
@@ -87,7 +89,9 @@ RUN ETCDVERSION=3.3.27 \
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
 
 #swiftclient
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN --mount=type=cache,target=/var/cache/yum \
+    --mount=type=cache,target=/var/cache/dnf \
+    ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
                     python3-etcd \
                     # TODO fix following
                     #python3-consul python3-gevent python3-greenlet python3-cachetools \
@@ -276,10 +280,19 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-                    glibc-devel glibc-static
+RUN --mount=type=cache,target=/var/cache/yum \
+    --mount=type=cache,target=/var/cache/dnf \
+    ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+                    glibc-devel glibc-static \
+    && mkdir /package && cd /package \
+    && wget -nv http://smarden.org/runit/runit-2.1.2.tar.gz \
+    && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+    && cd admin/runit-2.1.2 && package/install ;
 
-RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+RUN --mount=type=cache,target=/var/cache/yum \
+    --mount=type=cache,target=/var/cache/dnf \    
+    ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+    && ${PACKAGER} -y clean all ;
 
 RUN usermod -u 10014 postgres && groupmod -g 10631 postgres
 

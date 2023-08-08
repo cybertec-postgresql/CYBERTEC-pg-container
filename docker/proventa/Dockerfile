@@ -13,7 +13,6 @@ ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
-ARG POSTGIS_VERSION
 
 # Spilo-specific
 ENV SET_USER=REL3_0_0 \
@@ -26,6 +25,8 @@ ENV SET_USER=REL3_0_0 \
     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006 \
     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925 \
     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+    #rpm -q --queryformat '%{VERSION}-%{RELEASE}' pam.x86_64
+    #PAM_VERSION=1.3.1-25.el8
 
 # Get some Standard-Stuff
 RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
@@ -51,7 +52,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         gcc \
         #curl \
         libcurl-devel \
-        http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/pam-devel-1.3.1-22.el8.x86_64.rpm \
+        #http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/pam-devel-${PAM_VERSION}.x86_64.rpm \
         wget \
         http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/mlocate-0.26-20.el8.x86_64.rpm \
         git-clang-format \
@@ -102,8 +103,9 @@ ENV PATHBACKUP = $PATH
 #ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 #RUN echo $PATH
 # Install pam_oauth2.so
-RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
-    && make -C pam-oauth2 install \
+RUN echo \
+    #&& git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
+    #&& make -C pam-oauth2 install \
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \

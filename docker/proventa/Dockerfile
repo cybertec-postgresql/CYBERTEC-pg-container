@@ -125,10 +125,10 @@ RUN echo \
     && git clone https://github.com/orafce/orafce.git \
     # Oracle-Client for oracle_fdw
     && git clone https://github.com/laurenz/oracle_fdw.git \
-    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-basic-21.9.0.0.0-1.el8.x86_64.rpm \
-    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-sqlplus-21.9.0.0.0-1.el8.x86_64.rpm \
-    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-devel-21.9.0.0.0-1.el8.x86_64.rpm \
-    && wget https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-jdbc-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-basic-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-sqlplus-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-devel-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-jdbc-21.9.0.0.0-1.el8.x86_64.rpm \
     && ${PACKAGER} install -y oracle-*.rpm \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
@@ -150,12 +150,12 @@ RUN echo \
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                             pgaudit*${version} \
-                             pg_partman_*${version} \
+                            pgaudit*${version} \
+                            pg_partman_*${version} \
                              #postgis${POSTGIS_VERSION}_${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
-#                            postgresql${version}-pglogical \
+                            pglogical_*${version} \
 #                            postgresql${version}-pglogical-ticker \
 #                            postgresql${version}-pgq-node \
 #                            postgresql${version}-pldebugger \
@@ -206,11 +206,18 @@ RUN echo \
     done
 
 ## Clean Up git-repos
-RUN rm -rf /pgextwlist \
+RUN for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do \
+        rm -rf $n; \ 
+    done \
+    #&& rm -rf /pam-oauth2 \
+    #&& rm -rf /timescaledb \
+    && rm -rf /pgextwlist \
     && rm -rf /pg_stat_kcache \
     && rm -rf /pgnodemx \
     && rm -rf /orafce \
-    && rm -rf /oracle_fdw ;
+    && rm -rf /oracle_fdw \
+    && rm -f /oracle-instantclient-*.rpm ;
+
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
@@ -240,6 +247,7 @@ RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && rm -fr /var/spool/cron /var/tmp \
         && mkdir -p /var/spool \
         && ln -s $RW_DIR/cron /var/spool/cron \
+        && mkdir -p $RW_DIR/tmp \
         && ln -s $RW_DIR/tmp /var/tmp \
         && for d in /etc/runit/runsvdir/default/*; do \
             chmod 755 $d/* \

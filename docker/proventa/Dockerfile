@@ -25,9 +25,13 @@ ENV SET_USER=REL3_0_0 \
     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006 \
     PG_PERMISSIONS_COMMIT=314b9359e3d77c0b2ef7dbbde97fa4be80e31925 \
     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+    #rpm -q --queryformat '%{VERSION}-%{RELEASE}' pam.x86_64
+    #PAM_VERSION=1.3.1-25.el8
 
 # Get some Standard-Stuff
-RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN --mount=type=cache,target=/var/cache/yum \
+     --mount=type=cache,target=/var/cache/dnf \
+        ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
         openssh-clients \
         openssh-server \
         shadow-utils \
@@ -50,7 +54,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         gcc \
         #curl \
         libcurl-devel \
-        http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/pam-devel-1.3.1-22.el8.x86_64.rpm \
+        #http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/pam-devel-${PAM_VERSION}.x86_64.rpm \
         wget \
         http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/mlocate-0.26-20.el8.x86_64.rpm \
         git-clang-format \
@@ -82,9 +86,12 @@ RUN ETCDVERSION=3.3.27 \
     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 # Install Patroni
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto
+
 #swiftclient
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN --mount=type=cache,target=/var/cache/yum \
+    --mount=type=cache,target=/var/cache/dnf \
+    ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
                     python3-etcd \
                     # TODO fix following
                     #python3-consul python3-gevent python3-greenlet python3-cachetools \
@@ -100,19 +107,29 @@ ENV PATHBACKUP = $PATH
 #ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 #RUN echo $PATH
 # Install pam_oauth2.so
-RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
-    && make -C pam-oauth2 install \
+RUN echo \
+    #&& git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
+    #&& make -C pam-oauth2 install \
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
-    && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
-    && git clone https://github.com/timescale/timescaledb.git \
-    && git clone https://github.com/dimitri/pgextwlist.git \
-    && git clone https://github.com/powa-team/pg_stat_kcache.git \
-    && git clone https://github.com/crunchydata/pgnodemx \
+    #&& curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
+    #&& git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
+    #&& git clone https://github.com/timescale/timescaledb.git \
+    #&& git clone https://github.com/dimitri/pgextwlist.git \
+    #&& git clone https://github.com/powa-team/pg_stat_kcache.git \
+    #&& git clone https://github.com/crunchydata/pgnodemx \
     #&& git clone https://github.com/pgq/pgqd.git \
+    # orafce
+    && git clone https://github.com/orafce/orafce.git \
+    # Oracle-Client for oracle_fdw
+    && git clone https://github.com/laurenz/oracle_fdw.git \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-basic-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-sqlplus-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-devel-21.9.0.0.0-1.el8.x86_64.rpm \
+    && wget -nv https://download.oracle.com/otn_software/linux/instantclient/219000/oracle-instantclient-jdbc-21.9.0.0.0-1.el8.x86_64.rpm \
+    && ${PACKAGER} install -y oracle-*.rpm \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
     #postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
@@ -133,10 +150,12 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                             pgaudit*${version} \
+                            pgaudit*${version} \
+                            pg_partman_*${version} \
+                             #postgis${POSTGIS_VERSION}_${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
-#                            postgresql${version}-pglogical \
+                            pglogical_*${version} \
 #                            postgresql${version}-pglogical-ticker \
 #                            postgresql${version}-pgq-node \
 #                            postgresql${version}-pldebugger \
@@ -157,7 +176,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
 \
             # Install TimescaleDB
-            && ${PACKAGER} -y install -y timescaledb_${version} \
+            #&& ${PACKAGER} -y install -y timescaledb_${version} \
             #&& cd /timescaledb \
             #&& for v in $TIMESCALEDB; do \
             #        git checkout $v \
@@ -172,27 +191,40 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             #        && git clean -f -d; \
             #    done \
             #&& cd .. \
-            && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do \
-                make -C $n USE_PGXS=1 clean install-strip; \ 
-            done \
-            && cd /pgextwlist && make clean && make && make install \
-            && cd /pg_stat_kcache && make clean && make && make install \
-            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
+           # && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do \
+           #     make -C $n USE_PGXS=1 clean install-strip; \ 
+           # done \
+            #&& cd /pgextwlist && make clean && make && make install \
+            #&& cd /pg_stat_kcache && make clean && make && make install \
+            #&& cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
+            #orafce
+            && cd /orafce && make USE_PGXS=0 clean && make USE_PGXS=0 && make USE_PGXS=0 install \
+            #oracle_fdw
+            && cd /oracle_fdw && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
         && ${PACKAGER} -y clean all; \
     done
 
 ## Clean Up git-repos
-RUN rm -rf /pgextwlist \
+RUN for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do \
+        rm -rf $n; \ 
+    done \
+    #&& rm -rf /pam-oauth2 \
+    #&& rm -rf /timescaledb \
+    && rm -rf /pgextwlist \
     && rm -rf /pg_stat_kcache \
-    && rm -rf /pgnodemx ;
+    && rm -rf /pgnodemx \
+    && rm -rf /orafce \
+    && rm -rf /oracle_fdw \
+    && rm -f /oracle-instantclient-*.rpm ;
+
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
     PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
     PGHOME=/home/postgres \
     RW_DIR=/run \
-    TIMESCALEDB=$TIMESCALEDB \
+    #TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
@@ -215,6 +247,7 @@ RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && rm -fr /var/spool/cron /var/tmp \
         && mkdir -p /var/spool \
         && ln -s $RW_DIR/cron /var/spool/cron \
+        && mkdir -p $RW_DIR/tmp \
         && ln -s $RW_DIR/tmp /var/tmp \
         && for d in /etc/runit/runsvdir/default/*; do \
             chmod 755 $d/* \
@@ -247,8 +280,6 @@ RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
            && chgrp -R 0 $PGHOME $RW_DIR \
            && chmod -R g=u $PGHOME $RW_DIR \
            && usermod -a -G root postgres; \
-        else \
-            usermod -a -G root postgres; \
         fi
         
 # Remove default pgbackrest-config and spool-path
@@ -257,9 +288,19 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static
+RUN --mount=type=cache,target=/var/cache/yum \
+    --mount=type=cache,target=/var/cache/dnf \
+    ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+                    glibc-devel glibc-static \
+    && mkdir /package && cd /package \
+    && wget -nv http://smarden.org/runit/runit-2.1.2.tar.gz \
+    && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+    && cd admin/runit-2.1.2 && package/install ;
 
-RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+RUN --mount=type=cache,target=/var/cache/yum \
+    --mount=type=cache,target=/var/cache/dnf \    
+    ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+    && ${PACKAGER} -y clean all ;
 
 RUN usermod -u 10014 postgres && groupmod -g 10631 postgres
 

@@ -28,7 +28,7 @@ ENV SET_USER=REL3_0_0 \
     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
 
 # Get some Standard-Stuff
-RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
+RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
         openssh-clients \
         openssh-server \
         shadow-utils \
@@ -43,22 +43,22 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
         python3-etcd \
         #python3-pyyaml \
         git \
-        patchutils \
+        http://mirror.centos.org/centos/8-stream/AppStream/x86_64/os/Packages/patchutils-0.3.4-10.el8.x86_64.rpm \
         binutils \
         make \
         cmake \
         gcc \
         #curl \
         libcurl-devel \
-        pam-devel \
+        http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/pam-devel-1.3.1-22.el8.x86_64.rpm \
         wget \
-        mlocate \
+        http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/mlocate-0.26-20.el8.x86_64.rpm \
         git-clang-format \
         openssl-devel \
         ccache \
         redhat-rpm-config \
         krb5-devel \
-        busybox \
+        https://rpmfind.net/linux/epel/next/8/Everything/x86_64/Packages/b/busybox-1.35.0-2.el8.next.x86_64.rpm \
         dpkg \
         jq \
         rsync \
@@ -66,11 +66,11 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs \
 
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
-	${PACKAGER} -y install --nodocs \		
+	${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \		
 		pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 else \
-	${PACKAGER} -y install --nodocs  \
+	${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0  \
 		--setopt=skip_missing_names_on_install=False \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
@@ -84,9 +84,11 @@ RUN ETCDVERSION=3.3.27 \
 # Install Patroni
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
 #swiftclient
-RUN ${PACKAGER} -y install python3-etcd python3-consul  \
-                         python3-gevent python3-greenlet python3-cachetools \
-                        python3-rsa python3-pyasn1-modules  python3-cffi \
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+                    python3-etcd \
+                    # TODO fix following
+                    #python3-consul python3-gevent python3-greenlet python3-cachetools \
+                    python3-rsa python3-pyasn1-modules  python3-cffi \
     && ${PACKAGER} -y clean all;
 
     # python3-kazoo python3-meld3 python3-boto python3-swiftclient
@@ -112,8 +114,12 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/crunchydata/pgnodemx \
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
-    && ${PACKAGER} -y install postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
-    && ${PACKAGER} -y clean all\
+    && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+    #postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
+    libevent-devel brotli-devel \
+    http://mirror.centos.org/centos/8-stream/PowerTools/x86_64/os/Packages/perl-IO-Tty-1.12-11.el8.x86_64.rpm \
+    https://rpmfind.net/linux/centos/8-stream/PowerTools/x86_64/os/Packages/perl-IPC-Run-0.99-1.el8.noarch.rpm \
+    && ${PACKAGER} -y clean all \
 \
     # forbid creation of a main cluster when package is installed
     #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
@@ -121,14 +127,14 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 # Install PostgreSQL
     && for version in $PG_SUPPORTED_VERSIONS; do \
         ${PACKAGER} -y update && \
-        ${PACKAGER} -y install postgresql${version}-pltcl \
+          ${PACKAGER} -y install postgresql${version}-pltcl \
 #                            postgresql${version}-dirtyread \
 #                            postgresql${version}-extra-window-functions \
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                             postgis${POSTGIS_VERSION}_${version} \
                              pgaudit*${version} \
+#                             postgis${POSTGIS_VERSION}_${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
 #                            postgresql${version}-pglogical \
@@ -140,7 +146,6 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
 #                            postgresql${version}-plproxy \
 #                            postgresql${version}-repack \
 #                            postgresql${version}-wal2json \
-#                            postgresql${version}-pgextwlist \
         #&& ${PACKAGER} -y clean all; \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
@@ -152,21 +157,22 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
 \
-            # Install TimescaleDB           
-            && cd /timescaledb \
-            && for v in $TIMESCALEDB; do \
-                    git checkout $v \
-                    && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
-                    && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
-                        -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
-                            make -C build install \
-                            && strip /usr/pgsql-$version/lib/timescaledb*.so; \
-                    fi \
-                    && git reset --hard \
-                    && git clean -f -d; \
-                done \
-            && cd .. \
+            # Install TimescaleDB
+            && ${PACKAGER} -y install -y timescaledb_${version} \
+            #&& cd /timescaledb \
+            #&& for v in $TIMESCALEDB; do \
+            #        git checkout $v \
+            #        && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
+            #        && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
+            #            -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
+            #            -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
+            #                make -C build install \
+            #                && strip /usr/pgsql-$version/lib/timescaledb*.so; \
+            #        fi \
+            #        && git reset --hard \
+            #        && git clean -f -d; \
+            #    done \
+            #&& cd .. \
             && for n in bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT} set_user pg_permissions-${PG_PERMISSIONS_COMMIT} pg_tm_aux-${PG_TM_AUX_COMMIT} pg_profile-${PG_PROFILE} $EXTRA_EXTENSIONS; do \
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
@@ -177,7 +183,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
         && ${PACKAGER} -y clean all; \
     done
 
-# Clean Up git-repos
+## Clean Up git-repos
 RUN rm -rf /pgextwlist \
     && rm -rf /pg_stat_kcache \
     && rm -rf /pgnodemx ;
@@ -189,8 +195,6 @@ ENV LC_ALL=en_US.utf-8 \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
-
-
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
@@ -236,6 +240,7 @@ RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         done \
         && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
         && echo "source /etc/motd" >> /root/.bashrc \
+        && echo "source /etc/motd" >> $PGHOME/.bashrc \
         # Allow users in the root group to access the following files and dirs
         && if [ "$COMPRESS" != "true" ]; then \
            chmod 664 /etc/passwd \
@@ -251,7 +256,8 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
-RUN ${PACKAGER} -y install glibc-devel glibc-static
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+                    glibc-devel glibc-static
 
 RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
 

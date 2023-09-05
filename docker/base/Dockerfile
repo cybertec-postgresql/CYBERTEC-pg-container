@@ -25,6 +25,7 @@ RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
         openssl \
         vim \
         glibc-langpack-en \
+        http://mirror.centos.org/centos/8-stream/BaseOS/x86_64/os/Packages/glibc-langpack-de-2.28-225.el8.x86_64.rpm \
         #config-manager \
      && ${PACKAGER} -y clean all ;
 

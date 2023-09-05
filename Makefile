@@ -3,7 +3,7 @@
 BASE_IMAGE ?= rockylinux:9.1-minimal
 BASEOS ?= rocky9
 IMAGE_REPOSITORY ?= docker.io
-IMAGE_PATH ?= cybertec-prov-container
+IMAGE_PATH ?= cybertec-proventa-container
 PGVERSION ?= 15
 PGVERSION_FULL ?= 15.2
 OLD_PG_VERSIONS ?= 11 12 13 14
@@ -18,9 +18,9 @@ POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
-ROOTPATH = $(GOPATH)/src/github.com/cybertec/cybertec-pg-container
+ROOTPATH = $(GOPATH)/src/github.com/cybertec/cybertec-proventa-container
 ifndef ROOTPATH
-	export ROOTPATH=$(GOPATH)/src/github.com/cybertec/cybertec-pg-container
+	export ROOTPATH=$(GOPATH)/src/github.com/cybertec/cybertec-proventa-container
 endif
 
 # Build Images
@@ -41,7 +41,7 @@ proventa: base proventa
 base-build:
 		${BUILDWITH} build $(ROOTPATH)							\
 			--file $(ROOTPATH)/docker/base/Dockerfile 	\
-			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) 		\
+			--tag $(IMAGE_PATH)/base:$(BASEOS)-$(BUILD) 		\
 			--build-arg BASE_IMAGE							\
 			--build-arg IMAGE_REPOSITORY 					\
 			--build-arg BASEOS 								\
@@ -52,7 +52,7 @@ base: base-build;
 pgbackrest-build:
 		${BUILDWITH} build $(ROOTPATH)							\
 			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 	\
-			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-$(BUILD) 		\
+			--tag $(IMAGE_PATH)/pgbackrest:$(IMAGE_TAG)-$(BUILD) 		\
 			--build-arg BASE_IMAGE							\
 			--build-arg IMAGE_REPOSITORY 					\
 			--build-arg BASEOS 								\
@@ -67,7 +67,7 @@ pgbackrest: pgbackrest-build;
 postgres-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/postgres/Dockerfile 		\
-			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
+			--tag $(IMAGE_PATH)/postgres:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -84,7 +84,7 @@ postgres: postgres-build
 postgres-stage-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/postgres-stage/Dockerfile 		\
-			--tag cybertec-pg-container/postgres-stage:$(PGVERSION_FULL)-$(BETA)$(BUILD)	\
+			--tag $(IMAGE_PATH)/postgres-stage:$(PGVERSION_FULL)-$(BETA)$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -101,7 +101,7 @@ postgres-stage: postgres-stage-build
 postgres-gis-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/postgres-gis/Dockerfile 		\
-			--tag cybertec-pg-container/postgres-gis:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
+			--tag $(IMAGE_PATH)/postgres-gis:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -119,7 +119,7 @@ postgres-gis: postgres-gis-build
 postgres-oracle-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/postgres-oracle/Dockerfile 		\
-			--tag cybertec-pg-container/postgres-oracle:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
+			--tag $(IMAGE_PATH)/postgres-oracle:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -136,7 +136,7 @@ postgres-oracle: postgres-oracle-build
 exporter-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/exporter/Dockerfile 		\
-			--tag cybertec-pg-container/exporter:0.1.$(BUILD)	\
+			--tag $(IMAGE_PATH)/exporter:0.1.$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -153,7 +153,7 @@ exporter: exporter-build
 etcd-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/etcd/Dockerfile 		\
-			--tag cybertec-prov-container/etcd:0.1.$(BUILD)	\
+			--tag $(IMAGE_PATH)/etcd:0.1.$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -167,7 +167,7 @@ etcd: etcd-build
 pgbouncer-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/pgbouncer/Dockerfile 		\
-			--tag cybertec-prov-container/pgbouncer:0.1.$(BUILD)	\
+			--tag $(IMAGE_PATH)/pgbouncer:0.1.$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -180,7 +180,7 @@ pgbouncer: pgbouncer-build
 pg_timetable-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/pg_timetable/Dockerfile 		\
-			--tag cybertec-prov-container/pg_timetable:0.1.$(BUILD)	\
+			--tag $(IMAGE_PATH)/pg_timetable:0.1.$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
@@ -193,7 +193,7 @@ pg_timetable: pg_timetable-build
 proventa-build:
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/proventa/Dockerfile 		\
-			--tag cybertec-pg-container/proventa:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
+			--tag $(IMAGE_PATH)/proventa:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\

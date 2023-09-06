@@ -197,7 +197,6 @@ bootstrap:
     retry_timeout: 10
     maximum_lag_on_failover: 33554432
     postgresql:
-      database: 'test'
       use_pg_rewind: true
       use_slots: true
       parameters:
@@ -281,7 +280,6 @@ restapi:
   keyfile: {{SSL_RESTAPI_PRIVATE_KEY_FILE}}
   {{/SSL_RESTAPI_PRIVATE_KEY_FILE}}
 postgresql:
-  database: 'test'
   pgpass: /run/postgresql/pgpass
   use_unix_socket: true
   use_unix_socket_repl: true

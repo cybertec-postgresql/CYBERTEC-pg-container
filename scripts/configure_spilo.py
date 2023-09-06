@@ -197,6 +197,7 @@ bootstrap:
     retry_timeout: 10
     maximum_lag_on_failover: 33554432
     postgresql:
+      database: 'test'
       use_pg_rewind: true
       use_slots: true
       parameters:
@@ -280,6 +281,7 @@ restapi:
   keyfile: {{SSL_RESTAPI_PRIVATE_KEY_FILE}}
   {{/SSL_RESTAPI_PRIVATE_KEY_FILE}}
 postgresql:
+  database: 'test'
   pgpass: /run/postgresql/pgpass
   use_unix_socket: true
   use_unix_socket_repl: true
@@ -532,9 +534,9 @@ def get_placeholders(provider):
     placeholders.setdefault('PGPASSWORD_STANDBY', 'standby')
     placeholders.setdefault('USE_ADMIN', 'PGPASSWORD_ADMIN' in placeholders)
     placeholders.setdefault('PGUSER_ADMIN', 'admin')
-    placeholders.setdefault('PGPASSWORD_ADMIN', 'cola')
+    placeholders.setdefault('PGPASSWORD_ADMIN', 'admin')
     placeholders.setdefault('PGUSER_SUPERUSER', 'postgres')
-    placeholders.setdefault('PGPASSWORD_SUPERUSER', 'zalando')
+    placeholders.setdefault('PGPASSWORD_SUPERUSER', 'postgres')
     placeholders.setdefault('ALLOW_NOSSL', '')
     placeholders.setdefault('BGMON_LISTEN_IP', '0.0.0.0')
     placeholders.setdefault('PGPORT', '5432')

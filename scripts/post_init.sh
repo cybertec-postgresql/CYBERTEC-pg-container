@@ -1,9 +1,13 @@
 #!/bin/bash
 
-# cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
+#  cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 
-# PGVER=$(psql -d "$2" -XtAc "SELECT pg_catalog.current_setting('server_version_num')::int/10000")
-# if [ "$PGVER" -ge 12 ]; then RESET_ARGS="oid, oid, bigint"; fi
+#  PGVER=$(psql -d "$2" -XtAc "SELECT pg_catalog.current_setting('server_version_num')::int/10000")
+#  if [ "$PGVER" -ge 12 ]; then RESET_ARGS="oid, oid, bigint"; fi
+# (echo "
+# Create Database 'test';"
+#  ) | PGOPTIONS="-c synchronous_commit=local" psql -Xd "$2"
+
 
 # (echo "DO \$\$
 # BEGIN

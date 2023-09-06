@@ -37,25 +37,29 @@ if [ -n "$DATABASE_URL" ]; then
   DB_NAME="$(echo $url | grep / | cut -d/ -f2-)"
 fi
 
-# Write the password with MD5 encryption, to avoid printing it during startup.
-# Notice that `docker inspect` will show unencrypted env variables.
+# # Creates the pgbouncer userlist based on the ENV PGBOUNCER_USERLIST
+# Syntax: '"postgres":"mypgpass","pgbouncer":"bouncerpass"'
+# ENV AUTH_FILE defines the path
 _AUTH_FILE="${AUTH_FILE:-$PG_CONFIG_DIR/userlist.txt}"
+
+echo "$PGBOUNCER_USERLIST" | sed 's/\,/\n/g' | sed -r 's/[:]+/ /g' > "$_AUTH_FILE"
 
 # Workaround userlist.txt missing issue
 # https://github.com/edoburu/docker-pgbouncer/issues/33
-if [ ! -e "${_AUTH_FILE}" ]; then
-  touch "${_AUTH_FILE}"
-fi
+# if [ ! -e "${_AUTH_FILE}" ]; then
+#   touch "${_AUTH_FILE}"
+# fi
 
-if [ -n "$DB_USER" -a -n "$DB_PASSWORD" -a -e "${_AUTH_FILE}" ] && ! grep -q "^\"$DB_USER\"" "${_AUTH_FILE}"; then
-  if [ "$AUTH_TYPE" == "plain" ] || [ "$AUTH_TYPE" == "scram-sha-256" ]; then
-     pass="$DB_PASSWORD"
-  else
-     pass="md5$(echo -n "$DB_PASSWORD$DB_USER" | md5sum | cut -f 1 -d ' ')"
-  fi
-  echo "\"$DB_USER\" \"$pass\"" >> ${PG_CONFIG_DIR}/userlist.txt
-  echo "Wrote authentication credentials to ${PG_CONFIG_DIR}/userlist.txt"
-fi
+# if [ -n "$DB_USER" -a -n "$DB_PASSWORD" -a -e "${_AUTH_FILE}" ] && ! grep -q "^\"$DB_USER\"" "${_AUTH_FILE}"; then
+#   if [ "$AUTH_TYPE" == "plain" ] || [ "$AUTH_TYPE" == "scram-sha-256" ]; then
+#      pass="$DB_PASSWORD"
+#   else
+#      pass="md5$(echo -n "$DB_PASSWORD$DB_USER" | md5sum | cut -f 1 -d ' ')"
+#   fi
+#   echo "\"$DB_USER\" \"$pass\"" >> ${PG_CONFIG_DIR}/userlist.txt
+#   echo "Wrote authentication credentials to ${PG_CONFIG_DIR}/userlist.txt"
+# fi
+
 
 if [ ! -f ${PG_CONFIG_DIR}/pgbouncer.ini ]; then
   echo "Create pgbouncer config in ${PG_CONFIG_DIR}"

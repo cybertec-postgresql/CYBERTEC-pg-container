@@ -258,6 +258,9 @@ bootstrap:
     - encoding: UTF8
     - locale: {{INITDB_LOCALE}}.UTF-8
     - data-checksums
+  {{#WALDIR}}
+    - waldir {{WALDIR}}
+  {{/WALDIR}}
   {{#USE_ADMIN}}
   users:
     {{PGUSER_ADMIN}}:
@@ -581,6 +584,7 @@ def get_placeholders(provider):
     placeholders.setdefault('CLONE_WITH_BASEBACKUP', '')
     placeholders.setdefault('CLONE_TARGET_TIME', '')
     placeholders.setdefault('CLONE_TARGET_INCLUSIVE', True)
+    placeholders.setdefault('WALDIR', False)
 
     placeholders.setdefault('LOG_SHIP_SCHEDULE', '1 0 * * *')
     placeholders.setdefault('LOG_S3_BUCKET', '')

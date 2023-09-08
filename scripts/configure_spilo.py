@@ -258,6 +258,9 @@ bootstrap:
     - encoding: UTF8
     - locale: {{INITDB_LOCALE}}.UTF-8
     - data-checksums
+  {{#PGWAL}}
+    - waldir {{PGWAL}}
+  {{/PGWAL}}
   {{#USE_ADMIN}}
   users:
     {{PGUSER_ADMIN}}:
@@ -292,7 +295,7 @@ postgresql:
     shared_buffers: {{postgresql.parameters.shared_buffers}}
     logging_collector: 'on'
     log_destination: csvlog
-    log_directory: ../pg_log
+    log_directory: {{PGLOG}}
     log_filename: 'postgresql-%u.log'
     log_file_mode: '0644'
     log_rotation_age: '1d'
@@ -581,6 +584,8 @@ def get_placeholders(provider):
     placeholders.setdefault('CLONE_WITH_BASEBACKUP', '')
     placeholders.setdefault('CLONE_TARGET_TIME', '')
     placeholders.setdefault('CLONE_TARGET_INCLUSIVE', True)
+    placeholders.setdefault('PGWAL', False)
+    placeholders.setdefault('PGLOG', '../pg_log')
 
     placeholders.setdefault('LOG_SHIP_SCHEDULE', '1 0 * * *')
     placeholders.setdefault('LOG_S3_BUCKET', '')

@@ -302,7 +302,7 @@ RUN --mount=type=cache,target=/var/cache/yum \
     ${PACKAGER} -y remove $(rpm -qa "*-devel") \
     && ${PACKAGER} -y clean all ;
 
-RUN usermod -u 10014 postgres && groupmod -g 10631 postgres
+RUN usermod -u 10014 postgres && groupmod -g 10631 postgres && groupadd -g 11567 opspg_ro && groupadd -g 11604 siemdpg_ro
 
 # Modify for using origial-spilo scripts
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir

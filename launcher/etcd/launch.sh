@@ -1,4 +1,4 @@
 #!/bin/bash
 # Start etcd
 
-etcd
+etcd --data-dir=/etcd.data

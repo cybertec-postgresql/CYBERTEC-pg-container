@@ -22,11 +22,19 @@ RUN if [ "$BASEOS" = "ubi9" ] ; then \
 	fi
 RUN wget https://github.com/etcd-io/etcd/releases/download/${ETCDVERSION}/etcd-${ETCDVERSION}-linux-amd64.tar.gz && tar xvf etcd-${ETCDVERSION}-linux-amd64.tar.gz --no-same-owner && cd etcd-${ETCDVERSION}-linux-amd64 && mv etcd* /usr/local/bin && rm -rf /etcd-${ETCDVERSION}-linux-amd64.tar.gz etcd-${ETCDVERSION}-linux-amd64
 # Create Folders, etcd-group and etcd-user with defined uid and gid and define directory owner
-RUN mkdir -p /var/lib/etcd/ mkdir /etc/etcd && groupadd -g 11550 --system etcd && useradd -u 10285 -s /sbin/nologin --system -g etcd etcd && chown -R etcd:etcd /var/lib/etcd/ && chmod 0775 /var/lib/etcd/
+RUN mkdir -p /var/lib/etcd/ /etc/etcd /etcd.data \
+	&& groupadd -g 11550 --system etcd \
+	&& useradd -u 10285 -s /sbin/nologin --system -g etcd etcd \
+	&& chown -R etcd:etcd /var/lib/etcd/ \
+	&& chown -R etcd:etcd /etcd.data/ \
+	&& chmod 0775 /var/lib/etcd/
+
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
 COPY launcher/etcd/launch.sh /
+
+USER etcd
 
 CMD ["/bin/sh", "/launch.sh", "init"]
 

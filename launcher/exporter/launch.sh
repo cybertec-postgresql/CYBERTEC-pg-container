@@ -17,6 +17,10 @@ do
         fi
 done
 
-/bin/postgres_exporter --extend.query-path=/tmp/cpo_queries.yaml \
-    --config.file /postgres_exporter/config.yml
-    #--auto-discover-databases
+echo "Additional cmd switch provided: $PG_EXPORTER_CMDSW"
+
+  /bin/postgres_exporter --extend.query-path=/tmp/cpo_queries.yaml \
+    --config.file /postgres_exporter/config.yml \
+    --collector.stat_user_tables
+    ${PG_EXPORTER_CMDSW}
+

@@ -15,6 +15,7 @@ BUILD ?= 1
 ETCDVERSION ?= v3.5.0
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
+PGEXPORTER_VERSION ?= v0.13.2
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
@@ -134,19 +135,15 @@ postgres-oracle-build:
 postgres-oracle: postgres-oracle-build
 
 exporter-build:
+		echo ${PGEXPORTER_VERSION} 
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/exporter/Dockerfile 		\
 			--tag $(IMAGE_PATH)/exporter:0.1.$(BUILD)	\
-			--build-arg BASE_IMAGE								\
-			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\
 			--build-arg PACKAGER 								\
 			--build-arg CONTAINERSUITE 							\
 			--build-arg BUILD 									\
-			--build-arg PATRONI_VERSION 						\
-			--build-arg PGBACKREST_VERSION 						\
-			--build-arg OLD_PG_VERSION 							\
-			--build-arg PGVERSION 							
+			--build-arg PGEXPORTER_VERSION=$(PGEXPORTER_VERSION)
 
 exporter: exporter-build
 

@@ -7,7 +7,7 @@ FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD} AS builder
 # Dockerfile specific informations
 ARG PACKAGER
 ARG BASEOS
-ARG PGBACKREST_VERSION
+ARG PGEXPORTER_VERSION
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
 	${PACKAGER} -y update \
@@ -34,7 +34,9 @@ else \
 		&& ${PACKAGER} -y clean all ; \
 fi
 
-RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build 
+RUN git clone -q -b ${PGEXPORTER_VERSION} https://github.com/prometheus-community/postgres_exporter.git \
+	&& cd postgres_exporter \
+	&& make build 
 
 FROM registry.access.redhat.com/ubi8/ubi 
 

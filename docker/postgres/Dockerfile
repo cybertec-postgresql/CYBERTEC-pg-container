@@ -231,7 +231,10 @@ ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
 
 ENV PGDATA=$PGROOT/data \
-    PGLOG=$PGROOT/pg_log
+    PGLOG=$PGROOT/pg_log \
+    PGAUDIT_LOG=$PGROOT/pgaudit_log \
+    LDAP2PG_LOG=$PGROOT/ldap2pg_log \
+    TSM_LOG=$PGROOT/tsm_log
 
 WORKDIR $PGHOME
 
@@ -302,7 +305,9 @@ RUN --mount=type=cache,target=/var/cache/yum \
     ${PACKAGER} -y remove $(rpm -qa "*-devel") \
     && ${PACKAGER} -y clean all ;
 
-RUN usermod -u 10014 postgres && groupmod -g 10631 postgres && groupadd -g 11567 opspg_ro && groupadd -g 11604 siemdpg_ro
+RUN usermod -u 10014 postgres && groupmod -g 10631 postgres \
+    && groupadd -g 11567 opspg_ro && groupadd -g 11604 siemdpg_ro \
+    && usermod -a -G opspg_ro,siemdpg_ro postgres
 
 # Modify for using origial-spilo scripts
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir

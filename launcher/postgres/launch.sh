@@ -17,8 +17,9 @@ fi
 
 sysctl -w vm.dirty_background_bytes=67108864 > /dev/null 2>&1
 sysctl -w vm.dirty_bytes=134217728 > /dev/null 2>&1
+echo "Create following directories:"
+echo "$PGLOG $PGDATA $PGAUDIT_LOG $LDAP2PG_LOG $TSM_LOG $RW_DIR/postgresql $RW_DIR/tmp $RW_DIR/certs"
 mkdir -p "$PGLOG" "$PGDATA" "$PGAUDIT_LOG" "$LDAP2PG_LOG" "$TSM_LOG" "$RW_DIR/postgresql" "$RW_DIR/tmp" "$RW_DIR/certs"
-chmod 750 "$PGAUDIT_LOG" "$LDAP2PG_LOG" "$TSM_LOG" "$PGLOG"
 
 if [ "$(id -u)" -ne 0 ]; then
     sed -e "s/^postgres:x:[^:]*:[^:]*:/postgres:x:$(id -u):$(id -g):/" /etc/passwd > "$RW_DIR/tmp/passwd"
@@ -37,6 +38,13 @@ chown -R postgres: "$PGROOT" "$RW_DIR/certs"
 chmod -R go-w "$PGROOT"
 chmod 01777 "$RW_DIR/tmp"
 chmod 0700 "$PGDATA"
+
+echo "Chown and chmod following directories:"
+echo "$PGLOG $PGAUDIT_LOG $LDAP2PG_LOG $TSM_LOG"
+chown -R postgres:siemdpg_ro ${PGAUDIT_LOG}
+chown -R postgres:opspg_ro ${PGLOG} ${LDAP2PG_LOG} ${TSM_LOG} 
+chmod 750 "$PGAUDIT_LOG" "$LDAP2PG_LOG" "$TSM_LOG" "$PGLOG"
+ls -al $PGROOT
 
 if [ "$DEMO" = "true" ]; then
     python3 /scripts/configure_spilo.py patroni certificate pam-oauth2 #pgqd

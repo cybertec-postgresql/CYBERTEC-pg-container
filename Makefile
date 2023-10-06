@@ -27,6 +27,7 @@ endif
 all: base pgbackrest postgres
 base: base
 pgbackrest: pgbackrest
+pgbackrest-multi: pgbackrest-multi
 postgres: base postgres
 postgres-stage: base postgres-stage
 postgres-gis: base postgres-gis
@@ -58,6 +59,21 @@ pgbackrest-build:
 			--build-arg PGVERSION 												
 
 pgbackrest: pgbackrest-build;	
+
+pgbackrest-multi-build:
+		docker build $(ROOTPATH)							\
+			--file $(ROOTPATH)/docker/pgbackrest-multi/Dockerfile 	\
+			--tag cybertec-pg-container/pgbackrest-multi:$(IMAGE_TAG)-$(BUILD) 		\
+			--build-arg BASE_IMAGE							\
+			--build-arg IMAGE_REPOSITORY 					\
+			--build-arg BASEOS 								\
+			--build-arg PACKAGER 							\
+			--build-arg CONTAINERSUITE 						\
+			--build-arg BUILD 								\
+			--build-arg PGBACKREST_VERSION 					\
+			--build-arg PGVERSION 												
+
+pgbackrest-multi: pgbackrest-multi-build;
 			
 postgres-build:
 		docker build $(ROOTPATH)								\

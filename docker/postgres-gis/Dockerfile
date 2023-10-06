@@ -12,7 +12,7 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
-ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
+ARG TIMESCALEDB="1.7.5 2.3.1 2.11.1"
 ARG POSTGIS_VERSION
 
 # Spilo-specific
@@ -244,7 +244,7 @@ RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
            && chmod -R g=u $PGHOME $RW_DIR \
            && usermod -a -G root postgres; \
         fi
-        
+
 # Remove default pgbackrest-config and spool-path
 RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 
@@ -259,6 +259,15 @@ RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
+
+# Cleanup
+RUN for version in $PG_SUPPORTED_VERSIONS; do \
+    ${PACKAGER} -y remove postgresql${version}-devel gcc glibc-devel; \
+done
+
+RUN rm -rf pg_permissions* pg_profile* pg_tm_aux* timescaledb set_user pam-oauth2
+
+RUN ${PACKAGER} -y clean dbcache &&  ${PACKAGER} -y clean all;
 
 USER 26
 

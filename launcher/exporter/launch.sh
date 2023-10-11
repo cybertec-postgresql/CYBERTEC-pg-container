@@ -20,7 +20,7 @@ done
 echo "Additional cmd switch provided: $PG_EXPORTER_CMDSW"
 
   /bin/postgres_exporter --extend.query-path=/tmp/cpo_queries.yaml \
-    --config.file /postgres_exporter/config.yml \
-    --collector.stat_user_tables
+    --config.file ${EXPORTER_DIR}/config.yml \
+    --collector.stat_user_tables \
     ${PG_EXPORTER_CMDSW}
 

@@ -231,10 +231,10 @@ ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
 
 ENV PGDATA=$PGROOT/data \
-    PGLOG=$PGROOT/pg_log \
-    PGAUDIT_LOG=$PGROOT/pgaudit_log \
-    LDAP2PG_LOG=$PGROOT/ldap2pg_log \
-    TSM_LOG=$PGROOT/tsm_log
+    PGLOG=$PGHOME/pgdata/pg_log \
+    PGAUDIT_LOG=$PGHOME/pgdata/pgaudit_log \
+    LDAP2PG_LOG=$PGHOME/pgdata/ldap2pg_log \
+    TSM_LOG=$PGHOME/pgdata//tsm_log
 
 WORKDIR $PGHOME
 

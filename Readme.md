@@ -61,10 +61,10 @@ podman run -it --annotation run.oci.keep_original_groups=1  \
     --userns=keep-id  --name=postgres --rm \
     -v /home/postgres/pgwal:/home/postgres/pgdata/pgwal \
     -v /home/postgres/pgdata:/home/postgres/pgdata/pgroot/data \
-    -v /home/postgres/pglog:/home/postgres/pgdata/pgroot/pg_log \
-    -v /home/postgres/pgauditlog:/home/postgres/pgdata/pgroot/pgaudit_log \
-    -v /home/postgres/ldap2pglog:/home/postgres/pgdata/pgroot/ldap2pg_log \
-    -v /home/postgres/tsmlog:/home/postgres/pgdata/pgroot/tsm_log \
+    -v /home/postgres/pglog:/home/postgres/pgdata/pg_log \
+    -v /home/postgres/pgauditlog:/home/postgres/pgdata/pgaudit_log \
+    -v /home/postgres/ldap2pglog:/home/postgres/pgdata/ldap2pg_log \
+    -v /home/postgres/tsmlog:/home/postgres/pgdata/tsm_log \
     localhost/cybertec-proventa-container/postgres:ubi8-15.4-1-1
 
 ```

@@ -39,3 +39,32 @@ On Kubernetes and Kubernetes-based environments, the image uses the k8-etcd, oth
 <p>Take a look inside:</p>
 
     docker exec -it CONTAINERID /bin/bash
+
+### test image with podman
+
+Prior to running ensure all required folders exist on host and have permissions set accordingly
+
+```
+$ ls -ald /home/postgres/{ldap2pglog,pgdata,pglog,pgwal,tsmlog,pgauditlog} 
+drwxr-x---  2 postgres opspg_ro   4096 Oct  9 12:12 /home/postgres/ldap2pglog
+drwxr-x---  2 postgres siemdpg_ro 4096 Oct  9 12:12 /home/postgres/pgauditlog
+drwx------ 19 postgres postgres   4096 Oct  9 13:32 /home/postgres/pgdata
+drwxr-x---  2 postgres opspg_ro   4096 Oct  9 12:07 /home/postgres/pglog
+drwxrwxr-x  2 postgres postgres   4096 Oct  9 12:15 /home/postgres/pgwal
+drwxr-x---  2 postgres opspg_ro   4096 Oct  9 12:12 /home/postgres/tsmlog
+
+```
+then run with podman mounting all volumes
+
+```
+podman run -it --annotation run.oci.keep_original_groups=1  \
+    --userns=keep-id  --name=postgres --rm \
+    -v /home/postgres/pgwal:/home/postgres/pgdata/pgwal \
+    -v /home/postgres/pgdata:/home/postgres/pgdata/pgroot/data \
+    -v /home/postgres/pglog:/home/postgres/pgdata/pg_log \
+    -v /home/postgres/pgauditlog:/home/postgres/pgdata/pgaudit_log \
+    -v /home/postgres/ldap2pglog:/home/postgres/pgdata/ldap2pg_log \
+    -v /home/postgres/tsmlog:/home/postgres/pgdata/tsm_log \
+    localhost/cybertec-proventa-container/postgres:ubi8-15.4-1-1
+
+```

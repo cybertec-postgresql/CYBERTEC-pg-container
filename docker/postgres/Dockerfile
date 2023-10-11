@@ -231,10 +231,10 @@ ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
 
 ENV PGDATA=$PGROOT/data \
-    PGLOG=$PGROOT/pg_log \
-    PGAUDIT_LOG=$PGROOT/pgaudit_log \
-    LDAP2PG_LOG=$PGROOT/ldap2pg_log \
-    TSM_LOG=$PGROOT/tsm_log
+    PGLOG=$PGHOME/pgdata/pg_log \
+    PGAUDIT_LOG=$PGHOME/pgdata/pgaudit_log \
+    LDAP2PG_LOG=$PGHOME/pgdata/ldap2pg_log \
+    TSM_LOG=$PGHOME/pgdata//tsm_log
 
 WORKDIR $PGHOME
 
@@ -244,6 +244,10 @@ COPY motd /etc/
 COPY runit /etc/runit/runsvdir/default/
 COPY pgq_ticker.ini $PGHOME/
 RUN rm -rf /etc/service
+
+RUN usermod -u 10014 postgres && groupmod -g 10631 postgres \
+    && groupadd -g 11567 opspg_ro && groupadd -g 11604 siemdpg_ro \
+    && usermod -a -G opspg_ro,siemdpg_ro postgres
 
 RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && chown -R postgres:postgres $PGHOME $RW_DIR \
@@ -305,14 +309,17 @@ RUN --mount=type=cache,target=/var/cache/yum \
     ${PACKAGER} -y remove $(rpm -qa "*-devel") \
     && ${PACKAGER} -y clean all ;
 
-RUN usermod -u 10014 postgres && groupmod -g 10631 postgres \
-    && groupadd -g 11567 opspg_ro && groupadd -g 11604 siemdpg_ro \
-    && usermod -a -G opspg_ro,siemdpg_ro postgres
-
 # Modify for using origial-spilo scripts
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
+
+RUN mkdir -p "$PGROOT" "$RW_DIR/tmp" "$RW_DIR/certs" \
+    && chown -R postgres:root "$PGROOT" "$RW_DIR/tmp" "$RW_DIR/certs" \
+    && sed -e "s/^postgres:x:[^:]*:[^:]*:/postgres:x:$(id -u postgres):$(id -g  postgres):/" /etc/passwd > "$RW_DIR/tmp/passwd" \
+    && cat "$RW_DIR/tmp/passwd" > /etc/passwd \
+    && rm "$RW_DIR/tmp/passwd" \
+    && chmod 01777 "$RW_DIR/tmp"
 
 USER postgres
 

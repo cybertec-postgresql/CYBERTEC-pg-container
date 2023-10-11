@@ -43,11 +43,12 @@ FROM registry.access.redhat.com/ubi8/ubi
 COPY --from=builder ./postgres_exporter/postgres_exporter /bin/postgres_exporter
 COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
 COPY launcher/exporter/launch.sh /
-COPY scripts/exporter/queries/ /postgres_exporter/queries
 
 RUN groupadd -g 10631 postgres && useradd postgres -u 10014 -g 10631
 
 USER   postgres
+
+COPY scripts/exporter/queries/ /postgres_exporter_queries
 
 EXPOSE 9187
 

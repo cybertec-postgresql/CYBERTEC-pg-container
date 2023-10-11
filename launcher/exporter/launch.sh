@@ -2,7 +2,7 @@
 # Start the Exporter
 
 EXPORTER_DIR='/postgres_exporter'
-QUERIE_FOLDER="$EXPORTER_DIR/queries"
+QUERIE_FOLDER="postgres_exporter_queries"
 FILES="${QUERIE_FOLDER}/*"
 touch /tmp/cpo_queries.yaml
 for file in $FILES

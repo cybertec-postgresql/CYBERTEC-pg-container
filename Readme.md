@@ -54,17 +54,25 @@ drwxrwxr-x  2 postgres postgres   4096 Oct  9 12:15 /home/postgres/pgwal
 drwxr-x---  2 postgres opspg_ro   4096 Oct  9 12:12 /home/postgres/tsmlog
 
 ```
-then run with podman mounting all volumes
+then run with podman mounting all volumes:
 
 ```
 podman run -it --annotation run.oci.keep_original_groups=1  \
     --userns=keep-id  --name=postgres --rm \
     -v /home/postgres/pgwal:/home/postgres/pgdata/pgwal \
-    -v /home/postgres/pgdata:/home/postgres/pgdata/pgroot/data \
+    -v /home/postgres/pgroot:/home/postgres/pgdata/pgroot \
     -v /home/postgres/pglog:/home/postgres/pgdata/pg_log \
     -v /home/postgres/pgauditlog:/home/postgres/pgdata/pgaudit_log \
     -v /home/postgres/ldap2pglog:/home/postgres/pgdata/ldap2pg_log \
     -v /home/postgres/tsmlog:/home/postgres/pgdata/tsm_log \
+    localhost/cybertec-proventa-container/postgres:ubi8-15.4-1-1
+```
+
+Or with no bind mount volumes:
+
+```
+podman run -it --annotation run.oci.keep_original_groups=1  \
+    --userns=keep-id  --name=postgres --rm \
     localhost/cybertec-proventa-container/postgres:ubi8-15.4-1-1
 
 ```

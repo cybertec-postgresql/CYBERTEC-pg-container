@@ -234,7 +234,7 @@ ENV PGDATA=$PGROOT/data \
     PGLOG=$PGHOME/pgdata/pg_log \
     PGAUDIT_LOG=$PGHOME/pgdata/pgaudit_log \
     LDAP2PG_LOG=$PGHOME/pgdata/ldap2pg_log \
-    TSM_LOG=$PGHOME/pgdata//tsm_log
+    TSM_LOG=$PGHOME/pgdata/tsm_log
 
 WORKDIR $PGHOME
 

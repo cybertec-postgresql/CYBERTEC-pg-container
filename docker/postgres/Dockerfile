@@ -234,7 +234,7 @@ ENV PGDATA=$PGROOT/data \
     PGLOG=$PGHOME/pgdata/pg_log \
     PGAUDIT_LOG=$PGHOME/pgdata/pgaudit_log \
     LDAP2PG_LOG=$PGHOME/pgdata/ldap2pg_log \
-    TSM_LOG=$PGHOME/pgdata//tsm_log
+    TSM_LOG=$PGHOME/pgdata/tsm_log
 
 WORKDIR $PGHOME
 
@@ -315,7 +315,7 @@ RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/ru
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
 RUN mkdir -p "$PGROOT" "$RW_DIR/tmp" "$RW_DIR/certs" \
-    && chown -R postgres:root "$PGROOT" "$RW_DIR/tmp" "$RW_DIR/certs" \
+    && chown -R postgres:postgres "$PGHOME/pgdata" "$RW_DIR/tmp" "$RW_DIR/certs" \
     && sed -e "s/^postgres:x:[^:]*:[^:]*:/postgres:x:$(id -u postgres):$(id -g  postgres):/" /etc/passwd > "$RW_DIR/tmp/passwd" \
     && cat "$RW_DIR/tmp/passwd" > /etc/passwd \
     && rm "$RW_DIR/tmp/passwd" \

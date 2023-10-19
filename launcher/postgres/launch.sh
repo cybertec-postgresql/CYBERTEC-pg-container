@@ -19,7 +19,12 @@ sysctl -w vm.dirty_background_bytes=67108864 > /dev/null 2>&1
 sysctl -w vm.dirty_bytes=134217728 > /dev/null 2>&1
 #echo "Create following directories:"
 #echo "$PGAUDIT_LOG $LDAP2PG_LOG $TSM_LOG $RW_DIR/postgresql" 
-#mkdir -p "$PGAUDIT_LOG" "$LDAP2PG_LOG" "$TSM_LOG" "$RW_DIR/postgresql"
+#mkdir -p "$PGLOG" "$PGDATA "$PGAUDIT_LOG" "$LDAP2PG_LOG" "$TSM_LOG" "$RW_DIR/postgresql"
+mkdir -p "$PGDATA"
+[ ! -d "$PGLOG" ] && mkdir -v "$PGLOG"
+[ ! -d "$PGAUDIT_LOG" ] && mkdir -v "$PGAUDIT_LOG"
+[ ! -d "$LDAP2PG_LOG" ] && mkdir -v "$LDAP2PG_LOG"
+[ ! -d "$TSM_LOG" ] && mkdir -v  "$TSM_LOG"
 
 #if [ "$(id -u)" -ne 0 ]; then
 #    sed -e "s/^postgres:x:[^:]*:[^:]*:/postgres:x:$(id -u):$(id -g):/" /etc/passwd > "$RW_DIR/tmp/passwd"

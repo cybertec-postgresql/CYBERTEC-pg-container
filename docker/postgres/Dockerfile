@@ -66,6 +66,7 @@ RUN --mount=type=cache,target=/var/cache/yum \
         dpkg \
         jq \
         rsync \
+        cronie \
     && ${PACKAGER} -y clean all;
 
 
@@ -247,7 +248,11 @@ RUN rm -rf /etc/service
 
 RUN usermod -u 10014 postgres && groupmod -g 10631 postgres \
     && groupadd -g 11567 opspg_ro && groupadd -g 11604 siemdpg_ro \
-    && usermod -a -G opspg_ro,siemdpg_ro postgres
+    && groupadd -r crontab \
+    && usermod -a -G opspg_ro,siemdpg_ro,crontab postgres
+
+RUN chown postgres:postgres /usr/sbin/crond \
+    && setcap cap_setuid=ep /usr/sbin/crond
 
 RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && chown -R postgres:postgres $PGHOME $RW_DIR \

@@ -942,14 +942,16 @@ def write_clone_pgpass(placeholders, overwrite):
 
 def check_crontab(user):
     with open(os.devnull, 'w') as devnull:
-        cron_exit = subprocess.call(['crontab', '-lu', user], stdout=devnull, stderr=devnull)
+        #cron_exit = subprocess.call(['crontab', '-lu', user], stdout=devnull, stderr=devnull)
+        cron_exit = subprocess.call(['crontab', '-l'], stdout=devnull, stderr=devnull)
         if cron_exit == 0:
             return logging.warning('Cron for %s is already configured. (Use option --force to overwrite cron)', user)
     return True
 
 def setup_crontab(user, lines):
     lines += ['']  # EOF requires empty line for cron
-    c = subprocess.Popen(['crontab', '-u', user, '-'], stdin=subprocess.PIPE)
+    #c = subprocess.Popen(['crontab', '-u', user, '-'], stdin=subprocess.PIPE)
+    c = subprocess.Popen(['crontab', '-'], stdin=subprocess.PIPE)
     c.communicate(input='\n'.join(lines).encode())
 
 

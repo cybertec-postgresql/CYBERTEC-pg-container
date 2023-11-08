@@ -6,7 +6,7 @@ set -e
 # Here are some parameters. See all on
 # https://pgbouncer.github.io/config.html
 
-PG_CONFIG_DIR=/etc/pgbouncer
+#PG_CONFIG_DIR=/etc/pgbouncer
 
 if [ -n "$DATABASE_URL" ]; then
   # Thanks to https://stackoverflow.com/a/17287984/146289
@@ -59,7 +59,7 @@ echo "$PGBOUNCER_USERLIST" | sed 's/\,/\n/g' | sed -r 's/[:]+/ /g' > "$_AUTH_FIL
 #   echo "\"$DB_USER\" \"$pass\"" >> ${PG_CONFIG_DIR}/userlist.txt
 #   echo "Wrote authentication credentials to ${PG_CONFIG_DIR}/userlist.txt"
 # fi
-
+_AUTH_FILE=/etc/pgbouncer/userlist.txt
 
 if [ ! -f ${PG_CONFIG_DIR}/pgbouncer.ini ]; then
   echo "Create pgbouncer config in ${PG_CONFIG_DIR}"

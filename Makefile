@@ -4,6 +4,7 @@ BASE_IMAGE ?= rockylinux:9.1-minimal
 BASEOS ?= rocky9
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-proventa-container
+.EXPORT_ALL_VARIABLES:
 PGVERSION ?= 15
 PGVERSION_FULL ?= 15.2
 OLD_PG_VERSIONS ?= 11 12 13 14

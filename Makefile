@@ -1,14 +1,15 @@
-
 # Define Default if Values not exist
 BASE_IMAGE ?= rockylinux:9.1-minimal
 BASEOS ?= rocky9
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-proventa-container
+
+.EXPORT_ALL_VARIABLES:
 PGVERSION ?= 15
-PGVERSION_FULL ?= 15.2
+PGVERSION_FULL ?= 15.4
 OLD_PG_VERSIONS ?= 11 12 13 14
-PATRONI_VERSION ?= 3.0.1
-PGBACKREST_VERSION ?= 2.44
+PATRONI_VERSION ?= 3.1.2
+PGBACKREST_VERSION ?= 2.45
 POSTGIS_VERSION ?= 33
 PACKAGER ?= dnf
 BUILD ?= 1
@@ -135,7 +136,6 @@ postgres-oracle-build:
 postgres-oracle: postgres-oracle-build
 
 exporter-build:
-		echo ${PGEXPORTER_VERSION} 
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/exporter/Dockerfile 		\
 			--tag $(IMAGE_PATH)/exporter:0.1.$(BUILD)	\

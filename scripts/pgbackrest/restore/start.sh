@@ -5,6 +5,7 @@
 export PGDATA="${PGROOT}/data"
 declare -r pgdata="${PGDATA}" restore_opts="${RESTORE_COMMAND}" pgroot="${PGROOT}"
 export PGHOST='/tmp'
+export PATH="${PATH}:/usr/pgsql-${PGVERSION}/bin"
 
 #Check PreConditions
 output_info "pgBackRest: Check preconditions"

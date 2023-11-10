@@ -3,3 +3,4 @@ docker/postgres-stage
 docker/postgres-oracle
 docker/newpg
 docker/benchmark
+docker/pgbackrest-old

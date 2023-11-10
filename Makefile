@@ -27,7 +27,6 @@ endif
 all: base pgbackrest postgres
 base: base
 pgbackrest: pgbackrest
-pgbackrest-multi: pgbackrest-multi
 postgres: base postgres
 postgres-stage: base postgres-stage
 postgres-gis: base postgres-gis
@@ -43,7 +42,7 @@ base-build:
 			--build-arg BASEOS 								\
 			--build-arg PACKAGER 							\
 			--build-arg CONTAINERSUITE 						
-base: base-build;	
+base: base-build;		
 
 pgbackrest-build:
 		docker build $(ROOTPATH)							\
@@ -56,24 +55,10 @@ pgbackrest-build:
 			--build-arg CONTAINERSUITE 						\
 			--build-arg BUILD 								\
 			--build-arg PGBACKREST_VERSION 					\
+			--build-arg OLD_PG_VERSIONS						\
 			--build-arg PGVERSION 												
 
-pgbackrest: pgbackrest-build;	
-
-pgbackrest-multi-build:
-		docker build $(ROOTPATH)							\
-			--file $(ROOTPATH)/docker/pgbackrest-multi/Dockerfile 	\
-			--tag cybertec-pg-container/pgbackrest-multi:$(IMAGE_TAG)-$(BUILD) 		\
-			--build-arg BASE_IMAGE							\
-			--build-arg IMAGE_REPOSITORY 					\
-			--build-arg BASEOS 								\
-			--build-arg PACKAGER 							\
-			--build-arg CONTAINERSUITE 						\
-			--build-arg BUILD 								\
-			--build-arg PGBACKREST_VERSION 					\
-			--build-arg PGVERSION 												
-
-pgbackrest-multi: pgbackrest-multi-build;
+pgbackrest: pgbackrest-build;
 			
 postgres-build:
 		docker build $(ROOTPATH)								\
@@ -147,7 +132,7 @@ postgres-oracle: postgres-oracle-build
 exporter-build:
 		docker build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/exporter/Dockerfile 		\
-			--tag cybertec-pg-container/exporter:0.1.$(BUILD)	\
+			--tag cybertec-pg-container/exporter:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
 			--build-arg BASE_IMAGE								\
 			--build-arg IMAGE_REPOSITORY 						\
 			--build-arg BASEOS 									\

@@ -9,8 +9,6 @@ ARG PACKAGER
 ARG BASEOS
 ARG PGEXPORTER_VERSION
 
-RUN echo "PACKAGER ${PACKAGER}"
-
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
 	${PACKAGER} -y update \
 		&& ${PACKAGER} -y install --nodocs \

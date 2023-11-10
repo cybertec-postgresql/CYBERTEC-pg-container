@@ -34,90 +34,6 @@ BEGIN
     END IF;
 END;\$\$;
 
-DO \$\$
-BEGIN
-    PERFORM * FROM pg_catalog.pg_authid WHERE rolname = 'robot_zmon';
-    IF FOUND THEN
-        ALTER ROLE robot_zmon WITH NOCREATEDB NOLOGIN NOCREATEROLE NOSUPERUSER NOREPLICATION INHERIT;
-    ELSE
-        CREATE ROLE robot_zmon;
-    END IF;
-END;\$\$;
-
-CREATE EXTENSION IF NOT EXISTS pg_auth_mon SCHEMA public;
-ALTER EXTENSION pg_auth_mon UPDATE;
-GRANT SELECT ON TABLE public.pg_auth_mon TO robot_zmon;
-
-CREATE EXTENSION IF NOT EXISTS pg_cron SCHEMA public;
-DO \$\$
-BEGIN
-    PERFORM 1 FROM pg_catalog.pg_proc WHERE pronamespace = 'cron'::pg_catalog.regnamespace AND proname = 'schedule' AND proargnames = '{p_schedule,p_database,p_command}';
-    IF FOUND THEN
-        ALTER FUNCTION cron.schedule(text, text, text) RENAME TO schedule_in_database;
-    END IF;
-END;\$\$;
-ALTER EXTENSION pg_cron UPDATE;
-
-ALTER POLICY cron_job_policy ON cron.job USING (username = current_user OR
-    (pg_has_role(current_user, 'cron_admin', 'MEMBER')
-    AND pg_has_role(username, 'cron_admin', 'MEMBER')
-    AND NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = username AND rolsuper)
-    ));
-REVOKE SELECT ON cron.job FROM admin, public;
-GRANT SELECT ON cron.job TO cron_admin;
-REVOKE UPDATE (database, nodename) ON cron.job FROM admin;
-GRANT UPDATE (database, nodename) ON cron.job TO cron_admin;
-
-ALTER POLICY cron_job_run_details_policy ON cron.job_run_details USING (username = current_user OR
-    (pg_has_role(current_user, 'cron_admin', 'MEMBER')
-    AND pg_has_role(username, 'cron_admin', 'MEMBER')
-    AND NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname = username AND rolsuper)
-    ));
-REVOKE SELECT ON cron.job_run_details FROM admin, public;
-GRANT SELECT ON cron.job_run_details TO cron_admin;
-
-CREATE OR REPLACE FUNCTION cron.schedule_in_database(p_schedule text, p_database text, p_command text)
-RETURNS bigint
-LANGUAGE plpgsql
-AS \$function\$
-DECLARE
-    l_jobid bigint;
-BEGIN
-    IF NOT (SELECT rolcanlogin FROM pg_roles WHERE rolname = current_user)
-    THEN RAISE 'You cannot create a job using a role that cannot log in';
-    END IF;
-
-    SELECT schedule INTO l_jobid FROM cron.schedule(p_schedule, p_command);
-    UPDATE cron.job SET database = p_database, nodename = '' WHERE jobid = l_jobid;
-    RETURN l_jobid;
-END;
-\$function\$;
-REVOKE EXECUTE ON FUNCTION cron.alter_job(bigint, text, text, text, text, boolean) FROM admin, public;
-GRANT EXECUTE ON FUNCTION cron.alter_job(bigint, text, text, text, text, boolean) TO cron_admin;
-REVOKE EXECUTE ON FUNCTION cron.schedule(text, text) FROM admin, public;
-GRANT EXECUTE ON FUNCTION cron.schedule(text, text) TO cron_admin;
-REVOKE EXECUTE ON FUNCTION cron.schedule(text, text, text) FROM admin, public;
-GRANT EXECUTE ON FUNCTION cron.schedule(text, text, text) TO cron_admin;
-REVOKE EXECUTE ON FUNCTION cron.schedule_in_database(text, text, text) FROM admin, public;
-GRANT EXECUTE ON FUNCTION cron.schedule_in_database(text, text, text) TO cron_admin;
-REVOKE EXECUTE ON FUNCTION cron.schedule_in_database(text, text, text, text, text, boolean) FROM admin, public;
-GRANT EXECUTE ON FUNCTION cron.schedule_in_database(text, text, text, text, text, boolean) TO cron_admin;
-REVOKE EXECUTE ON FUNCTION cron.unschedule(bigint) FROM admin, public;
-GRANT EXECUTE ON FUNCTION cron.unschedule(bigint) TO cron_admin;
-REVOKE EXECUTE ON FUNCTION cron.unschedule(name) FROM admin, public;
-GRANT EXECUTE ON FUNCTION cron.unschedule(name) TO cron_admin;
-REVOKE USAGE ON SCHEMA cron FROM admin;
-GRANT USAGE ON SCHEMA cron TO cron_admin;
-
-CREATE EXTENSION IF NOT EXISTS file_fdw SCHEMA public;
-DO \$\$
-BEGIN
-    PERFORM * FROM pg_catalog.pg_foreign_server WHERE srvname = 'pglog';
-    IF NOT FOUND THEN
-        CREATE SERVER pglog FOREIGN DATA WRAPPER file_fdw;
-    END IF;
-END;\$\$;
-
 CREATE TABLE IF NOT EXISTS public.postgres_log (
     log_time timestamp(3) with time zone,
     user_name text,
@@ -202,5 +118,26 @@ GRANT EXECUTE ON FUNCTION public.pg_stat_statements_reset($RESET_ARGS) TO admin;
     fi
     if [ "$ENABLE_PG_MON" = "true" ] && [ "$PGVER" -ge 11 ]; then echo "CREATE EXTENSION IF NOT EXISTS pg_mon SCHEMA public;"; fi
     cat metric_helpers.sql
+
+# CPO-Monitoring
+echo "GRANT pg_monitor TO cpo_exporter;
+GRANT SELECT ON TABLE pg_authid TO cpo_exporter;";
+
+# Structure
+
+echo "CREATE SCHEMA IF NOT EXISTS exporter;
+ALTER SCHEMA exporter OWNER TO cpo_exporter;
+CREATE EXTENSION IF NOT EXISTS pgnodemx SCHEMA exporter;
+ALTER EXTENSION pgnodemx UPDATE;
+
+CREATE TABLE exporter.pgbackrestbackupinfo (
+    name text NOT NULL,
+    data jsonb NOT NULL,
+    data_time timestamp with time zone DEFAULT now() NOT NULL
+)
+WITH (autovacuum_analyze_scale_factor='0', autovacuum_vacuum_scale_factor='0', autovacuum_vacuum_threshold='2', autovacuum_analyze_threshold='2');
+ALTER TABLE exporter.pgbackrestbackupinfo OWNER TO cpo_exporter;";
+
 done < <(psql -d "$2" -tAc 'select pg_catalog.quote_ident(datname) from pg_catalog.pg_database where datallowconn')
 ) | PGOPTIONS="-c synchronous_commit=local" psql -Xd "$2"
+

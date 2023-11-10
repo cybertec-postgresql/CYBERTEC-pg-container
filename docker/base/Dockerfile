@@ -14,9 +14,9 @@ LABEL maintainer="Matthias Groemmer <matthias.groemmer@cybertec.at>"
 
 #RUN microdnf -y --nodocs --noplugins --setopt=install_weak_deps=0 install ${PACKAGER}
 
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm vim && ${PACKAGER} -y upgrade
+RUN ${PACKAGER} -y install --nodocs  https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm vim && ${PACKAGER} -y upgrade
 
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0  \
         bind-utils \
         gettext \
         hostname \
@@ -26,11 +26,13 @@ RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
         openssl \
         vim \
         glibc-langpack-en \
-        #config-manager \
+        openssh-clients \
+        openssh-server \
+        #dnf-command(config-manager) \
      && ${PACKAGER} -y clean all ;
 
 #Enable CRB-Repo (Powertools)
-#RUN ${PACKAGER} -y config-manager --set-enabled crb
+RUN ${PACKAGER} -y config-manager --set-enabled crb
 #Add PostgreSQL-Repo to Base
 RUN ${PACKAGER} --nodocs --noplugins --setopt=install_weak_deps=0 install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-x86_64/pgdg-redhat-repo-latest.noarch.rpm && ${PACKAGER} -y update && ${PACKAGER} -y clean all
 #RUN dnf -qy module disable postgresql

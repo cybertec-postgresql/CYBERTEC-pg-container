@@ -8,6 +8,9 @@ FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD}
 ARG PACKAGER
 ARG PGBACKREST_VERSION
 ARG PGVERSION
+ARG OLD_PG_VERSIONS
+ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
+ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
 	${PACKAGER} -y install --nodocs \
@@ -26,11 +29,18 @@ else \
 		openssh-server \
 		bzip2 \
 		lz4 \
-		postgresql${PGVERSION}-server \
+		#postgresql${PGVERSION}-server \
 		pgbackrest-${PGBACKREST_VERSION} \
 		nano \
 		&& ${PACKAGER} -y clean all ; \
 fi
+
+# Install postgres-server
+RUN ${PACKAGER} -y update \
+	&& for version in $PG_SUPPORTED_VERSIONS; do \
+		${PACKAGER} -y install --nodocs postgresql${version}-server; \
+    done \
+	&& ${PACKAGER} -y clean all;
 
 # Remove default pgbackrest-config
 RUN rm /etc/pgbackrest.conf
@@ -67,7 +77,7 @@ RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod 
 RUN chown -R postgres:postgres /opt/pgbackrest  \
 	/backrestrepo /home/postgres/pgdata
 
-ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
+#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 COPY launcher/pgbackrest/launch.sh /
 	
 VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]

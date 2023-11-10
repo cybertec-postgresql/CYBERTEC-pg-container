@@ -12,8 +12,7 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
-ARG TIMESCALEDB="1.7.5 2.3.1 2.8.1"
-
+ARG TIMESCALEDB="1.7.5 2.3.1 2.11.1"
 # Spilo-specific
 ENV SET_USER=REL3_0_0 \
     #BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
@@ -98,11 +97,11 @@ ENV PATHBACKUP = $PATH
 #ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 #RUN echo $PATH
 # Install pam_oauth2.so
-RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
-    && make -C pam-oauth2 install \
+#RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
+    #&& make -C pam-oauth2 install \
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
-    && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
+RUN    curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
@@ -203,6 +202,8 @@ COPY runit /etc/runit/runsvdir/default/
 COPY pgq_ticker.ini $PGHOME/
 RUN rm -rf /etc/service
 
+RUN mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata
+
 RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
         && chown -R postgres:postgres $PGHOME $RW_DIR \
         && rm -fr /var/spool/cron /var/tmp \
@@ -256,6 +257,20 @@ RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.
 RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
+
+# Cleanup
+RUN rm -rf /pgextwlist /pg_stat_kcache /oracle_fdw /pgnodemx /pg_permissions* /pg_profile* /pg_tm_aux* /timescaledb /set_user /pam-oauth2;
+
+# Cleanup
+RUN for version in $PG_SUPPORTED_VERSIONS; do \
+    ${PACKAGER} -y remove postgresql${version}-devel; \
+done
+
+# Clean Up Packages binutils glibc-devel glibc-static
+RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils flatpak glibc-static gcc glibc-devel \
+    #&& ${PACKAGER} -y autoremove \
+    && ${PACKAGER} -y clean dbcache \
+    && ${PACKAGER} -y clean all; 
 
 USER 26
 

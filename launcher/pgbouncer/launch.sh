@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 # Based on https://raw.githubusercontent.com/brainsam/pgbouncer/master/entrypoint.sh
 
 set -e
@@ -59,7 +59,7 @@ echo "$PGBOUNCER_USERLIST" | sed 's/\,/\n/g' | sed -r 's/[:]+/ /g' > "$_AUTH_FIL
 #   echo "\"$DB_USER\" \"$pass\"" >> ${PG_CONFIG_DIR}/userlist.txt
 #   echo "Wrote authentication credentials to ${PG_CONFIG_DIR}/userlist.txt"
 # fi
-_AUTH_FILE=/etc/pgbouncer/userlist.txt
+_AUTH_FILE=${PG_CONFIG_DIR}/userlist.txt
 
 if [ ! -f ${PG_CONFIG_DIR}/pgbouncer.ini ]; then
   echo "Create pgbouncer config in ${PG_CONFIG_DIR}"
@@ -156,4 +156,5 @@ echo "Starting $*..."
 fi
 
 #exec "$@"
-#pgbouncer
+
+pgbouncer -q ${PG_CONFIG_DIR}/pgbouncer.ini

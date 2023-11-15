@@ -39,6 +39,9 @@ RUN chown -R postgres:postgres ${PG_CONFIG_DIR} \
 	&& chmod 777 -R /var/log/pgbouncer \
 	&& chown postgres:postgres -R /var/run/pgbouncer
 
+# prevent starting with the defaullt ini 
+RUN rm -f ${PG_CONFIG_DIR}/pgbouncer.ini
+
 USER postgres
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]

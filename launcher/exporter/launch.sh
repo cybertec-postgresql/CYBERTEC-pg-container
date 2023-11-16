@@ -10,10 +10,10 @@ do
   if [[ -f ${file?} ]]
   then
             cat ${file?} >> /tmp/cpo_queries.yaml
-        else
-            echo ${FILES}
-            echo "Query file ${file?} does not exist (it should).."
-            exit 1
+        #else
+        #    echo ${FILES}
+        #    echo "Query file ${file?} does not exist (it should).."
+        #    exit 1
         fi
 done
 

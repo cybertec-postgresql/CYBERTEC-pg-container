@@ -48,7 +48,7 @@ RUN groupadd -g 10631 postgres && useradd postgres -u 10014 -g 10631
 
 USER   postgres
 
-COPY scripts/exporter/queries/ /postgres_exporter_queries
+#COPY scripts/exporter/queries/ /postgres_exporter_queries
 
 EXPOSE 9187
 

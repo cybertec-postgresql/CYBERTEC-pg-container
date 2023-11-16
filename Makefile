@@ -1,4 +1,3 @@
-
 # Define Default if Values not exist
 BASE_IMAGE ?= rockylinux:9.1-minimal
 BASEOS ?= rocky9
@@ -17,7 +16,7 @@ BUILD ?= 1
 ETCDVERSION ?= v3.5.0
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
-PGEXPORTER_VERSION ?= v0.13.2
+PGEXPORTER_VERSION ?= v0.15.0
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
@@ -137,7 +136,6 @@ postgres-oracle-build:
 postgres-oracle: postgres-oracle-build
 
 exporter-build:
-		echo ${PGEXPORTER_VERSION} 
 		${BUILDWITH} build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/exporter/Dockerfile 		\
 			--tag $(IMAGE_PATH)/exporter:0.1.$(BUILD)	\

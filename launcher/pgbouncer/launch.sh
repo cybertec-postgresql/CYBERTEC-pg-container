@@ -60,6 +60,7 @@ echo "$PGBOUNCER_USERLIST" | sed 's/\,/\n/g' | sed -r 's/[:]+/ /g' > "$_AUTH_FIL
 #   echo "Wrote authentication credentials to ${PG_CONFIG_DIR}/userlist.txt"
 # fi
 _AUTH_FILE=${PG_CONFIG_DIR}/userlist.txt
+_LOG_FILE=/var/log/pgbouncer/pgbouncer.log
 
 if [ ! -f ${PG_CONFIG_DIR}/pgbouncer.ini ]; then
   echo "Create pgbouncer config in ${PG_CONFIG_DIR}"
@@ -74,6 +75,8 @@ ${DB_NAME:-*} = host=${DB_HOST:?"Setup pgbouncer config error! You must set DB_H
 port=${DB_PORT:-5432} user=${DB_USER:-postgres}
 ${CLIENT_ENCODING:+client_encoding = ${CLIENT_ENCODING}\n}\
 [pgbouncer]
+#logfile = ${_LOG_FILE:-/var/log/pgbouncer/pgbouncer.log}
+pidfile = /var/run/pgbouncer/pgbouncer.pid
 listen_addr = ${LISTEN_ADDR:-0.0.0.0}
 listen_port = ${LISTEN_PORT:-5432}
 unix_socket_dir = ${UNIX_SOCKET_DIR}
@@ -151,10 +154,10 @@ ${TCP_KEEPINTVL:+tcp_keepintvl = ${TCP_KEEPINTVL}\n}\
 ${TCP_USER_TIMEOUT:+tcp_user_timeout = ${TCP_USER_TIMEOUT}\n}\
 ################## end file ##################
 " > ${PG_CONFIG_DIR}/pgbouncer.ini
-cat ${PG_CONFIG_DIR}/pgbouncer.ini
+#cat ${PG_CONFIG_DIR}/pgbouncer.ini
 echo "Starting $*..."
 fi
 
 #exec "$@"
 
-pgbouncer -q ${PG_CONFIG_DIR}/pgbouncer.ini
+pgbouncer ${PG_CONFIG_DIR}/pgbouncer.ini

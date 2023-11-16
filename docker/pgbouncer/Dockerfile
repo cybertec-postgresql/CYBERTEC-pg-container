@@ -29,18 +29,19 @@ EXPOSE 5432 6432
 RUN usermod -l postgres pgbouncer \
 	&& usermod -u 10014 postgres \
 	&& groupmod -n postgres pgbouncer \
-	&& groupmod -g 10631 postgres
+	&& groupmod -g 10631 postgres \
+	&& groupadd -g 11567 opspg_ro \
+    && usermod -g opspg_ro postgres
 
-#RUN touch /var/log/pgbouncer/pgbouncer.log \
-#    && chown postgres:postgres /var/log/pgbouncer/pgbouncer.log
+RUN chown -R postgres:opspg_ro /var/log/pgbouncer \
+    && chmod 750 -R /var/log/pgbouncer
 
 RUN chown -R postgres:postgres ${PG_CONFIG_DIR} \
-	&& chown -R postgres:postgres /var/log/pgbouncer \
-	&& chmod 777 -R /var/log/pgbouncer \
-	&& chown postgres:postgres -R /var/run/pgbouncer
+	&& chown -R postgres:postgres /var/run/pgbouncer
 
 # prevent starting with the defaullt ini 
 RUN rm -f ${PG_CONFIG_DIR}/pgbouncer.ini
+#RUN mv ${PG_CONFIG_DIR}/pgbouncer.ini ${PG_CONFIG_DIR}/pgbouncer.default.ini
 
 USER postgres
 
@@ -49,4 +50,3 @@ ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 COPY launcher/pgbouncer/launch.sh /
 
 CMD ["/bin/sh", "/launch.sh", "init"]
-

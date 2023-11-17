@@ -71,7 +71,7 @@ if [ ! -f ${PG_CONFIG_DIR}/pgbouncer.ini ]; then
   printf "\
 ################## Auto generated ##################
 [databases]
-#${DB_NAME:-*} = host=${DB_HOST:?"Setup pgbouncer config error! You must set DB_HOST env"} \
+${DB_NAME:-*} = host=${DB_HOST:?"Setup pgbouncer config error! You must set DB_HOST env"} \
 port=${DB_PORT:-5432} user=${DB_USER:-postgres}
 ${CLIENT_ENCODING:+client_encoding = ${CLIENT_ENCODING}\n}\
 [pgbouncer]

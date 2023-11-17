@@ -29,11 +29,9 @@ EXPOSE 5432 6432
 RUN usermod -l postgres pgbouncer \
 	&& usermod -u 10014 postgres \
 	&& groupmod -n postgres pgbouncer \
-	&& groupmod -g 10631 postgres \
-	&& groupadd -g 11567 opspg_ro \
-    && usermod -g opspg_ro postgres
+	&& groupmod -g 10631 postgres
 
-RUN chown -R postgres:opspg_ro /var/log/pgbouncer \
+RUN chown -R postgres:postgres /var/log/pgbouncer \
     && chmod 750 -R /var/log/pgbouncer
 
 RUN chown -R postgres:postgres ${PG_CONFIG_DIR} \

@@ -319,8 +319,8 @@ RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/ru
 
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
-RUN mkdir -p "$PGROOT" "$RW_DIR/tmp" "$RW_DIR/certs" \
-    && chown -R postgres:postgres "$PGHOME/pgdata" "$RW_DIR/tmp" "$RW_DIR/certs" \
+RUN mkdir -p "$PGROOT" "$RW_DIR/tmp" "$RW_DIR/certs" "/etc/pgbackrest/conf.d" "/home/postgres/pgdata/pgbackrest/log" \
+    && chown -R postgres:postgres "$PGHOME/pgdata" "$RW_DIR/tmp" "$RW_DIR/certs" "/etc/pgbackrest" "/home/postgres/pgdata/pgbackrest"  \
     && sed -e "s/^postgres:x:[^:]*:[^:]*:/postgres:x:$(id -u postgres):$(id -g  postgres):/" /etc/passwd > "$RW_DIR/tmp/passwd" \
     && cat "$RW_DIR/tmp/passwd" > /etc/passwd \
     && rm "$RW_DIR/tmp/passwd" \

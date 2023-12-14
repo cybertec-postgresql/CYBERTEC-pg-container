@@ -10,11 +10,10 @@ export CURRENT_GROUP=$(id -g)
 
 # Prepare Folders and Files
 NSS_ROOT_DIR="/tmp/nss_wrapper"
-NSS_PASSWD="${NSS_ROOT_DIR}/${NSS_SUBDIR}/passwd"
-NSS_GROUP="${NSS_ROOT_DIR}/${NSS_SUBDIR}/group"
+NSS_PASSWD="${NSS_ROOT_DIR}/passwd"
+NSS_GROUP="${NSS_ROOT_DIR}//group"
 
 mkdir -p ${NSS_ROOT_DIR}
-mkdir -p "${NSS_ROOT_DIR}/${NSS_SUBDIR}"
 chmod g+rwx ${NSS_ROOT_DIR}
 
 [[ -f "${NSS_PASSWD}" ]] || cp "/etc/passwd" "${NSS_PASSWD}"

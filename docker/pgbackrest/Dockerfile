@@ -82,10 +82,7 @@ COPY launcher/pgbackrest/launch.sh /
 	
 VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]
 
-# Defines a unique directory name that will be utilized by the nss_wrapper in the UID script
-ENV NSS_WRAPPER_SUBDIR="pgbackrest"
-
-ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper_new.sh"]
+ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
 USER 26
 

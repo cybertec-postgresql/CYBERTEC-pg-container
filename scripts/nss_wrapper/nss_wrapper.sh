@@ -1,7 +1,5 @@
 #!/bin/bash
 
-#NSS_DIR=${NSS_DIR:-'/opt/pgbackrest'}
-
 # Define some needed ENVs & Variables
 export NSS_USERNAME=${NSS_USERNAME:-'postgres'}
 #export NSS_USERDESC=${NSS_USERDESC:-'PostgreSQL Server'}

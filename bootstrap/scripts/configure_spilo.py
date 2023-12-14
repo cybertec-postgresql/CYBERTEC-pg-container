@@ -768,7 +768,6 @@ def write_log_environment(placeholders):
     for var in ('LOG_TMPDIR', 'LOG_AWS_HOST', 'LOG_S3_KEY', 'LOG_S3_BUCKET', 'PGLOG'):
         write_file(log_env[var], os.path.join(log_env['LOG_ENV_DIR'], var), True)
 
-
 def write_wale_environment(placeholders, prefix, overwrite):
     s3_names = ['WALE_S3_PREFIX', 'WALG_S3_PREFIX', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
                 'WALE_S3_ENDPOINT', 'AWS_ENDPOINT', 'AWS_REGION', 'AWS_INSTANCE_PROFILE', 'WALE_DISABLE_S3_SSE',

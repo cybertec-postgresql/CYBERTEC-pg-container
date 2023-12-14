@@ -272,7 +272,7 @@ RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils f
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all; 
 
-ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper_new.sh"]
+ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
 USER 26
 

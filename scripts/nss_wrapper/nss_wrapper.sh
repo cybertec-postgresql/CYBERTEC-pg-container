@@ -30,7 +30,6 @@ if [[ ! $(cat "${NSS_PASSWD}") =~ ${NSS_USERNAME}:x:${CURRENT_USER} ]]; then
 fi
 
 if [[ ! $(cat "${NSS_GROUP}") =~ ${NSS_USERNAME}:x:${CURRENT_USER} ]]; then
-    echo "nss_wrapper: adding group"
     cp "${NSS_GROUP}" "${NSS_GROUP}.tmp"
     sed -i "/${NSS_USERNAME}:x:/d" "${NSS_GROUP}.tmp"
     printf '${NSS_USERNAME}:x:${CURRENT_USER}:${NSS_USERNAME}\n' >> "${NSS_GROUP}.tmp"

@@ -56,7 +56,7 @@ Run mkdir -p /opt/pgbackrest /backrestrepo /home/postgres /home/postgres/pgdata/
 ADD scripts/pgbackrest/ /opt/pgbackrest/bin/
 
 # add pgbackrest-common files
-ADD /scripts/nss_wrapper /opt/pgbackrest/bin
+ADD /scripts/nss_wrapper /scripts/nss_wrapper
 
 # set user and group ownership
 RUN chown -R postgres:postgres /opt/pgbackrest  \
@@ -82,14 +82,11 @@ COPY launcher/pgbackrest/launch.sh /
 	
 VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]
 
-USER 26
-
 # Defines a unique directory name that will be utilized by the nss_wrapper in the UID script
 ENV NSS_WRAPPER_SUBDIR="pgbackrest"
 
-ENTRYPOINT ["/opt/pgbackrest/bin/uid_postgres.sh"]
+ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper_new.sh"]
 
-#CMD ["/opt/pgbackrest/bin/start.sh"]
+USER 26
 
 CMD ["/bin/sh", "/launch.sh", "init"]
-#CMD ["/bin/sh", "/scripts/postgres/promote.sh"]

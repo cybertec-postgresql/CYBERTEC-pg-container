@@ -12,7 +12,7 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
-ARG TIMESCALEDB="1.7.5 2.3.1 2.11.1"
+ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
 # Spilo-specific
 ENV SET_USER=REL3_0_0 \
     #BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
@@ -205,7 +205,7 @@ RUN rm -rf /etc/service
 RUN mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata
 
 RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
-        && chown -R postgres:postgres $PGHOME $RW_DIR \
+        && chown -R postgres:postgres $PGHOME $PGHOME/pgdata $RW_DIR \
         && rm -fr /var/spool/cron /var/tmp \
         && mkdir -p /var/spool \
         && ln -s $RW_DIR/cron /var/spool/cron \
@@ -272,7 +272,14 @@ RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils f
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all; 
 
+
+# Defines a unique directory name that will be utilized by the nss_wrapper in the UID script
+#ENV NSS_WRAPPER_SUBDIR="pgbackrest"
+
+ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper_new.sh"]
+
 USER 26
+
 
 #RUN chown -R postgres:root /var/lib/pgsql
 CMD ["/bin/sh", "/launch.sh", "init"]

@@ -2,7 +2,7 @@
 
 # Define some needed ENVs & Variables
 export NSS_USERNAME=${NSS_USERNAME:-'postgres'}
-#export NSS_USERDESC=${NSS_USERDESC:-'PostgreSQL Server'}
+export NSS_USERDESC=${NSS_USERDESC:-'PostgreSQL Server'}
 export CURRENT_USER=$(id -u)
 export CURRENT_GROUP=$(id -g)
 
@@ -23,7 +23,7 @@ if [[ ! $(cat "${NSS_PASSWD}") =~ ${NSS_USERNAME}:x:${CURRENT_USER} ]]; then
     cp "${NSS_PASSWD}" "${NSS_PASSWD}.tmp"
     sed -i "/${NSS_USERNAME}:x:/d" "${NSS_PASSWD}.tmp"
     sed -i "/${CURRENT_USER}:x:/d" "${NSS_PASSWD}.tmp"
-    echo '${NSS_USERNAME}:x:${CURRENT_USER}:${CURRENT_GROUP}:${CRUNCHY_NSS_USER_DESC}:${HOME}:/bin/bash\n' >> "${NSS_PASSWD}.tmp"
+    echo '${NSS_USERNAME}:x:${CURRENT_USER}:${CURRENT_GROUP}:${NSS_USERDESC}:${HOME}:/bin/bash\n' >> "${NSS_PASSWD}.tmp"
     envsubst < "${NSS_PASSWD}.tmp" > "${NSS_PASSWD}"
     rm "${NSS_PASSWD}.tmp"
     echo "User was added via nss_wrapper"

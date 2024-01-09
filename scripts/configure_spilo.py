@@ -209,7 +209,7 @@ bootstrap:
         max_connections: {{postgresql.parameters.max_connections}}
         max_replication_slots: 10
         hot_standby: 'on'
-        password_encryption: 'md5'
+        password_encryption: 'scram-sha-256'
         tcp_keepalives_idle: 900
         tcp_keepalives_interval: 100
         log_line_prefix: '%t [%p]: [%l-1] %c %x %d %u %a %h '
@@ -298,7 +298,7 @@ postgresql:
     log_rotation_age: '1d'
     log_truncate_on_rotation: 'on'
     ssl: 'on'
-    password_encryption: 'md5'
+    password_encryption: 'scram-sha-256'
     {{#SSL_CA_FILE}}
     ssl_ca_file: {{SSL_CA_FILE}}
     {{/SSL_CA_FILE}}
@@ -317,13 +317,13 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     {{#PAM_OAUTH2}}
     - hostssl all             +{{HUMAN_ROLE}}    127.0.0.1/32       pam
     {{/PAM_OAUTH2}}
-    - host    all             all                127.0.0.1/32       md5
+    - host    all             all                127.0.0.1/32       scram-sha-256
     {{#PAM_OAUTH2}}
     - hostssl all             +{{HUMAN_ROLE}}    ::1/128            pam
     {{/PAM_OAUTH2}}
-    - host    all             all                ::1/128            md5
+    - host    all             all                ::1/128            scram-sha-256
     - local   replication     {{PGUSER_STANDBY}}                    trust
-    - hostssl replication     {{PGUSER_STANDBY}} all                md5
+    - hostssl replication     {{PGUSER_STANDBY}} all                scram-sha-256
     {{^ALLOW_NOSSL}}
     - hostnossl all           all                all                reject
     {{/ALLOW_NOSSL}}
@@ -331,10 +331,10 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     - hostssl all             +{{HUMAN_ROLE}}    all                pam
     {{/PAM_OAUTH2}}
     {{#ALLOW_NOSSL}}
-    - host    all             all                all                md5
+    - host    all             all                all                scram-sha-256
     {{/ALLOW_NOSSL}}
     {{^ALLOW_NOSSL}}
-    - hostssl all             all                all                md5
+    - hostssl all             all                all                scram-sha-256
     {{/ALLOW_NOSSL}}
 
   {{#USE_PGBACKREST}}
@@ -1107,7 +1107,7 @@ def main():
 
     # Ensure replication is available
     if 'pg_hba' in config['bootstrap'] and not any(['replication' in i for i in config['bootstrap']['pg_hba']]):
-        rep_hba = 'hostssl replication {} all md5'.\
+        rep_hba = 'hostssl replication {} all scram-sha-256'.\
             format(config['postgresql']['authentication']['replication']['username'])
         config['bootstrap']['pg_hba'].insert(0, rep_hba)
 

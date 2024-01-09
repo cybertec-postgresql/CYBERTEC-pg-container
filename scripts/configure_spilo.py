@@ -307,7 +307,7 @@ postgresql:
     {{/SSL_CRL_FILE}}
     ssl_cert_file: {{SSL_CERTIFICATE_FILE}}
     ssl_key_file: {{SSL_PRIVATE_KEY_FILE}}
-    shared_preload_libraries: 'pg_stat_statements,pgextwlist,set_user'
+    shared_preload_libraries: 'pg_stat_statements,set_user'
     pg_stat_statements.track_utility: 'off'
     extwlist.extensions: 'btree_gin,btree_gist,citext,extra_window_functions,first_last_agg,hll,\
 hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefunc,uuid-ossp'
@@ -337,11 +337,10 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     - hostssl all             all                all                md5
     {{/ALLOW_NOSSL}}
 
-  {{#USE_WALE}}
+  {{#USE_PGBACKREST}}
   recovery_conf:
-    restore_command: envdir "{{WALE_ENV_DIR}}" timeout "{{WAL_RESTORE_TIMEOUT}}"
-      /scripts/restore_command.sh "%f" "%p"
-  {{/USE_WALE}}
+    restore_command: pgbackrest --stanza=db archive-get %f "%p"
+  {{/USE_PGBACKREST}}
   authentication:
     superuser:
       username: {{PGUSER_SUPERUSER}}
@@ -359,10 +358,19 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     on_role_change: '/scripts/on_role_change.sh {{HUMAN_ROLE}} true'
  {{/CALLBACK_SCRIPT}}
   create_replica_method:
+  {{#USE_PGBACKREST}}
+    - pgbackrest
+  {{/USE_PGBACKREST}}
   {{#USE_WALE}}
     - wal_e
   {{/USE_WALE}}
     - basebackup_fast_xlog
+  {{#USE_PGBACKREST}}
+  pgbackrest:
+    command: pgbackrest --stanza=db --delta restore
+    keep_data: True
+    no_params: True
+  {{/USE_PGBACKREST}}
   {{#USE_WALE}}
   wal_e:
     command: envdir {{WALE_ENV_DIR}} bash /scripts/wale_restore.sh
@@ -561,6 +569,7 @@ def get_placeholders(provider):
     placeholders.setdefault('WAL_RESTORE_TIMEOUT', '0')
     placeholders.setdefault('WALE_ENV_DIR', os.path.join(placeholders['RW_DIR'], 'etc', 'wal-e.d', 'env'))
     placeholders.setdefault('USE_WALE', False)
+    placeholders.setdefault('USE_PGBACKREST', False)
     cpu_count = str(min(psutil.cpu_count(), 10))
     placeholders.setdefault('WALG_DOWNLOAD_CONCURRENCY', cpu_count)
     placeholders.setdefault('WALG_UPLOAD_CONCURRENCY', cpu_count)
@@ -648,8 +657,8 @@ def get_placeholders(provider):
     placeholders['postgresql'].setdefault('parameters', {})
     placeholders['WALE_BINARY'] = 'wal-g' if placeholders.get('USE_WALG_BACKUP') == 'true' else 'wal-e'
     placeholders['postgresql']['parameters']['archive_command'] = \
-        'envdir "{WALE_ENV_DIR}" {WALE_BINARY} wal-push "%p"'.format(**placeholders) \
-        if placeholders['USE_WALE'] else '/bin/true'
+        'pgbackrest --stanza=db archive-push "%p"' \
+        if placeholders['USE_PGBACKREST'] else '/bin/true'
 
     cgroup_memory_limit_path = '/sys/fs/cgroup/memory/memory.limit_in_bytes'
     cgroup_v2_memory_limit_path = '/sys/fs/cgroup/memory.max'

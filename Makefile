@@ -4,10 +4,10 @@ BASE_IMAGE ?= rockylinux:9.1-minimal
 BASEOS ?= rocky9
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
-PGVERSION ?= 15
-PGVERSION_FULL ?= 15.2
-OLD_PG_VERSIONS ?= 11 12 13 14
-PATRONI_VERSION ?= 3.0.1
+PGVERSION ?= 16
+PGVERSION_FULL ?= 16.1
+OLD_PG_VERSIONS ?= 13 14 15
+PATRONI_VERSION ?= 3.2.1
 PGBACKREST_VERSION ?= 2.44
 POSTGIS_VERSION ?= 33
 PACKAGER ?= dnf
@@ -32,9 +32,9 @@ postgres-stage: base postgres-stage
 postgres-gis: base postgres-gis
 postgres-oracle: base postgres-oracle
 exporter: exporter
-
+#--no-cache
 base-build:
-		docker build $(ROOTPATH)							\
+		docker build $(ROOTPATH) 							\
 			--file $(ROOTPATH)/docker/base/Dockerfile 	\
 			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) 		\
 			--build-arg BASE_IMAGE							\

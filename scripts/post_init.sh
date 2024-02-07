@@ -55,26 +55,6 @@ ALTER EXTENSION set_user UPDATE;
 # GRANT EXECUTE ON FUNCTION public.set_user(text) TO admin;
 # GRANT EXECUTE ON FUNCTION public.pg_stat_statements_reset($RESET_ARGS) TO admin;"
 
-
-# CPO-Monitoring
-echo "GRANT pg_monitor TO cpo_exporter;
-GRANT SELECT ON TABLE pg_authid TO cpo_exporter;";
-
-# Structure
-
-echo "CREATE SCHEMA IF NOT EXISTS exporter;
-ALTER SCHEMA exporter OWNER TO cpo_exporter;
-CREATE EXTENSION IF NOT EXISTS pgnodemx with SCHEMA exporter;
-alter extension pgnodemx UPDATE;
-
-CREATE TABLE exporter.pgbackrestbackupinfo (
-    name text NOT NULL,
-    data jsonb NOT NULL,
-    data_time timestamp with time zone DEFAULT now() NOT NULL
-)
-WITH (autovacuum_analyze_scale_factor='0', autovacuum_vacuum_scale_factor='0', autovacuum_vacuum_threshold='2', autovacuum_analyze_threshold='2');
-ALTER TABLE exporter.pgbackrestbackupinfo OWNER TO cpo_exporter;";
-
 done < <(psql -d "$2" -tAc 'select pg_catalog.quote_ident(datname) from pg_catalog.pg_database where datallowconn')
 ) | PGOPTIONS="-c synchronous_commit=local" psql -Xd "$2"
 

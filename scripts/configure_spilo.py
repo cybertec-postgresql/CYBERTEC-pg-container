@@ -209,7 +209,6 @@ bootstrap:
         max_connections: {{postgresql.parameters.max_connections}}
         max_replication_slots: 10
         hot_standby: 'on'
-        password_encryption: 'scram-sha-256'
         tcp_keepalives_idle: 900
         tcp_keepalives_interval: 100
         log_line_prefix: '%t [%p]: [%l-1] %c %x %d %u %a %h '
@@ -258,6 +257,8 @@ bootstrap:
     - encoding: UTF8
     - locale: {{INITDB_LOCALE}}.UTF-8
     - data-checksums
+    - locale-provider: icu 
+    - icu-locale: {{INITDB_LOCALE}}
   {{#USE_ADMIN}}
   users:
     {{PGUSER_ADMIN}}:
@@ -588,6 +589,7 @@ def get_placeholders(provider):
     placeholders.setdefault('CLONE_TARGET_TIME', '')
     placeholders.setdefault('CLONE_TARGET_INCLUSIVE', True)
 
+    placeholders.setdefault('LOG_GROUP_BY_DATE', False)
     placeholders.setdefault('LOG_SHIP_SCHEDULE', '1 0 * * *')
     placeholders.setdefault('LOG_S3_BUCKET', '')
     placeholders.setdefault('LOG_S3_ENDPOINT', '')
@@ -766,6 +768,8 @@ def write_log_environment(placeholders):
     log_env['LOG_AWS_REGION'] = aws_region
 
     log_s3_key = 'spilo/{LOG_BUCKET_SCOPE_PREFIX}{SCOPE}{LOG_BUCKET_SCOPE_SUFFIX}/log/'.format(**log_env)
+    if os.getenv('LOG_GROUP_BY_DATE'):
+        log_s3_key += '{DATE}/'
     log_s3_key += placeholders['instance_data']['id']
     log_env['LOG_S3_KEY'] = log_s3_key
 

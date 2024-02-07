@@ -4,3 +4,12 @@ docker/postgres-oracle
 docker/newpg
 docker/benchmark
 docker/pgbackrest-old
+
+#FerretDB
+docker/ferretdb
+ferretdb
+launcher/ferretdb
+
+#Exporter_v2
+docker/exporter_v2
+launcher/exporter_v2

@@ -1,15 +1,15 @@
 
 # Define Default if Values not exist
-BASE_IMAGE ?= rockylinux:9.1-minimal
+BASE_IMAGE ?= rockylinux:9.3-minimal
 BASEOS ?= rocky9
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
 PGVERSION ?= 16
-PGVERSION_FULL ?= 16.1
+PGVERSION_FULL ?= 16.2
 OLD_PG_VERSIONS ?= 13 14 15
-PATRONI_VERSION ?= 3.2.1
-PGBACKREST_VERSION ?= 2.44
-POSTGIS_VERSION ?= 33
+PATRONI_VERSION ?= 3.1.2
+PGBACKREST_VERSION ?= 2.50
+POSTGIS_VERSION ?= 34
 PACKAGER ?= dnf
 BUILD ?= 1
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
@@ -32,30 +32,30 @@ postgres-stage: base postgres-stage
 postgres-gis: base postgres-gis
 postgres-oracle: base postgres-oracle
 exporter: exporter
-#--no-cache
+
 base-build:
-		docker build $(ROOTPATH) 							\
-			--file $(ROOTPATH)/docker/base/Dockerfile 	\
-			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) 		\
-			--build-arg BASE_IMAGE							\
-			--build-arg IMAGE_REPOSITORY 					\
-			--build-arg BASEOS 								\
-			--build-arg PACKAGER 							\
+		docker build $(ROOTPATH) 								\
+			--file $(ROOTPATH)/docker/base/Dockerfile 		 	\
+			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) \
+			--build-arg BASE_IMAGE								\
+			--build-arg IMAGE_REPOSITORY 						\
+			--build-arg BASEOS 									\
+			--build-arg PACKAGER 								\
 			--build-arg CONTAINERSUITE 						
 base: base-build;		
 
 pgbackrest-build:
-		docker build $(ROOTPATH)							\
-			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 	\
-			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-$(BUILD) 		\
-			--build-arg BASE_IMAGE							\
-			--build-arg IMAGE_REPOSITORY 					\
-			--build-arg BASEOS 								\
-			--build-arg PACKAGER 							\
-			--build-arg CONTAINERSUITE 						\
-			--build-arg BUILD 								\
-			--build-arg PGBACKREST_VERSION 					\
-			--build-arg OLD_PG_VERSIONS						\
+		docker build $(ROOTPATH)											\
+			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 				\
+			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-$(BUILD) 	\
+			--build-arg BASE_IMAGE											\
+			--build-arg IMAGE_REPOSITORY 									\
+			--build-arg BASEOS 												\
+			--build-arg PACKAGER 											\
+			--build-arg CONTAINERSUITE 										\
+			--build-arg BUILD 												\
+			--build-arg PGBACKREST_VERSION 									\
+			--build-arg OLD_PG_VERSIONS										\
 			--build-arg PGVERSION 												
 
 pgbackrest: pgbackrest-build;

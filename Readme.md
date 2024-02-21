@@ -23,13 +23,14 @@ On Kubernetes and Kubernetes-based environments, the image uses the k8-etcd, oth
     export BASEOS=rocky9
     export PACKAGER=dnf
     export CONTAINERSUITE=cybertec-pg-container
-    export PGBACKREST_VERSION=2.49
-    export PATRONI_VERSION=3.1.1
+    export PGBACKREST_VERSION=2.50
+    export PATRONI_VERSION=3.1.2
     export PG_MAJOR=16
-    export PG_VERSION=16.1
-    export OLD_PG_VERSIONS="12 13 14 15"
-    export POSTGIS_VERSION=32
+    export PG_VERSION=16.2
+    export OLD_PG_VERSIONS="13 14 15"
+    export POSTGIS_VERSION=34
     export BUILD=1
+    export ARCH=x86_64
 
 <p>You can build all images with make
 - make all

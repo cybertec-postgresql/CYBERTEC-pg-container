@@ -1,11 +1,11 @@
 ---
-title: "CPO (CYBERTEC-PG-Operator)"
+title: "CYBERTEC-pg-container"
 date: 2023-03-07T14:26:51+01:00
 draft: false
 ---
-Current Release: 0.3.0 (xx.xx.xxxx) [Release Notes](/documentation/release_notes)
+Current Release: 0.7.0-rc1 (23.02.2024) [Release Notes](/documentation/release_notes)
 
-CPO (CYBERTEC PG Operator) allows you to create and run PostgreSQL clusters on Kubernetes. 
+The CYBERTEC-pg-container allows you to build PostgreSQL-Clusters in combination with Patroni and pgBackRest on docker/podman Environment or use it in combination with the [CYBERTEC-pg-operator](https://github.com/cybertec-postgresql/CYBERTEC-pg-operator) and deploy PostgreSQL clusters on Kubernetes. 
 
 The operator reduces your efforts and simplifies the administration of your PostgreSQL clusters so that you can concentrate on other things. 
 

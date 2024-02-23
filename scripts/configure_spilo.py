@@ -209,7 +209,6 @@ bootstrap:
         max_connections: {{postgresql.parameters.max_connections}}
         max_replication_slots: 10
         hot_standby: 'on'
-        password_encryption: 'md5'
         tcp_keepalives_idle: 900
         tcp_keepalives_interval: 100
         log_line_prefix: '%t [%p]: [%l-1] %c %x %d %u %a %h '
@@ -258,6 +257,8 @@ bootstrap:
     - encoding: UTF8
     - locale: {{INITDB_LOCALE}}.UTF-8
     - data-checksums
+    - locale-provider: icu 
+    - icu-locale: {{INITDB_LOCALE}}
   {{#USE_ADMIN}}
   users:
     {{PGUSER_ADMIN}}:
@@ -298,7 +299,7 @@ postgresql:
     log_rotation_age: '1d'
     log_truncate_on_rotation: 'on'
     ssl: 'on'
-    password_encryption: 'md5'
+    password_encryption: 'scram-sha-256'
     {{#SSL_CA_FILE}}
     ssl_ca_file: {{SSL_CA_FILE}}
     {{/SSL_CA_FILE}}
@@ -307,7 +308,7 @@ postgresql:
     {{/SSL_CRL_FILE}}
     ssl_cert_file: {{SSL_CERTIFICATE_FILE}}
     ssl_key_file: {{SSL_PRIVATE_KEY_FILE}}
-    shared_preload_libraries: 'pg_stat_statements,pgextwlist,set_user'
+    shared_preload_libraries: 'pg_stat_statements,set_user'
     pg_stat_statements.track_utility: 'off'
     extwlist.extensions: 'btree_gin,btree_gist,citext,extra_window_functions,first_last_agg,hll,\
 hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefunc,uuid-ossp'
@@ -317,13 +318,13 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     {{#PAM_OAUTH2}}
     - hostssl all             +{{HUMAN_ROLE}}    127.0.0.1/32       pam
     {{/PAM_OAUTH2}}
-    - host    all             all                127.0.0.1/32       md5
+    - host    all             all                127.0.0.1/32       scram-sha-256
     {{#PAM_OAUTH2}}
     - hostssl all             +{{HUMAN_ROLE}}    ::1/128            pam
     {{/PAM_OAUTH2}}
-    - host    all             all                ::1/128            md5
+    - host    all             all                ::1/128            scram-sha-256
     - local   replication     {{PGUSER_STANDBY}}                    trust
-    - hostssl replication     {{PGUSER_STANDBY}} all                md5
+    - hostssl replication     {{PGUSER_STANDBY}} all                scram-sha-256
     {{^ALLOW_NOSSL}}
     - hostnossl all           all                all                reject
     {{/ALLOW_NOSSL}}
@@ -331,17 +332,16 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     - hostssl all             +{{HUMAN_ROLE}}    all                pam
     {{/PAM_OAUTH2}}
     {{#ALLOW_NOSSL}}
-    - host    all             all                all                md5
+    - host    all             all                all                scram-sha-256
     {{/ALLOW_NOSSL}}
     {{^ALLOW_NOSSL}}
-    - hostssl all             all                all                md5
+    - hostssl all             all                all                scram-sha-256
     {{/ALLOW_NOSSL}}
 
-  {{#USE_WALE}}
+  {{#USE_PGBACKREST}}
   recovery_conf:
-    restore_command: envdir "{{WALE_ENV_DIR}}" timeout "{{WAL_RESTORE_TIMEOUT}}"
-      /scripts/restore_command.sh "%f" "%p"
-  {{/USE_WALE}}
+    restore_command: pgbackrest --stanza=db archive-get %f "%p"
+  {{/USE_PGBACKREST}}
   authentication:
     superuser:
       username: {{PGUSER_SUPERUSER}}
@@ -359,10 +359,19 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     on_role_change: '/scripts/on_role_change.sh {{HUMAN_ROLE}} true'
  {{/CALLBACK_SCRIPT}}
   create_replica_method:
+  {{#USE_PGBACKREST}}
+    - pgbackrest
+  {{/USE_PGBACKREST}}
   {{#USE_WALE}}
     - wal_e
   {{/USE_WALE}}
     - basebackup_fast_xlog
+  {{#USE_PGBACKREST}}
+  pgbackrest:
+    command: pgbackrest --stanza=db --delta restore
+    keep_data: True
+    no_params: True
+  {{/USE_PGBACKREST}}
   {{#USE_WALE}}
   wal_e:
     command: envdir {{WALE_ENV_DIR}} bash /scripts/wale_restore.sh
@@ -561,6 +570,7 @@ def get_placeholders(provider):
     placeholders.setdefault('WAL_RESTORE_TIMEOUT', '0')
     placeholders.setdefault('WALE_ENV_DIR', os.path.join(placeholders['RW_DIR'], 'etc', 'wal-e.d', 'env'))
     placeholders.setdefault('USE_WALE', False)
+    placeholders.setdefault('USE_PGBACKREST', False)
     cpu_count = str(min(psutil.cpu_count(), 10))
     placeholders.setdefault('WALG_DOWNLOAD_CONCURRENCY', cpu_count)
     placeholders.setdefault('WALG_UPLOAD_CONCURRENCY', cpu_count)
@@ -579,6 +589,7 @@ def get_placeholders(provider):
     placeholders.setdefault('CLONE_TARGET_TIME', '')
     placeholders.setdefault('CLONE_TARGET_INCLUSIVE', True)
 
+    placeholders.setdefault('LOG_GROUP_BY_DATE', False)
     placeholders.setdefault('LOG_SHIP_SCHEDULE', '1 0 * * *')
     placeholders.setdefault('LOG_S3_BUCKET', '')
     placeholders.setdefault('LOG_S3_ENDPOINT', '')
@@ -648,8 +659,8 @@ def get_placeholders(provider):
     placeholders['postgresql'].setdefault('parameters', {})
     placeholders['WALE_BINARY'] = 'wal-g' if placeholders.get('USE_WALG_BACKUP') == 'true' else 'wal-e'
     placeholders['postgresql']['parameters']['archive_command'] = \
-        'envdir "{WALE_ENV_DIR}" {WALE_BINARY} wal-push "%p"'.format(**placeholders) \
-        if placeholders['USE_WALE'] else '/bin/true'
+        'pgbackrest --stanza=db archive-push "%p"' \
+        if placeholders['USE_PGBACKREST'] else '/bin/true'
 
     cgroup_memory_limit_path = '/sys/fs/cgroup/memory/memory.limit_in_bytes'
     cgroup_v2_memory_limit_path = '/sys/fs/cgroup/memory.max'
@@ -757,6 +768,8 @@ def write_log_environment(placeholders):
     log_env['LOG_AWS_REGION'] = aws_region
 
     log_s3_key = 'spilo/{LOG_BUCKET_SCOPE_PREFIX}{SCOPE}{LOG_BUCKET_SCOPE_SUFFIX}/log/'.format(**log_env)
+    if os.getenv('LOG_GROUP_BY_DATE'):
+        log_s3_key += '{DATE}/'
     log_s3_key += placeholders['instance_data']['id']
     log_env['LOG_S3_KEY'] = log_s3_key
 
@@ -1098,7 +1111,7 @@ def main():
 
     # Ensure replication is available
     if 'pg_hba' in config['bootstrap'] and not any(['replication' in i for i in config['bootstrap']['pg_hba']]):
-        rep_hba = 'hostssl replication {} all md5'.\
+        rep_hba = 'hostssl replication {} all scram-sha-256'.\
             format(config['postgresql']['authentication']['replication']['username'])
         config['bootstrap']['pg_hba'].insert(0, rep_hba)
 

@@ -12,10 +12,9 @@ LIB_DIR = '/usr/lib/postgresql'
 
 # (min_version, max_version, shared_preload_libraries, extwlist.extensions)
 extensions = {
-    'timescaledb':    (12, 16, True,  True),
-    'pg_cron':        (12, 16, True,  False),
-    'pg_stat_kcache': (12, 16, True,  False),
-    'pg_partman':     (12, 16, False, True)
+    'timescaledb':    (13, 16, False,  True),
+    'pg_partman':     (13, 16, False, True),
+    'pg_stat_statements':   (14, 16, True, True)
 }
 
 def adjust_extensions(old, version, extwlist=False):

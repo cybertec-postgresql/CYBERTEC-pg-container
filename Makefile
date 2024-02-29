@@ -52,13 +52,13 @@ pgbackrest-build:
 			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-$(BUILD) 	\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)							\
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)				\
-			--build-arg BASEOS=$(BASEOS) 									\
-			--build-arg PACKAGER=$(PACKAGER) 								\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 					\
-			--build-arg BUILD=$(BUILD) 										\
-			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 			\
-			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)					\
-			--build-arg PGVERSION=$(PGVERSION)												
+			--build-arg BASEOS=$(BASEOS)									\
+			--build-arg PACKAGER=$(PACKAGER)								\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE)					\
+			--build-arg BUILD=$(BUILD)										\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)			\
+			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"				\
+			--build-arg PGVERSION										
 
 pgbackrest: pgbackrest-build;
 			
@@ -74,7 +74,7 @@ postgres-build:
 			--build-arg BUILD=$(BUILD) 											\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
-			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)						\
+			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
 			--build-arg PGVERSION=$(PGVERSION)							
 
 postgres: postgres-build
@@ -91,7 +91,7 @@ postgres-stage-build:
 			--build-arg BUILD=$(BUILD) 														\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 							\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 									\
-			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)									\
+			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"								\
 			--build-arg PGVERSION=$(PGVERSION)							
 
 postgres-stage: postgres-stage-build
@@ -108,7 +108,7 @@ postgres-gis-build:
 			--build-arg BUILD=$(BUILD) 												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 					\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
-			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)							\
+			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(PGVERSION)										\
 			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							
 
@@ -126,7 +126,7 @@ postgres-oracle-build:
 			--build-arg BUILD=$(BUILD) 													\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 								\
-			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)								\
+			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"							\
 			--build-arg PGVERSION=$(PGVERSION)
 
 postgres-oracle: postgres-oracle-build

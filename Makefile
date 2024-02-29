@@ -7,7 +7,7 @@ IMAGE_PATH ?= cybertec-pg-container
 CONTAINERSUITE ?= cybertec-pg-container
 PGVERSION ?= 16
 PGVERSION_FULL ?= 16.2
-OLD_PG_VERSIONS ?= 
+OLD_PG_VERSIONS ?= 13 14 15
 PATRONI_VERSION ?= 3.2.2
 PGBACKREST_VERSION ?= 2.50
 POSTGIS_VERSION ?= 34
@@ -83,67 +83,65 @@ postgres-stage-build:
 		docker build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/postgres-stage/Dockerfile 		\
 			--tag cybertec-pg-container/postgres-stage:$(PGVERSION_FULL)-$(BETA)$(BUILD)	\
-			--build-arg BASE_IMAGE								\
-			--build-arg IMAGE_REPOSITORY 						\
-			--build-arg BASEOS 									\
-			--build-arg PACKAGER 								\
-			--build-arg CONTAINERSUITE 							\
-			--build-arg BUILD 									\
-			--build-arg PATRONI_VERSION 						\
-			--build-arg PGBACKREST_VERSION 						\
-			--build-arg OLD_PG_VERSIONS							\
-			--build-arg PGVERSION 							
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)								\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)					\
+			--build-arg BASEOS=$(BASEOS) 										\
+			--build-arg PACKAGER=$(PACKAGER) 									\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 						\
+			--build-arg BUILD=$(BUILD) 											\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
+			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
+			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)						\
+			--build-arg PGVERSION=$(PGVERSION)							
 
 postgres-stage: postgres-stage-build
 
 postgres-gis-build:
-		docker build $(ROOTPATH)								\
-			--file $(ROOTPATH)/docker/postgres-gis/Dockerfile 		\
+		docker build $(ROOTPATH)													\
+			--file $(ROOTPATH)/docker/postgres-gis/Dockerfile 						\
 			--tag cybertec-pg-container/postgres-gis:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
-			--build-arg BASE_IMAGE								\
-			--build-arg IMAGE_REPOSITORY 						\
-			--build-arg BASEOS 									\
-			--build-arg PACKAGER 								\
-			--build-arg CONTAINERSUITE 							\
-			--build-arg BUILD 									\
-			--build-arg PATRONI_VERSION 						\
-			--build-arg PGBACKREST_VERSION 						\
-			--build-arg OLD_PG_VERSIONS							\
-			--build-arg PGVERSION								\
-			--build-arg POSTGIS_VERSION							
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
+			--build-arg BASEOS=$(BASEOS) 											\
+			--build-arg PACKAGER=$(PACKAGER) 										\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 							\
+			--build-arg BUILD=$(BUILD) 												\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 					\
+			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
+			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)							\
+			--build-arg PGVERSION=$(PGVERSION)										\			
+			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							
 
 postgres-gis: postgres-gis-build
 
 postgres-oracle-build:
-		docker build $(ROOTPATH)								\
-			--file $(ROOTPATH)/docker/postgres-oracle/Dockerfile 		\
+		docker build $(ROOTPATH)														\
+			--file $(ROOTPATH)/docker/postgres-oracle/Dockerfile 						\
 			--tag cybertec-pg-container/postgres-oracle:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
-			--build-arg BASE_IMAGE								\
-			--build-arg IMAGE_REPOSITORY 						\
-			--build-arg BASEOS 									\
-			--build-arg PACKAGER 								\
-			--build-arg CONTAINERSUITE 							\
-			--build-arg BUILD 									\
-			--build-arg PATRONI_VERSION 						\
-			--build-arg PGBACKREST_VERSION 						\
-			--build-arg OLD_PG_VERSIONS							\
-			--build-arg PGVERSION 							
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)							\
+			--build-arg BASEOS=$(BASEOS) 												\
+			--build-arg PACKAGER=$(PACKAGER) 											\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
+			--build-arg BUILD=$(BUILD) 													\	
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\	
+			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 								\
+			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)								\
+			--build-arg PGVERSION=$(PGVERSION)
 
 postgres-oracle: postgres-oracle-build
 
 exporter-build:
-		docker build $(ROOTPATH)								\
-			--file $(ROOTPATH)/docker/exporter/Dockerfile 		\
-			--tag cybertec-pg-container/exporter:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
-			--build-arg BASE_IMAGE								\
-			--build-arg IMAGE_REPOSITORY 						\
-			--build-arg BASEOS 									\
-			--build-arg PACKAGER 								\
-			--build-arg CONTAINERSUITE 							\
-			--build-arg BUILD 									\
-			--build-arg PATRONI_VERSION 						\
-			--build-arg PGBACKREST_VERSION 						\
-			--build-arg OLD_PG_VERSION 							\
-			--build-arg PGVERSION 							
+		docker build $(ROOTPATH)														\
+			--file $(ROOTPATH)/docker/exporter/Dockerfile 								\
+			--tag cybertec-pg-container/exporter:$(IMAGE_TAG)-$(BETA)$(BUILD)			\
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)							\
+			--build-arg BASEOS=$(BASEOS) 												\
+			--build-arg PACKAGER=$(PACKAGER) 											\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
+			--build-arg BUILD=$(BUILD) 													\	
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\	
+			--build-arg PGVERSION=$(PGVERSION)
 
 exporter: exporter-build

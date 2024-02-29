@@ -1,13 +1,14 @@
 
 # Define Default if Values not exist
-BASE_IMAGE ?= rockylinux:9.3-minimal
+BASE_IMAGE ?= rockylinux:9
 BASEOS ?= rocky9
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
+CONTAINERSUITE ?= cybertec-pg-container
 PGVERSION ?= 16
 PGVERSION_FULL ?= 16.2
-OLD_PG_VERSIONS ?= 13 14 15
-PATRONI_VERSION ?= 3.1.2
+OLD_PG_VERSIONS ?= 
+PATRONI_VERSION ?= 3.2.2
 PGBACKREST_VERSION ?= 2.50
 POSTGIS_VERSION ?= 34
 PACKAGER ?= dnf
@@ -37,43 +38,44 @@ base-build:
 		docker build $(ROOTPATH) 								\
 			--file $(ROOTPATH)/docker/base/Dockerfile 		 	\
 			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) \
-			--build-arg BASE_IMAGE								\
-			--build-arg IMAGE_REPOSITORY 						\
-			--build-arg BASEOS 									\
-			--build-arg PACKAGER 								\
-			--build-arg CONTAINERSUITE 						
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)				\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)	\
+			--build-arg BASEOS=$(BASEOS) 						\
+			--build-arg PACKAGER=$(PACKAGER) 					\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 		
+
 base: base-build;		
 
 pgbackrest-build:
 		docker build $(ROOTPATH)											\
 			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 				\
 			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-$(BUILD) 	\
-			--build-arg BASE_IMAGE											\
-			--build-arg IMAGE_REPOSITORY 									\
-			--build-arg BASEOS 												\
-			--build-arg PACKAGER 											\
-			--build-arg CONTAINERSUITE 										\
-			--build-arg BUILD 												\
-			--build-arg PGBACKREST_VERSION 									\
-			--build-arg OLD_PG_VERSIONS										\
-			--build-arg PGVERSION 												
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)							\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)				\
+			--build-arg BASEOS=$(BASEOS) 									\
+			--build-arg PACKAGER=$(PACKAGER) 								\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 					\
+			--build-arg BUILD=$(BUILD) 										\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 			\
+			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)					\
+			--build-arg PGVERSION=$(PGVERSION)												
 
 pgbackrest: pgbackrest-build;
 			
 postgres-build:
-		docker build $(ROOTPATH)								\
-			--file $(ROOTPATH)/docker/postgres/Dockerfile 		\
+		docker build $(ROOTPATH)												\
+			--file $(ROOTPATH)/docker/postgres/Dockerfile 						\
 			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)-$(BETA)$(BUILD)	\
-			--build-arg BASE_IMAGE								\
-			--build-arg IMAGE_REPOSITORY 						\
-			--build-arg BASEOS 									\
-			--build-arg PACKAGER 								\
-			--build-arg CONTAINERSUITE 							\
-			--build-arg BUILD 									\
-			--build-arg PATRONI_VERSION 						\
-			--build-arg PGBACKREST_VERSION 						\
-			--build-arg OLD_PG_VERSIONS							\
-			--build-arg PGVERSION 							
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)								\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)					\
+			--build-arg BASEOS=$(BASEOS) 										\
+			--build-arg PACKAGER=$(PACKAGER) 									\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 						\
+			--build-arg BUILD=$(BUILD) 											\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
+			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
+			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)						\
+			--build-arg PGVERSION=$(PGVERSION)							
 
 postgres: postgres-build
 

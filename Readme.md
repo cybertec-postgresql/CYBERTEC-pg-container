@@ -24,7 +24,7 @@ On Kubernetes and Kubernetes-based environments, the image uses the k8-etcd, oth
     export PACKAGER=dnf
     export CONTAINERSUITE=cybertec-pg-container
     export PGBACKREST_VERSION=2.50
-    export PATRONI_VERSION=3.1.2
+    export PATRONI_VERSION=3.2.2
     export PG_MAJOR=16
     export PG_VERSION=16.2
     export OLD_PG_VERSIONS="13 14 15"

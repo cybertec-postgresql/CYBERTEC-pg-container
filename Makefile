@@ -80,18 +80,18 @@ postgres-build:
 postgres: postgres-build
 
 postgres-stage-build:
-		docker build $(ROOTPATH)								\
-			--file $(ROOTPATH)/docker/postgres-stage/Dockerfile 		\
+		docker build $(ROOTPATH)															\
+			--file $(ROOTPATH)/docker/postgres-stage/Dockerfile 							\
 			--tag cybertec-pg-container/postgres-stage:$(PGVERSION_FULL)-$(BETA)$(BUILD)	\
-			--build-arg BASE_IMAGE=$(BASE_IMAGE)								\
-			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)					\
-			--build-arg BASEOS=$(BASEOS) 										\
-			--build-arg PACKAGER=$(PACKAGER) 									\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 						\
-			--build-arg BUILD=$(BUILD) 											\
-			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
-			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
-			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)						\
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)											\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)								\
+			--build-arg BASEOS=$(BASEOS) 													\
+			--build-arg PACKAGER=$(PACKAGER) 												\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 									\
+			--build-arg BUILD=$(BUILD) 														\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 							\
+			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 									\
+			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)									\
 			--build-arg PGVERSION=$(PGVERSION)							
 
 postgres-stage: postgres-stage-build
@@ -109,7 +109,7 @@ postgres-gis-build:
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 					\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
 			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)							\
-			--build-arg PGVERSION=$(PGVERSION)										\			
+			--build-arg PGVERSION=$(PGVERSION)										\
 			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							
 
 postgres-gis: postgres-gis-build
@@ -123,8 +123,8 @@ postgres-oracle-build:
 			--build-arg BASEOS=$(BASEOS) 												\
 			--build-arg PACKAGER=$(PACKAGER) 											\
 			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
-			--build-arg BUILD=$(BUILD) 													\	
-			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\	
+			--build-arg BUILD=$(BUILD) 													\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 								\
 			--build-arg OLD_PG_VERSIONS=$(OLD_PG_VERSIONS)								\
 			--build-arg PGVERSION=$(PGVERSION)
@@ -140,8 +140,8 @@ exporter-build:
 			--build-arg BASEOS=$(BASEOS) 												\
 			--build-arg PACKAGER=$(PACKAGER) 											\
 			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
-			--build-arg BUILD=$(BUILD) 													\	
-			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\	
+			--build-arg BUILD=$(BUILD) 													\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\
 			--build-arg PGVERSION=$(PGVERSION)
 
 exporter: exporter-build

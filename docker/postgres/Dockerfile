@@ -61,6 +61,7 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
         dpkg \
         jq \
         rsync \
+        libicu \
 		pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 else \
@@ -101,6 +102,7 @@ else \
         jq \
         rsync \
         dumb-init \ 
+        libicu \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 fi

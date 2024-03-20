@@ -198,7 +198,8 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                            pgaudit*${version} \
+                             pgaudit*${version} \
+                             credcheck_*${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
 #                            postgresql${version}-pglogical \

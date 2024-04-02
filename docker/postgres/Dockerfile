@@ -61,6 +61,7 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
         dpkg \
         jq \
         rsync \
+        libicu \
 		pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 else \
@@ -101,6 +102,7 @@ else \
         jq \
         rsync \
         dumb-init \ 
+        libicu \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 fi
@@ -196,7 +198,8 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                            pgaudit*${version} \
+                             pgaudit*${version} \
+                             credcheck_*${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
 #                            postgresql${version}-pglogical \
@@ -320,9 +323,16 @@ COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
 RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-                    glibc-devel glibc-static
+                    glibc-devel glibc-static \
+                && mkdir -p /package;
 
-RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
+  #wget -nv http://smarden.org/runit/runit-2.1.2.tar.gz \
+
+RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+    && cd admin/runit-2.1.2 && package/install \
+    && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+    && ${PACKAGER} -y clean all ;
 
 # Modify for using origial-spilo scripts
 # RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init &&

@@ -6,27 +6,25 @@ PGVER=$(psql -d "$2" -XtAc "SELECT pg_catalog.current_setting('server_version_nu
 if [ "$PGVER" -ge 12 ]; then RESET_ARGS="oid, oid, bigint"; fi
 
 (
-# echo "DO \$\$
-# BEGIN
-#     PERFORM * FROM pg_catalog.pg_authid WHERE rolname = 'admin';
-#     IF FOUND THEN
-#         ALTER ROLE admin WITH CREATEDB NOLOGIN NOCREATEROLE NOSUPERUSER NOREPLICATION INHERIT;
-#     ELSE
-#         CREATE ROLE admin CREATEDB;
-#     END IF;
-# END;\$\$;
+echo "DO \$\$
+BEGIN
+    PERFORM * FROM pg_catalog.pg_authid WHERE rolname = 'admin';
+    IF FOUND THEN
+        ALTER ROLE admin WITH CREATEDB NOLOGIN NOCREATEROLE NOSUPERUSER NOREPLICATION INHERIT;
+    ELSE
+        CREATE ROLE admin CREATEDB;
+    END IF;
+END;\$\$;
 
-# GRANT cron_admin TO admin;
-
-# DO \$\$
-# BEGIN
-#     PERFORM * FROM pg_catalog.pg_authid WHERE rolname = '$1';
-#     IF FOUND THEN
-#         ALTER ROLE $1 WITH NOCREATEDB NOLOGIN NOCREATEROLE NOSUPERUSER NOREPLICATION INHERIT;
-#     ELSE
-#         CREATE ROLE $1;
-#     END IF;
-# END;\$\$;"
+DO \$\$
+BEGIN
+    PERFORM * FROM pg_catalog.pg_authid WHERE rolname = '$1';
+    IF FOUND THEN
+        ALTER ROLE $1 WITH NOCREATEDB NOLOGIN NOCREATEROLE NOSUPERUSER NOREPLICATION INHERIT;
+    ELSE
+        CREATE ROLE $1;
+    END IF;
+END;\$\$;"
 
 while IFS= read -r db_name; do
     echo "\c ${db_name}"
@@ -50,8 +48,8 @@ while IFS= read -r db_name; do
         fi
     fi
     sed "s/:HUMAN_ROLE/$1/" create_user_functions.sql
-    echo "CREATE EXTENSION IF NOT EXISTS pg_stat_statements SCHEMA public;
-ALTER EXTENSION set_user UPDATE;
+    echo "CREATE EXTENSION IF NOT EXISTS pg_stat_statements SCHEMA public;"
+# ALTER EXTENSION set_user UPDATE;
 # GRANT EXECUTE ON FUNCTION public.set_user(text) TO admin;
 # GRANT EXECUTE ON FUNCTION public.pg_stat_statements_reset($RESET_ARGS) TO admin;"
 

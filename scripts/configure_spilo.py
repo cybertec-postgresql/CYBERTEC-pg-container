@@ -32,7 +32,7 @@ PROVIDER_OPENSTACK = "openstack"
 PROVIDER_LOCAL = "local"
 PROVIDER_UNSUPPORTED = "unsupported"
 USE_KUBERNETES = os.environ.get('KUBERNETES_SERVICE_HOST') is not None
-KUBERNETES_DEFAULT_LABELS = '{"application": "spilo"}'
+KUBERNETES_DEFAULT_LABELS = '{"application": "cpo", "member.cpo.opensource.cybertec.at/type": "postgres"}'
 PATRONI_DCS = ('kubernetes', 'zookeeper', 'exhibitor', 'consul', 'etcd3', 'etcd')
 AUTO_ENABLE_WALG_RESTORE = ('WAL_S3_BUCKET', 'WALE_S3_PREFIX', 'WALG_S3_PREFIX', 'WALG_AZ_PREFIX', 'WALG_SSH_PREFIX')
 WALG_SSH_NAMES = ['WALG_SSH_PREFIX', 'SSH_PRIVATE_KEY_PATH', 'SSH_USERNAME', 'SSH_PORT']
@@ -1082,7 +1082,7 @@ def main():
 
     if provider == PROVIDER_LOCAL and not any(1 for key in config.keys() if key in PATRONI_DCS):
         link_runit_service(placeholders, 'etcd')
-        config['etcd'] = {'host': '127.0.0.1:2379'}
+        config['etcd3'] = {'host': '127.0.0.1:2379'}
 
     pgdata = config['postgresql']['data_dir']
     version_file = os.path.join(pgdata, 'PG_VERSION')

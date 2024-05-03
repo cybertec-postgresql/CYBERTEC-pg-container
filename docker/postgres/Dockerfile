@@ -13,11 +13,9 @@ ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
+ARG ARCH
 # Spilo-specific
 ENV SET_USER=REL3_0_0 \
-    #BG_MON_COMMIT=e22182e129ce357b5aa80090fba2aacfc42b1996 \
-    #PG_AUTH_MON_COMMIT=52d90bbaa6d3c61195cd9532ebe036b1183808c5 \
-    #PG_MON_COMMIT=54fbdcc3cfe7e2a626bd96dda644d9a0c6866b58 \
     PLPROFILER=REL4_1 \
     PG_PROFILE=0.3.6 \
     PAM_OAUTH2=v1.0.1 \
@@ -27,43 +25,6 @@ ENV SET_USER=REL3_0_0 \
 
 # Get some Standard-Stuff
 RUN if [ "$BASEOS" = "ubi8" ] ; then \
-	${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-        openssh-clients \
-        openssh-server \
-        shadow-utils \
-        tar \
-        bzip2 \
-        lz4 \
-        python3 \
-        python3-pip \
-        python3-psycopg2 \
-        python3-psutil \
-        python3-requests \
-        python3-etcd \
-        #python3-pyyaml \
-        git \
-        patchutils \
-        binutils \
-        make \
-        cmake \
-        gcc \
-        #curl \
-        libcurl-devel \
-        pam-devel \
-        wget \
-        mlocate \
-        git-clang-format \
-        openssl-devel \
-        ccache \
-        redhat-rpm-config \
-        krb5-devel \
-        busybox \
-        dpkg \
-        jq \
-        rsync \
-		pgbackrest-${PGBACKREST_VERSION} \
-		&& ${PACKAGER} -y clean all ; \
-else \
 	${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
 		--setopt=skip_missing_names_on_install=False \
         openssh-clients \
@@ -79,15 +40,13 @@ else \
         python3-requests \
         python3-etcd \
         python3-pyyaml \
-        python3-etcd \
+        python3-setuptools \
         git \
         patchutils \
         binutils \
         make \
         cmake \
         gcc \
-        #curl \
-        libcurl-devel \
         pam-devel \
         wget \
         mlocate \
@@ -97,79 +56,68 @@ else \
         redhat-rpm-config \
         krb5-devel \
         busybox \
-        dpkg \
         jq \
         rsync \
         dumb-init \ 
+        libicu \
+        pgbackrest-${PGBACKREST_VERSION} \
+		&& ${PACKAGER} -y clean all ; \
+else \
+	${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+		--setopt=skip_missing_names_on_install=False \
+        openssh-clients \
+        openssh-server \
+        shadow-utils \
+        tar \
+        bzip2 \
+        lz4 \
+        python3 \
+        python3-pip \
+        python3-psycopg2 \
+        python3-psutil \
+        python3-requests \
+        #python3-etcd \
+        python3-pyyaml \
+        python3-setuptools \
+        git \
+        patchutils \
+        binutils \
+        make \
+        cmake \
+        gcc \
+        pam-devel \
+        wget \
+        mlocate \
+        git-clang-format \
+        openssl-devel \
+        ccache \
+        redhat-rpm-config \
+        krb5-devel \
+        busybox \
+        jq \
+        rsync \
+        dumb-init \ 
+        libicu \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 fi
 
-# RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-#         openssh-clients \
-#         openssh-server \
-#         shadow-utils \
-#         tar \
-#         bzip2 \
-#         lz4 \
-#         python3 \
-#         python3-pip \
-#         python3-psycopg2 \
-#         python3-psutil \
-#         python3-requests \
-#         python3-etcd \
-#         #python3-pyyaml \
-#         git \
-#         patchutils \
-#         binutils \
-#         make \
-#         cmake \
-#         gcc \
-#         #curl \
-#         libcurl-devel \
-#         pam-devel \
-#         wget \
-#         mlocate \
-#         git-clang-format \
-#         openssl-devel \
-#         ccache \
-#         redhat-rpm-config \
-#         krb5-devel \
-#         busybox \
-#         dpkg \
-#         jq \
-#         rsync \
-#     && ${PACKAGER} -y clean all;
-
 # install etcdctl
-RUN ETCDVERSION=3.3.27 \
-    && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz \
+RUN ETCDVERSION=3.5.13 \
+    && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz \
     | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
-# Install Patroni
-# RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
-# #swiftclient
-# RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-#                     python3-etcd python3-consul  \
-#                     python3-gevent python3-greenlet python3-cachetools \
-#                     python3-rsa python3-pyasn1-modules  python3-cffi \
-#     && ${PACKAGER} -y clean all;
-
-    # python3-kazoo python3-meld3 python3-boto python3-swiftclient
-
-#RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
-
-#RUN  mkdir /usr/lib/postgresql
 ENV PATHBACKUP = $PATH
-#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
-#RUN echo $PATH
+
 # Install pam_oauth2.so
 #RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     #&& make -C pam-oauth2 install \
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto \ 
-    && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION \
+
+    #pip3.11 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto \ 
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto python-etcd --upgrade \ 
+    && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade \
     && mkdir /usr/lib/postgresql \
     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
@@ -196,7 +144,8 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
 #                            postgresql${version}-first-last-agg \
 #                            postgresql${version}-hll \
 #                            postgresql${version}-hypopg \
-                            pgaudit*${version} \
+                             pgaudit*${version} \
+                             credcheck_*${version} \
 #                            postgresql${version}-pg-checksums \
 #                            postgresql${version}-pgl-ddl-deploy \
 #                            postgresql${version}-pglogical \
@@ -320,9 +269,16 @@ COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
 RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-                    glibc-devel glibc-static
+                    glibc-devel glibc-static \
+                && mkdir -p /package;
 
-RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
+  #wget -nv http://smarden.org/runit/runit-2.1.2.tar.gz \
+
+RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+    && cd admin/runit-2.1.2 && package/install \
+    && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+    && ${PACKAGER} -y clean all ;
 
 # Modify for using origial-spilo scripts
 # RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init &&
@@ -339,7 +295,7 @@ RUN for version in $PG_SUPPORTED_VERSIONS; do \
 done
 
 # Clean Up Packages binutils glibc-devel glibc-static
-RUN ${PACKAGER} -y remove python3-pip python3-wheel python3-dev git patchutils flatpak glibc-static gcc glibc-devel \
+RUN ${PACKAGER} -y remove python3.11-pip python3.11-wheel python3.11-dev git patchutils flatpak glibc-static gcc glibc-devel \
     #&& ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all; 

@@ -20,8 +20,7 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
 		tar \
 		bzip2 \
 		lz4 \
-		dumb-init \
-		pgbackrest-${PGBACKREST_VERSION} \
+		#crunchy-backrest-${BACKREST_VER} \
 		&& ${PACKAGER} -y clean all ; \
 else \
 	${PACKAGER} -y install --nodocs  \
@@ -31,8 +30,8 @@ else \
 		bzip2 \
 		lz4 \
 		#postgresql${PGVERSION}-server \
-		dumb-init \
 		pgbackrest-${PGBACKREST_VERSION} \
+		nano \
 		&& ${PACKAGER} -y clean all ; \
 fi
 
@@ -87,4 +86,4 @@ ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
 USER 26
 
-CMD ["dumb-init", "/launch.sh", "init"]
+CMD ["/bin/sh", "/launch.sh", "init"]

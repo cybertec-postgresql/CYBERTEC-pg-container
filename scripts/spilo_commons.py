@@ -14,8 +14,7 @@ LIB_DIR = '/usr/lib/postgresql'
 extensions = {
     'timescaledb':    (13, 16, False,  True),
     'pg_partman':     (13, 16, False, True),
-    'pg_stat_statements':  (34, 16, True, True),
-    'pgaudit'           :  (13, 16, True, True)
+    'pg_stat_statements':   (14, 16, True, True)
 }
 
 def adjust_extensions(old, version, extwlist=False):

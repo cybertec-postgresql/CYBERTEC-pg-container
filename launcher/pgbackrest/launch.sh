@@ -6,11 +6,7 @@ PGBACKREST_PATH=${PGBACKREST_PATH:-'/opt/pgbackrest'}
 source "${PGBACKREST_PATH}/bin/shell_lib.sh"
 output_info "Start pgBackRest-PreCondition-Check"
 
-if [ "$MODE" == "pgbackrest" ] && [ "$COMMAND" == "repo-host" ]; then
-    output_info "pgBackRest: Start Repo-Host"
-    pgbackrest server
-
-elif [ "$MODE" == "pgbackrest" ] && [ "$COMMAND" == "backup" ]; then
+if [ "$MODE" == "pgbackrest" ] && [ "$COMMAND" == "backup" ]; then
     output_info "pgBackRest: Backup-Job found"
     source "${PGBACKREST_PATH}/bin/backup/start.sh"
     output_success "pgBackRest: Backup-Job completed"

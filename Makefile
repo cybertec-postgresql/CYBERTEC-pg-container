@@ -13,7 +13,6 @@ PGBACKREST_VERSION ?= 2.50
 POSTGIS_VERSION ?= 34
 PACKAGER ?= dnf
 BUILD ?= 1
-ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 
@@ -73,11 +72,10 @@ postgres-build:
 			--build-arg PACKAGER=$(PACKAGER) 									\
 			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 						\
 			--build-arg BUILD=$(BUILD) 											\
-			--build-arg ARCH=$(ARCH) 											\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
-			--build-arg PGVERSION=$(PGVERSION)
+			--build-arg PGVERSION=$(PGVERSION)							
 
 postgres: postgres-build
 
@@ -94,7 +92,7 @@ postgres-stage-build:
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 							\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 									\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"								\
-			--build-arg PGVERSION=$(PGVERSION)
+			--build-arg PGVERSION=$(PGVERSION)							
 
 postgres-stage: postgres-stage-build
 
@@ -112,7 +110,7 @@ postgres-gis-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(PGVERSION)										\
-			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)
+			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							
 
 postgres-gis: postgres-gis-build
 

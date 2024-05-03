@@ -565,7 +565,7 @@ def get_placeholders(provider):
                             if USE_KUBERNETES and placeholders.get('DCS_ENABLE_KUBERNETES_API') else '')
     #pgBackRest
     placeholders.setdefault('USE_PGBACKREST', False)
-    placeholders.setdefault('COMMAND', '')
+    placeholders.setdefault('PGBACKREST_SERVER', False)
     # use namespaces to set WAL bucket prefix scope naming the folder namespace-clustername for non-default namespace.
     placeholders.setdefault('WAL_BUCKET_SCOPE_PREFIX', '{0}-'.format(placeholders['NAMESPACE'])
                             if placeholders['NAMESPACE'] not in ('default', '') else '')

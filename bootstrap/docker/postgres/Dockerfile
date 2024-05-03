@@ -95,9 +95,13 @@ RUN pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION
 
 RUN mkdir /usr/lib/postgresql
 ENV PATHBACKUP = $PATH
+#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
+#RUN echo $PATH
 # Install pam_oauth2.so
 RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     && make -C pam-oauth2 install \
+    #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
+    #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/x4m/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz | tar xz \
     && curl -sL https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz | tar xz \
@@ -106,6 +110,7 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/powa-team/pg_stat_kcache.git \
     && git clone https://github.com/crunchydata/pgnodemx \
+    #&& git clone https://github.com/pgq/pgqd.git \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all\
@@ -117,11 +122,30 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
     && for version in $PG_SUPPORTED_VERSIONS; do \
         ${PACKAGER} -y update && \
         ${PACKAGER} -y install postgresql${version}-pltcl \
+#                            postgresql${version}-dirtyread \
+#                            postgresql${version}-extra-window-functions \
+#                            postgresql${version}-first-last-agg \
+#                            postgresql${version}-hll \
+#                            postgresql${version}-hypopg \
                             pgaudit*${version} \
+#                            postgresql${version}-pg-checksums \
+#                            postgresql${version}-pgl-ddl-deploy \
+#                            postgresql${version}-pglogical \
+#                            postgresql${version}-pglogical-ticker \
+#                            postgresql${version}-pgq-node \
+#                            postgresql${version}-pldebugger \
+#                            postgresql${version}-pllua \
+#                            postgresql${version}-plpgsql-check \
+#                            postgresql${version}-plproxy \
+#                            postgresql${version}-repack \
+#                            postgresql${version}-wal2json \
+        #&& ${PACKAGER} -y clean all; \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
                     postgresql${version}-plpython3 postgresql${version}-devel \
                     pg_cron_${version} \
+                    #postgresql-${version}-pgq3 \
+                    #postgresql-${version}-pg-stat-kcache $EXTRAS \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
@@ -150,14 +174,6 @@ RUN git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
         && ${PACKAGER} -y clean all; \
     done
-
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
-    && ${PACKAGER} -y clean all; \
-
-RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
-
-# Modify for using origial-spilo scripts
-RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 # Clean Up git-repos
 RUN rm -rf /pgextwlist \
@@ -230,6 +246,14 @@ RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
+
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+                    glibc-devel glibc-static
+
+RUN  mkdir /package && cd /package && wget http://smarden.org/runit/runit-2.1.2.tar.gz && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz && cd admin/runit-2.1.2 && package/install
+
+# Modify for using origial-spilo scripts
+RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
 
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 

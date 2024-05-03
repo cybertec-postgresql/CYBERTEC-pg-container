@@ -36,11 +36,11 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
         python3 \
         python3-pip \
         python3-psycopg2 \
-        python3-psutil \
-        python3-requests \
-        python3-etcd \
-        python3-pyyaml \
-        python3-setuptools \
+        # python3-psutil \
+        # python3-requests \
+        # python3-etcd \
+        # python3-pyyaml \
+        # python3-setuptools \
         git \
         patchutils \
         binutils \
@@ -74,11 +74,11 @@ else \
         python3 \
         python3-pip \
         python3-psycopg2 \
-        python3-psutil \
-        python3-requests \
-        #python3-etcd \
-        python3-pyyaml \
-        python3-setuptools \
+        # python3-psutil \
+        # python3-requests \
+        # python3-etcd \
+        # python3-pyyaml \
+        # python3-setuptools \
         git \
         patchutils \
         binutils \
@@ -115,8 +115,7 @@ ENV PATHBACKUP = $PATH
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
 
-    #pip3.11 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto \ 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto python-etcd --upgrade \ 
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto python-etcd psutil requests --upgrade \
     && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade \
     && mkdir /usr/lib/postgresql \
     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
@@ -139,31 +138,12 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
     && for version in $PG_SUPPORTED_VERSIONS; do \
         ${PACKAGER} -y update && \
         ${PACKAGER} -y install postgresql${version}-pltcl \
-#                            postgresql${version}-dirtyread \
-#                            postgresql${version}-extra-window-functions \
-#                            postgresql${version}-first-last-agg \
-#                            postgresql${version}-hll \
-#                            postgresql${version}-hypopg \
                              pgaudit*${version} \
                              credcheck_*${version} \
-#                            postgresql${version}-pg-checksums \
-#                            postgresql${version}-pgl-ddl-deploy \
-#                            postgresql${version}-pglogical \
-#                            postgresql${version}-pglogical-ticker \
-#                            postgresql${version}-pgq-node \
-#                            postgresql${version}-pldebugger \
-#                            postgresql${version}-pllua \
-#                            postgresql${version}-plpgsql-check \
-#                            postgresql${version}-plproxy \
-#                            postgresql${version}-repack \
-#                            postgresql${version}-wal2json \
-        #&& ${PACKAGER} -y clean all; \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
                     postgresql${version}-plpython3 postgresql${version}-devel \
                     pg_cron_${version} \
-                    #postgresql-${version}-pgq3 \
-                    #postgresql-${version}-pg-stat-kcache $EXTRAS \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
@@ -189,15 +169,23 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
             done \
             #&& cd /pgextwlist && make clean && make && make install \
             #&& cd /pg_stat_kcache && make clean && make && make install \
-            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install \
+            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
-        && ${PACKAGER} -y clean all; \
-    done
+    done \
+    && ${PACKAGER} -y clean all \
+    && rm -rf /pgextwlist /pg_stat_kcache /pgnodemx;
 
-# Clean Up git-repos
-RUN rm -rf /pgextwlist \
-    && rm -rf /pg_stat_kcache \
-    && rm -rf /pgnodemx ;
+COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
+
+RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
+    && ${PACKAGER} -y clean all \
+    && mkdir -p /package \
+    && cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+    && cd admin/runit-2.1.2 && package/install \
+    && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
+    && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+    && ${PACKAGER} -y clean all;
+
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
@@ -220,70 +208,50 @@ COPY motd /etc/
 
 COPY runit /etc/runit/runsvdir/default/
 COPY pgq_ticker.ini $PGHOME/
-RUN rm -rf /etc/service
-
-RUN mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata
-
-RUN sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
-        && chown -R postgres:postgres $PGHOME $PGHOME/pgdata $RW_DIR \
-        && rm -fr /var/spool/cron /var/tmp \
-        && mkdir -p /var/spool \
-        && ln -s $RW_DIR/cron /var/spool/cron \
-        && ln -s $RW_DIR/tmp /var/tmp \
-        && for d in /etc/runit/runsvdir/default/*; do \
-            chmod 755 $d/* \
-            && ln -s /run/supervise/$(basename $d) $d/supervise; \
-        done \
-        && ln -snf $RW_DIR/service /etc/service \
-        #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
-        && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
-        && ln -s $RW_DIR/.bash_history /root/.bash_history \
-        && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history \
-        && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history \
-        && ln -s $RW_DIR/etc $PGHOME/etc \
-        && for d in $PGHOME /root; do \
-            d=$d/.config/patroni \
-            && mkdir -p $d \
-            && ln -s $PGHOME/postgres.yml $d/patronictl.yaml; \
-        done \
-        && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
-        && echo "PATH=\"$PATH\"" > /etc/environment \
-        && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor; \
-            do echo "export $e" >> /etc/bash.bashrc; \
-        done \
-        && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
-        && echo "source /etc/motd" >> /root/.bashrc \
-        # Allow users in the root group to access the following files and dirs
-        && if [ "$COMPRESS" != "true" ]; then \
-           chmod 664 /etc/passwd \
-           && chmod o+r /etc/shadow \
-           && chgrp -R 0 $PGHOME $RW_DIR \
-           && chmod -R g=u $PGHOME $RW_DIR \
-           && usermod -a -G root postgres; \
-        fi
+RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata \
+    && sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
+    && chown -R postgres:postgres $PGHOME $PGHOME/pgdata $RW_DIR \
+    && rm -fr /var/spool/cron /var/tmp \
+    && mkdir -p /var/spool \
+    && ln -s $RW_DIR/cron /var/spool/cron \
+    && ln -s $RW_DIR/tmp /var/tmp \
+    && for d in /etc/runit/runsvdir/default/*; do \
+        chmod 755 $d/* \
+        && ln -s /run/supervise/$(basename $d) $d/supervise; \
+    done \
+    && ln -snf $RW_DIR/service /etc/service \
+    #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
+    && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
+    && ln -s $RW_DIR/.bash_history /root/.bash_history \
+    && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history \
+    && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history \
+    && ln -s $RW_DIR/etc $PGHOME/etc \
+    && for d in $PGHOME /root; do \
+        d=$d/.config/patroni \
+        && mkdir -p $d \
+        && ln -s $PGHOME/postgres.yml $d/patronictl.yaml; \
+    done \
+    && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
+    && echo "PATH=\"$PATH\"" > /etc/environment \
+    && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor; \
+        do echo "export $e" >> /etc/bash.bashrc; \
+    done \
+    && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
+    && echo "source /etc/motd" >> /root/.bashrc \
+    # Allow users in the root group to access the following files and dirs
+    && if [ "$COMPRESS" != "true" ]; then \
+        chmod 664 /etc/passwd \
+        && chmod o+r /etc/shadow \
+        && chgrp -R 0 $PGHOME $RW_DIR \
+        && chmod -R g=u $PGHOME $RW_DIR \
+        && usermod -a -G root postgres; \
+    fi
         
 # Remove default pgbackrest-config and spool-path
 RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
-
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-                    glibc-devel glibc-static \
-                && mkdir -p /package;
-
-COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
-  #wget -nv http://smarden.org/runit/runit-2.1.2.tar.gz \
-
-RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
-    && cd admin/runit-2.1.2 && package/install \
-    && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
-    && ${PACKAGER} -y clean all ;
-
-# Modify for using origial-spilo scripts
-# RUN ln -s /usr/local/bin/dumb-init /usr/bin/dumb-init &&
-RUN ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir
-
 #RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
 
 # Cleanup

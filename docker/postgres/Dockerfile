@@ -109,6 +109,8 @@ RUN ETCDVERSION=3.5.13 \
 
 ENV PATHBACKUP = $PATH
 
+COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
+
 # Install pam_oauth2.so
 #RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     #&& make -C pam-oauth2 install \
@@ -129,7 +131,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
-    && ${PACKAGER} -y clean all\
+    && ${PACKAGER} -y clean all \
 \
     # forbid creation of a main cluster when package is installed
     #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
@@ -172,19 +174,27 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
             && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
     done \
-    && ${PACKAGER} -y clean all \
-    && rm -rf /pgextwlist /pg_stat_kcache /pgnodemx;
-
-COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
-
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
+    && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
     && ${PACKAGER} -y clean all \
     && mkdir -p /package \
     && cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
     && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
-    && ${PACKAGER} -y clean all;
+    && ${PACKAGER} -y autoremove \
+    && ${PACKAGER} -y clean all \
+    && rm -rf /pgextwlist /pg_stat_kcache /pgnodemx;vi
+
+
+# RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
+#     && ${PACKAGER} -y clean all \
+#     && mkdir -p /package \
+#     && cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+#     && cd admin/runit-2.1.2 && package/install \
+#     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
+#     && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+#     && ${PACKAGER} -y autoremove \
+#     && ${PACKAGER} -y clean all;
 
 
 EXPOSE 5432 8008 8080

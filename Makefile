@@ -49,7 +49,7 @@ base-build:
 base: base-build;		
 
 pgbackrest-build:
-		docker build $(ROOTPATH)											\
+		docker build $(ROOTPATH)	 --no-cache										\
 			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 				\
 			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-$(BUILD) 	\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)							\

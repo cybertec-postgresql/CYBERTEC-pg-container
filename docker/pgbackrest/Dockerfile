@@ -19,6 +19,8 @@ RUN ${PACKAGER} -y install --nodocs  \
 		openssh-server \
 		bzip2 \
 		lz4 \
+		zstd \
+		libicu \
 		#postgresql${PGVERSION}-server \
 		dumb-init \
 		pgbackrest-${PGBACKREST_VERSION} \
@@ -36,7 +38,7 @@ RUN rm /etc/pgbackrest.conf
 RUN rm -rf /var/spool/pgbackrest
 
 # Add kubectl
-RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl 
+RUN curl -LO https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl && chmod +x kubectl 
 
 FROM ${CONTAINERIMAGE}
 
@@ -45,6 +47,11 @@ ARG PGVERSION
 COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
+# SSH-client
+COPY --from=builder /etc/ssh /etc/ssh
+COPY --from=builder /usr/bin/ssh /usr/bin/ssh
+COPY --from=builder /usr/libexec/openssh /usr/libexec/openssh
+# pgBackRest
 COPY --from=builder /usr/bin/pgbackrest /usr/bin/pgbackrest
 COPY --from=builder /usr/share/licenses/pgbackrest/LICENSE /usr/share/licenses/pgbackrest/LICENSE
 COPY --from=builder /var/lib/pgbackrest /var/lib/pgbackrest
@@ -53,6 +60,22 @@ COPY --from=builder /var/log/pgbackrest /var/log/pgbackrest
 COPY --from=builder /usr/pgsql-* /usr/pgsql-*
 COPY --from=builder /var/lib/pgsql /var/lib/pgsql
 COPY --from=builder ./kubectl /usr/local/bin/
+# lz4
+COPY --from=builder /usr/bin/lz4* /usr/bin/lz4*
+# zstd
+COPY --from=builder /usr/bin/zstd* /usr/bin/zstd*
+# libicu
+COPY --from=builder /usr/lib64/libicu* /usr/lib64/libicu*
+# glibc
+COPY --from=builder /usr/lib64/libglib* /usr/lib64/libglib*
+COPY --from=builder /usr/lib64/libc* /usr/lib64/libc*
+COPY --from=builder /usr/lib64/ld* /usr/lib64/ld*
+
+
+# libraries
+COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
+
+
 
 
 # add postgres user and group

@@ -17,4 +17,4 @@ do
         fi
 done
 
-cd postgres_exporter && ./postgres_exporter --extend.query-path=/tmp/cpo_queries.yaml #--auto-discover-databases
+/bin/postgres_exporter --extend.query-path=/tmp/cpo_queries.yaml #--auto-discover-databases

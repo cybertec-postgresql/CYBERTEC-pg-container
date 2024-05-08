@@ -9,7 +9,7 @@ output_info "Start pgBackRest-PreCondition-Check"
 
 if [ "$USE_PGBACKREST" == true ]; then
     output_info "Check if RepoHost-Server needs to start"
-    if [ "$USE_PGBACKREST" == true ] && [ "$PGBACKREST_SERVER" == true ]; then
+    if [ "$PGBACKREST_SERVER" == true ]; then
         output_info "pgBackRest: Start Repo-Host"
         pgbackrest server &
     else

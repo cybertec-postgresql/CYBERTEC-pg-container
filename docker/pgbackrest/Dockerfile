@@ -40,13 +40,14 @@ RUN rm -rf /var/spool/pgbackrest
 # Add kubectl
 RUN curl -LO https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl && chmod +x kubectl 
 
-FROM ${CONTAINERIMAGE}
+FROM ${CONTAINERIMAGE} as micro
 
 ARG PGVERSION
 
 COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
+COPY --from=builder /usr/lib64 /usr/lib64
 # SSH-client
 COPY --from=builder /etc/ssh /etc/ssh
 COPY --from=builder /usr/bin/ssh /usr/bin/ssh
@@ -65,18 +66,21 @@ COPY --from=builder /usr/bin/lz4* /usr/bin/lz4*
 # zstd
 COPY --from=builder /usr/bin/zstd* /usr/bin/zstd*
 # libicu
-COPY --from=builder /usr/lib64/libicu* /usr/lib64/libicu*
+# COPY --from=builder /usr/lib64/libicu* /usr/lib64/libicu*
 # glibc
-COPY --from=builder /usr/lib64/libglib* /usr/lib64/libglib*
-COPY --from=builder /usr/lib64/libc* /usr/lib64/libc*
-COPY --from=builder /usr/lib64/ld* /usr/lib64/ld*
-
+# COPY --from=builder /usr/lib64/libglib* /usr/lib64/libglib*
+# COPY --from=builder /usr/lib64/libc* /usr/lib64/libc*
+# COPY --from=builder /usr/lib64/ld* /usr/lib64/ld*
+# sed
+COPY --from=builder /usr/bin/sed /usr/bin/sed
+COPY --from=builder /usr/share/locale /usr/share/locale
+COPY --from=builder /usr/lib /usr/lib
 
 # libraries
-COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
-
-
-
+COPY --from=builder /usr/bin/nss_wrapper.pl /usr/bin/nss_wrapper.pl 
+# COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
+COPY --from=builder /usr/share/man/man1 /usr/share/man/man1
+COPY --from=builder /usr/bin/envsubst /usr/bin/envsubst
 
 # add postgres user and group
 #RUN groupadd postgres -g 26 && useradd postgres -u 26 -g 26
@@ -89,6 +93,9 @@ ADD scripts/pgbackrest/ /opt/pgbackrest/bin/
 
 # add pgbackrest-common files
 ADD /scripts/nss_wrapper /scripts/nss_wrapper
+
+FROM scratch 
+COPY --from=micro / /
 
 # set user and group ownership
 RUN chown -R postgres:postgres /opt/pgbackrest  \
@@ -116,3 +123,4 @@ ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 USER 26
 
 CMD ["dumb-init", "/launch.sh", "init"]
+

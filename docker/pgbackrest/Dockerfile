@@ -23,6 +23,7 @@ RUN ${PACKAGER} -y install --nodocs  \
 		libicu \
 		#postgresql${PGVERSION}-server \
 		dumb-init \
+		jq \
 		pgbackrest-${PGBACKREST_VERSION} \
 	&& ${PACKAGER} -y clean all ; 
 
@@ -65,16 +66,17 @@ COPY --from=builder ./kubectl /usr/local/bin/
 COPY --from=builder /usr/bin/lz4* /usr/bin/lz4*
 # zstd
 COPY --from=builder /usr/bin/zstd* /usr/bin/zstd*
-# libicu
-# COPY --from=builder /usr/lib64/libicu* /usr/lib64/libicu*
-# glibc
-# COPY --from=builder /usr/lib64/libglib* /usr/lib64/libglib*
-# COPY --from=builder /usr/lib64/libc* /usr/lib64/libc*
-# COPY --from=builder /usr/lib64/ld* /usr/lib64/ld*
-# sed
+# Others
 COPY --from=builder /usr/bin/sed /usr/bin/sed
+COPY --from=builder /usr/bin/jq /usr/bin/jq
+COPY --from=builder /usr/bin/watch /usr/bin/watch
 COPY --from=builder /usr/share/locale /usr/share/locale
 COPY --from=builder /usr/lib /usr/lib
+COPY --from=builder /usr/lib64 /usr/lib64
+# PostgreSQL
+COPY --from=builder /usr/pgsql-* /usr/
+COPY --from=builder /var/lib/pgsql /var/lib/pgsql
+COPY --from=builder /usr/bin/pg_* /usr/bin/
 
 # libraries
 COPY --from=builder /usr/bin/nss_wrapper.pl /usr/bin/nss_wrapper.pl 

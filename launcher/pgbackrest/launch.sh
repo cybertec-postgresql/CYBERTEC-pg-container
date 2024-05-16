@@ -9,9 +9,17 @@ output_info "Start pgBackRest-PreCondition-Check"
 
 if [ "$USE_PGBACKREST" == true ]; then
     output_info "Check if RepoHost-Server needs to start"
-    if [ "$PGBACKREST_SERVER" == true ]; then
-        output_info "pgBackRest: Start Repo-Host"
-        pgbackrest server &
+    if [ "$REPO_HOST" == true ]; then
+        if [[ -n $RESTORE_ENABLE ]] || [[ -n $RESTORE_BASEBACKUP ]]; then
+            output_info "pgBackRest: Starting temporary Repo-Host"
+            pgbackrest server &
+            pid=$!
+            trap 'kill $pid' EXIT
+        else
+            output_info "pgBackRest: Starting Repo-Host"
+            /opt/pgbackrest/bin/repo-host/start.sh &
+            pgbackrest server
+        fi
     else
         output_info "RepoHost-Server not needed. Skip Step"
     fi

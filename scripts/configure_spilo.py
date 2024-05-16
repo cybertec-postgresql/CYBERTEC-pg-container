@@ -565,7 +565,7 @@ def get_placeholders(provider):
                             if USE_KUBERNETES and placeholders.get('DCS_ENABLE_KUBERNETES_API') else '')
     #pgBackRest
     placeholders.setdefault('USE_PGBACKREST', False)
-    placeholders.setdefault('PGBACKREST_SERVER', False)
+    placeholders.setdefault('REPO_HOST', False)
     # use namespaces to set WAL bucket prefix scope naming the folder namespace-clustername for non-default namespace.
     placeholders.setdefault('WAL_BUCKET_SCOPE_PREFIX', '{0}-'.format(placeholders['NAMESPACE'])
                             if placeholders['NAMESPACE'] not in ('default', '') else '')
@@ -1134,7 +1134,7 @@ def main():
             if bool(placeholders.get('LOG_S3_BUCKET')):
                 write_log_environment(placeholders)
         elif section == 'pgbackrest':
-            if placeholders['PGBACKREST_SERVER']:
+            if placeholders['REPO_HOST']:
                 link_runit_service(placeholders, 'pgbackrest')
         elif section == 'wal-e':
             if placeholders['USE_WALE']:

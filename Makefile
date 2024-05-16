@@ -2,7 +2,7 @@
 # Define Default if Values not exist
 BASE_IMAGE ?= rockylinux:9
 BASEOS ?= rocky9
-CONTAINERIMAGE ?= rockylinux:9-ubi-micro
+CONTAINERIMAGE ?= rockylinux/rockylinux:9-ubi-micro
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
 CONTAINERSUITE ?= cybertec-pg-container

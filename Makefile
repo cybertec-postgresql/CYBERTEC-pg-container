@@ -20,10 +20,7 @@ POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
-ROOTPATH = $(GOPATH)/src/github.com/cybertec/cybertec-pg-container
-ifndef ROOTPATH
-	export ROOTPATH=$(GOPATH)/src/github.com/cybertec/cybertec-pg-container
-endif
+ROOTPATH ?= $(GOPATH)/src/github.com/cybertec/cybertec-pg-container
 
 # Build Images
 

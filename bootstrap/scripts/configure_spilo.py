@@ -39,7 +39,7 @@ WALG_SSH_NAMES = ['WALG_SSH_PREFIX', 'SSH_PRIVATE_KEY_PATH', 'SSH_USERNAME', 'SS
 
 
 def parse_args():
-    sections = ['all', 'patroni', 'certificate', 'wal-e', 'crontab',
+    sections = ['all', 'patroni', 'certificate', 'pgbackrest', 'wal-e', 'crontab',
                 'pam-oauth2', 'pgbouncer', 'bootstrap', 'standby-cluster', 'log']
     argp = argparse.ArgumentParser(description='Configures Spilo',
                                    epilog="Choose from the following sections:\n\t{}".format('\n\t'.join(sections)),
@@ -555,6 +555,9 @@ def get_placeholders(provider):
     # in Kubernetes with Etcd in a non-default namespace
     placeholders.setdefault('NAMESPACE', placeholders.get('POD_NAMESPACE', 'default')
                             if USE_KUBERNETES and placeholders.get('DCS_ENABLE_KUBERNETES_API') else '')
+    #pgBackRest
+    placeholders.setdefault('USE_PGBACKREST', False)
+    placeholders.setdefault('PGBACKREST_SERVER', False)
     # use namespaces to set WAL bucket prefix scope naming the folder namespace-clustername for non-default namespace.
     placeholders.setdefault('WAL_BUCKET_SCOPE_PREFIX', '{0}-'.format(placeholders['NAMESPACE'])
                             if placeholders['NAMESPACE'] not in ('default', '') else '')
@@ -1115,6 +1118,9 @@ def main():
         elif section == 'log':
             if bool(placeholders.get('LOG_S3_BUCKET')):
                 write_log_environment(placeholders)
+        elif section == 'pgbackrest':
+            if placeholders['PGBACKREST_SERVER']:
+                link_runit_service(placeholders, 'pgbackrest')
         elif section == 'wal-e':
             if placeholders['USE_WALE']:
                 write_wale_environment(placeholders, '', args['force'])

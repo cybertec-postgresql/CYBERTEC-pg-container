@@ -3,10 +3,10 @@ name: Build Docker Container
 on:
   push:
     branches:
-      - dev
+      - buildWorkflowforDev
   pull_request:
     branches:
-      - dev
+      - buildWorkflowforDev
 
 jobs:
   build:

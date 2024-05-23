@@ -10,7 +10,6 @@ ARG PACKAGER
 ARG PGBACKREST_VERSION
 ARG PGVERSION
 ARG OLD_PG_VERSIONS
-#ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 
 RUN ${PACKAGER} -y install --nodocs  \
@@ -21,7 +20,6 @@ RUN ${PACKAGER} -y install --nodocs  \
 		lz4 \
 		zstd \
 		libicu \
-		#postgresql${PGVERSION}-server \
 		dumb-init \
 		jq \
 		pgbackrest-${PGBACKREST_VERSION} \

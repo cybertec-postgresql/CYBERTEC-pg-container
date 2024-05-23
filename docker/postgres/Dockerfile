@@ -1,6 +1,7 @@
 ARG CONTAINERSUITE
 ARG BUILD
 ARG BASEOS
+ARG PGVERSION
  
 FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD} as builder
 
@@ -198,6 +199,9 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
 #     && ${PACKAGER} -y clean all;
 
 FROM scratch 
+
+ARG PGVERSION
+
 COPY --from=builder / /
 
 EXPOSE 5432 8008 8080

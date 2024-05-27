@@ -57,7 +57,6 @@ COPY --from=builder /usr/share/licenses/pgbackrest/LICENSE /usr/share/licenses/p
 COPY --from=builder /var/lib/pgbackrest /var/lib/pgbackrest
 COPY --from=builder /var/log/pgbackrest /var/log/pgbackrest
 # Postgres
-COPY --from=builder /usr/pgsql-* /usr/pgsql-*
 COPY --from=builder /var/lib/pgsql /var/lib/pgsql
 COPY --from=builder ./kubectl /usr/local/bin/
 # lz4
@@ -72,7 +71,11 @@ COPY --from=builder /usr/share/locale /usr/share/locale
 COPY --from=builder /usr/lib /usr/lib
 COPY --from=builder /usr/lib64 /usr/lib64
 # PostgreSQL
-COPY --from=builder /usr/pgsql-* /usr/
+# TODO: implement a method that works with $PG_SUPPORTED_VERSIONS
+COPY --from=builder /usr/pgsql-13 /usr/pgsql-13
+COPY --from=builder /usr/pgsql-14 /usr/pgsql-14
+COPY --from=builder /usr/pgsql-15 /usr/pgsql-15
+COPY --from=builder /usr/pgsql-16 /usr/pgsql-16
 COPY --from=builder /var/lib/pgsql /var/lib/pgsql
 COPY --from=builder /usr/bin/pg_* /usr/bin/
 

@@ -1,8 +1,9 @@
 ARG CONTAINERSUITE
 ARG BUILD
 ARG BASEOS
+ARG PGVERSION
  
-FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD}
+FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD} as builder
 
 # Dockerfile specific informations
 ARG PACKAGER
@@ -109,13 +110,15 @@ RUN ETCDVERSION=3.5.13 \
 
 ENV PATHBACKUP = $PATH
 
+COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
+
 # Install pam_oauth2.so
 #RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
     #&& make -C pam-oauth2 install \
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto python-etcd psutil requests --upgrade \
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff --upgrade \
     && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade \
     && mkdir /usr/lib/postgresql \
     && curl -sL https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz | tar xz \
@@ -129,7 +132,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
     #&& git clone https://github.com/pgq/pgqd.git \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
-    && ${PACKAGER} -y clean all\
+    && ${PACKAGER} -y clean all \
 \
     # forbid creation of a main cluster when package is installed
     #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
@@ -172,20 +175,34 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 b
             && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
             #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
     done \
-    && ${PACKAGER} -y clean all \
-    && rm -rf /pgextwlist /pg_stat_kcache /pgnodemx;
-
-COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
-
-RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
-    && ${PACKAGER} -y clean all \
-    && mkdir -p /package \
-    && cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+    && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
+    && ${PACKAGER} -y clean all;
+    
+    RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+    && rm -rf /pg_permissions* /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
+    && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
+    && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
+    && ${PACKAGER} -y autoremove \
+    && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;
 
+# RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
+#     && ${PACKAGER} -y clean all \
+#     && mkdir -p /package \
+#     && cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
+#     && cd admin/runit-2.1.2 && package/install \
+#     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
+#     && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
+#     && ${PACKAGER} -y autoremove \
+#     && ${PACKAGER} -y clean all;
+
+FROM scratch 
+
+ARG PGVERSION
+
+COPY --from=builder / /
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
@@ -247,26 +264,9 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         && usermod -a -G root postgres; \
     fi
         
-# Remove default pgbackrest-config and spool-path
-RUN rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
 
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
-#RUN curl -LO https://dl.k8s.io/release/v1.26.0/bin/linux/amd64/kubectl && chmod +x kubectl && mv ./kubectl /usr/local/bin/
-
-# Cleanup
-RUN rm -rf /pgextwlist /pg_stat_kcache /oracle_fdw /pgnodemx /pg_permissions* /pg_profile* /pg_tm_aux* /timescaledb /set_user /pam-oauth2;
-
-# Cleanup
-RUN for version in $PG_SUPPORTED_VERSIONS; do \
-    ${PACKAGER} -y remove postgresql${version}-devel; \
-done
-
-# Clean Up Packages binutils glibc-devel glibc-static
-RUN ${PACKAGER} -y remove python3.11-pip python3.11-wheel python3.11-dev git patchutils flatpak glibc-static gcc glibc-devel \
-    #&& ${PACKAGER} -y autoremove \
-    && ${PACKAGER} -y clean dbcache \
-    && ${PACKAGER} -y clean all; 
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 

@@ -25,7 +25,7 @@ else
     output_info "pgBackRest: Detect Primary-Pod $hostName"
     while true ; do
         unset error
-        kubectl exec $hostName -c postgres -- /bin/bash -c "pgbackrest backup ${COMMAND_OPTS}" || { output_error "pgBackRest: Create basebackup failed"; error=true; }
+        kubectl exec $hostName -c ${CONTAINER} -- /bin/bash -c "pgbackrest backup ${COMMAND_OPTS}" || { output_error "pgBackRest: Create basebackup failed"; error=true; }
         if [ "$error" = true ]; then
             if [ "$count" == 3 ]; then
                 output_error "pgBackRest: Basebackup could not be created. Abort init-script";

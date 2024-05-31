@@ -39,6 +39,12 @@ RUN rm -rf /var/spool/pgbackrest
 # Add kubectl
 RUN curl -LO https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl && chmod +x kubectl 
 
+RUN mkdir -p /tmp/pgsql && cp -r /usr/pgsql* /tmp/pgsql
+RUN mkdir -p /tmp/pg && cp -r /usr/bin/pg* /tmp/pg
+RUN mkdir -p /tmp/lz4 && cp -r /usr/bin/lz4* /tmp/lz4
+RUN mkdir -p /tmp/zstd && cp -r /usr/bin/zstd* /tmp/zstd
+
+
 FROM ${CONTAINERIMAGE} as micro
 
 ARG PGVERSION
@@ -57,12 +63,15 @@ COPY --from=builder /usr/share/licenses/pgbackrest/LICENSE /usr/share/licenses/p
 COPY --from=builder /var/lib/pgbackrest /var/lib/pgbackrest
 COPY --from=builder /var/log/pgbackrest /var/log/pgbackrest
 # Postgres
+COPY --from=builder /tmp/pgsql/ /usr/
 COPY --from=builder /var/lib/pgsql /var/lib/pgsql
+COPY --from=builder /tmp/pg /usr/bin/
+
 COPY --from=builder ./kubectl /usr/local/bin/
 # lz4
-COPY --from=builder /usr/bin/lz4* /usr/bin/lz4*
+COPY --from=builder /tmp/lz4 /usr/bin/
 # zstd
-COPY --from=builder /usr/bin/zstd* /usr/bin/zstd*
+COPY --from=builder /tmp/zstd /usr/bin/
 # Others
 COPY --from=builder /usr/bin/sed /usr/bin/sed
 COPY --from=builder /usr/bin/jq /usr/bin/jq
@@ -70,14 +79,21 @@ COPY --from=builder /usr/bin/watch /usr/bin/watch
 COPY --from=builder /usr/share/locale /usr/share/locale
 COPY --from=builder /usr/lib /usr/lib
 COPY --from=builder /usr/lib64 /usr/lib64
-# PostgreSQL
-# TODO: implement a method that works with $PG_SUPPORTED_VERSIONS
-COPY --from=builder /usr/pgsql-13 /usr/pgsql-13
-COPY --from=builder /usr/pgsql-14 /usr/pgsql-14
-COPY --from=builder /usr/pgsql-15 /usr/pgsql-15
-COPY --from=builder /usr/pgsql-16 /usr/pgsql-16
-COPY --from=builder /var/lib/pgsql /var/lib/pgsql
-COPY --from=builder /usr/bin/pg_* /usr/bin/
+# CA
+COPY --from=builder /usr/bin/ca-legacy /usr/bin/ca-legacy
+COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
+# p11-kit
+COPY --from=builder /etc/pkcs11 /etc/pkcs11
+COPY --from=builder /usr/libexec/p11-kit /usr/libexec/p11-kit
+COPY --from=builder /usr/share/bash-completion/completions /usr/share/bash-completion/completions
+COPY --from=builder /usr/share/p11-kit /usr/share/p11-kit
+COPY --from=builder /usr/share/polkit-1 /usr/share/polkit-1
+
+COPY --from=builder /usr/bin/p11-kit /usr/bin/p11-kit
+COPY --from=builder /etc/pki /etc/pki
+COPY --from=builder /usr/share/pki /usr/share/pki
+COPY --from=builder /etc/ssl /etc/ssl
+COPY --from=builder /etc/pkcs11 /etc/pkcs11
 
 # libraries
 COPY --from=builder /usr/bin/nss_wrapper.pl /usr/bin/nss_wrapper.pl 
@@ -99,6 +115,8 @@ ADD /scripts/nss_wrapper /scripts/nss_wrapper
 
 FROM scratch 
 COPY --from=micro / /
+
+ARG PGVERSION
 
 # set user and group ownership
 RUN chown -R postgres:postgres /opt/pgbackrest  \

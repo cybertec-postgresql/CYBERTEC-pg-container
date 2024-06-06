@@ -82,6 +82,13 @@ COPY --from=builder /usr/lib64 /usr/lib64
 # CA
 COPY --from=builder /usr/bin/ca-legacy /usr/bin/ca-legacy
 COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
+# grep 
+COPY --from=builder /etc/profile.d /etc/profile.d
+COPY --from=builder /usr/bin/grep /usr/bin/grep
+COPY --from=builder /usr/libexec /usr/libexec
+# COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
+# COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
+
 # p11-kit
 COPY --from=builder /etc/pkcs11 /etc/pkcs11
 COPY --from=builder /usr/libexec/p11-kit /usr/libexec/p11-kit
@@ -94,6 +101,7 @@ COPY --from=builder /etc/pki /etc/pki
 COPY --from=builder /usr/share/pki /usr/share/pki
 COPY --from=builder /etc/ssl /etc/ssl
 COPY --from=builder /etc/pkcs11 /etc/pkcs11
+
 
 # libraries
 COPY --from=builder /usr/bin/nss_wrapper.pl /usr/bin/nss_wrapper.pl 

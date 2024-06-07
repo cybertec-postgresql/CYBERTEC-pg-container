@@ -13,3 +13,7 @@ launcher/ferretdb
 #Exporter_v2
 docker/exporter_v2
 launcher/exporter_v2
+
+# logical backup 
+docker/logical_backup/
+scripts/logical_backup/

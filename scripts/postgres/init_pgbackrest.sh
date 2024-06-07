@@ -19,7 +19,7 @@ else
     # Create Stanza and run Init-Backup
     stanza=$(pgbackrest info --output=json)
     if [ "$stanza" == "[]" ]; then
-        pgbackrest stanza-create --stanza=db1
+        pgbackrest stanza-create --stanza=db
         pgbackrest backup --type=full --stanza=db --repo=1
         echo "Finished: pgBackRest is ready for use"
     else

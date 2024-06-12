@@ -41,6 +41,6 @@ jobs:
     steps:
       - name: Tag and push container1
         run: |
-          docker tag user/base:latest {{ $IMAGEPRAEFIX }}/base:base-{{ $BUILD }}-{{ $TYPE }}
+          docker tag user/base:latest ${{ IMAGEPRAEFIX }}/base:base-${{ BUILD }}-${{ TYPE }}
 
 

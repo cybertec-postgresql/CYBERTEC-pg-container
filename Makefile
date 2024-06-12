@@ -31,6 +31,7 @@ postgres: base postgres
 postgres-stage: base postgres-stage
 postgres-gis: base postgres-gis
 postgres-oracle: base postgres-oracle
+pgbouncer: pgbouncer
 exporter: exporter
 
 base-build:
@@ -135,6 +136,21 @@ postgres-oracle-build:
 			--build-arg PGVERSION=$(PGVERSION)
 
 postgres-oracle: postgres-oracle-build
+
+pgbouncer-build:
+		docker build $(ROOTPATH)														\
+			--file $(ROOTPATH)/docker/pgbouncer/Dockerfile 								\
+			--tag cybertec-pg-container/pgbouncer:$(IMAGE_TAG)-$(BETA)$(BUILD)			\
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\
+			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 								\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)							\
+			--build-arg BASEOS=$(BASEOS) 												\
+			--build-arg PACKAGER=$(PACKAGER) 											\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
+			--build-arg BUILD=$(BUILD) 													\
+			--build-arg PGVERSION=$(PGVERSION)
+
+pgbouncer: pgbouncer-build
 
 exporter-build:
 		docker build $(ROOTPATH)														\

@@ -28,22 +28,54 @@ cpo_pgnodemx_process:
 
 cpo_pgnodemx_mem:
   query: "
-with d(key, val) as
-(select key, val from exporter.cgroup_setof_kv('memory.stat'))
+WITH d AS (
+  SELECT key, val 
+  FROM exporter.cgroup_setof_kv('memory.stat')
+),
+limits AS (
+  SELECT 
+    CASE
+      WHEN exporter.cgroup_mode() = 'legacy' AND exporter.cgroup_scalar_bigint('memory.limit_in_bytes') = 9223372036854771712 THEN 0
+      WHEN exporter.cgroup_mode() = 'legacy' THEN exporter.cgroup_scalar_bigint('memory.limit_in_bytes')
+      WHEN exporter.cgroup_scalar_bigint('memory.max') = 9223372036854775807 THEN 0
+      ELSE exporter.cgroup_scalar_bigint('memory.max')
+    END AS limit,
+    exporter.cgroup_mode() AS mode
+),
+values AS (
+  SELECT
+    (SELECT val FROM d WHERE key = 'cache') AS cache,
+    (SELECT val FROM d WHERE key = 'rss') AS rss,
+    (SELECT val FROM d WHERE key = 'shmem') AS shmem,
+    (SELECT val FROM d WHERE key = 'mapped_file') AS mapped_file,
+    (SELECT val FROM d WHERE key = 'dirty') AS dirty_legacy,
+    (SELECT val FROM d WHERE key = 'file_dirty') AS dirty,
+    (SELECT val FROM d WHERE key = 'active_anon') AS active_anon,
+    (SELECT val FROM d WHERE key = 'inactive_anon') AS inactive_anon,
+    (SELECT val FROM d WHERE key = 'active_file') AS active_file,
+    (SELECT val FROM d WHERE key = 'inactive_file') AS inactive_file
+)
 SELECT
- exporter.kdapi_scalar_bigint('mem_request') as request,
-case when exporter.cgroup_scalar_bigint('memory.limit_in_bytes') = 9223372036854771712 then 0 else exporter.cgroup_scalar_bigint('memory.limit_in_bytes') end as limit,
- (select val from d where key='cache') as cache,
- (select val from d where key='rss') as rss,
- (select val from d where key='shmem') as shmem,
- (select val from d where key='mapped_file') as mapped_file,
- (select val from d where key='dirty') as dirty,
- (select val from d where key='active_anon') as active_anon,
- (select val from d where key='inactive_anon') as inactive_anon,
- (select val from d where key='active_file') as active_file,
- (select val from d where key='inactive_file') as inactive_file,
- exporter.cgroup_scalar_bigint('memory.usage_in_bytes') as usage_in_bytes,
- exporter.cgroup_scalar_bigint('memory.kmem.usage_in_bytes') as kmem_usage_in_bytes
+  exporter.kdapi_scalar_bigint('mem_request') AS request,
+  limits.limit,
+  CASE WHEN limits.mode = 'legacy' THEN values.cache ELSE 0 END AS cache,
+  CASE WHEN limits.mode = 'legacy' THEN values.rss ELSE 0 END AS rss,
+  values.shmem,
+  CASE WHEN limits.mode = 'legacy' THEN values.mapped_file ELSE 0 END AS mapped_file,
+  CASE WHEN limits.mode = 'legacy' THEN values.dirty_legacy ELSE values.dirty END AS dirty,
+  values.active_anon,
+  values.inactive_anon,
+  values.active_file,
+  values.inactive_file,
+  CASE
+    WHEN limits.mode = 'legacy' THEN exporter.cgroup_scalar_bigint('memory.usage_in_bytes')
+    ELSE exporter.cgroup_scalar_bigint('memory.current')
+  END AS usage_in_bytes,
+  CASE
+    WHEN limits.mode = 'legacy' THEN exporter.cgroup_scalar_bigint('memory.kmem.usage_in_bytes')
+    ELSE 0
+  END AS kmem_usage_in_byte
+FROM limits, values
 "
   metrics:
     - request:
@@ -98,8 +130,25 @@ cpo_pgnodemx_cpu:
         description: "CPU limit value in milli cores"
 
 cpo_pgnodemx_cpucfs:
-  query: "SELECT  exporter.cgroup_scalar_bigint('cpu.cfs_period_us') as period_us, 
-                  case when exporter.cgroup_scalar_bigint('cpu.cfs_quota_us') < 0 then 0 else exporter.cgroup_scalar_bigint('cpu.cfs_quota_us') end as quota_us"
+  query: "WITH cgroup_mode AS (
+  SELECT exporter.cgroup_mode() AS mode
+),
+cpu_values AS (
+  SELECT
+    exporter.cgroup_scalar_bigint('cpu.cfs_period_us') AS cfs_period_us,
+    exporter.cgroup_scalar_bigint('cpu.cfs_quota_us') AS cfs_quota_us,
+    exporter.cgroup_array_bigint('cpu.max') AS cpu_max
+)
+SELECT
+  CASE
+    WHEN cm.mode = 'legacy' THEN cv.cfs_period_us
+    ELSE (cv.cpu_max)[2]
+  END AS period_us,
+  CASE
+    WHEN cm.mode = 'legacy' THEN GREATEST(cv.cfs_quota_us, 0)
+    ELSE GREATEST((cv.cpu_max)[1], 0)
+  END AS quota_us
+FROM cgroup_mode cm, cpu_values cv"
   metrics:
     - period_us:
         usage: "GAUGE"
@@ -109,7 +158,19 @@ cpo_pgnodemx_cpucfs:
         description: "the length of a period (in microseconds)"
 
 cpo_pgnodemx_cpuacct:
-  query: "SELECT exporter.cgroup_scalar_bigint('cpuacct.usage') as usage, clock_timestamp() as usage_ts"
+  query: "WITH cpu_usage AS (
+  SELECT
+    exporter.cgroup_mode() AS mode,
+    exporter.cgroup_scalar_bigint('cpuacct.usage') AS legacy_usage,
+    (SELECT val FROM exporter.cgroup_setof_kv('cpu.stat') WHERE key = 'usage_usec') * 1000 AS v2_usage
+)
+SELECT
+  CASE
+    WHEN cu.mode = 'legacy' THEN cu.legacy_usage
+    ELSE cu.v2_usage
+  END AS usage,
+  clock_timestamp() AS usage_ts
+FROM cpu_usage cu"
   metrics:
     - usage:
         usage: "GAUGE"
@@ -119,12 +180,18 @@ cpo_pgnodemx_cpuacct:
         description: "CPU usage snapshot timestamp"
 
 cpo_pgnodemx_cpustat:
-  query: "WITH d(key, val) AS
-(select key, val from exporter.cgroup_setof_kv('cpu.stat'))
+  query: "WITH d AS (
+  SELECT key, val, exporter.cgroup_mode() AS mode
+  FROM exporter.cgroup_setof_kv('cpu.stat')
+)
 SELECT
- (SELECT val FROM d WHERE key='nr_periods') AS nr_periods,
- (SELECT val FROM d WHERE key='nr_throttled') AS nr_throttled,
- (SELECT val FROM d WHERE key='throttled_time') AS throttled_time, clock_timestamp() as snap_ts"
+  MAX(CASE WHEN key = 'nr_periods' THEN val END) AS nr_periods,
+  MAX(CASE WHEN key = 'nr_throttled' THEN val END) AS nr_throttled,
+  MAX(CASE WHEN mode = 'legacy' AND key = 'throttled_usec' THEN val 
+           WHEN mode = 'unified' AND key = 'throttled_usec' THEN val*1000 END) AS throttled_time_in_nanoseconds,
+  clock_timestamp() AS snap_ts
+FROM d
+"
   metrics:
     - nr_periods:
         usage: "GAUGE"
@@ -132,9 +199,9 @@ SELECT
     - nr_throttled:
         usage: "GAUGE"
         description: "number of runnable periods in which the application used its entire quota and was throttled"
-    - throttled_time:
+    - throttled_time_in_nanoseconds:
         usage: "GAUGE"
-        description: "sum total amount of time individual threads within the exporter.cgroup were throttled"
+        description: "sum total amount of time in nanoseconds individual threads within the exporter.cgroup were throttled"
     - snap_ts:
         usage: "GAUGE"
         description: "CPU stat snapshot timestamp"

@@ -13,9 +13,11 @@ jobs:
       ROOTPATH: /home/runner/work/CYBERTEC-pg-container/CYBERTEC-pg-container
       BASEOS: rocky9
       BUILD: 1
-
-
-
+      PGVERSION_FULL: 16.3
+      POSTGIS_VERSION: 34
+      IMAGE_TAG_PREFIX: $(BASEOS)-$(PGVERSION_FULL)
+      IMAGE_TAG_SUFFIX: $(BUILD)
+      CONTAINER_REPO: docker.io/cybertecpostgresql/cybertec-pg-container-dev
 
 
     steps:
@@ -30,23 +32,56 @@ jobs:
         with:
           go-version: '1.22'          
 
-      - name: Build base$
-        id: build-base
+      - name: Build Postgres $IMAGE_TAG_PREFIX-IMAGE_TAG_SUFFIX
+        id: build-postgres
         run: |
-          make base
-          docker save -o base.tar cybertec-pg-container/base:$BASEOS-$BUILD
+          make postgres
+          docker tag cybertec-pg-container/postgres:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:postgres-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          docker save -o postgres.tar $CONTAINER_REPO:postgres-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+
+      - name: Build Postgres with GIS $IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX
+        id: build-postgres-gis
+        run: |
+          make postgres-gis
+          docker tag cybertec-pg-container/postgres-gis:$IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:postgres-gis-$IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX
+          docker save -o postgres-gis.tar $CONTAINER_REPO:postgres-gis-$IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX
+
+      - name: Build pgBackRest
+        id: build-pgbackrest
+        run: |
+          make pgbackrest
+          docker tag cybertec-pg-container/pgbackrest:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgbackrest-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          docker save -o pgbackrest.tar $CONTAINER_REPO:pgbackrest-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+
+    - name: Build exporter
+        id: build-exporter
+        run: |
+          make exporter
+          docker tag cybertec-pg-container/exporter:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:exporter-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          docker save -o exporter.tar $CONTAINER_REPO:exporter-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+
+    - name: Build pgBouncer
+    id: build-pgbouncer
+    run: |
+      make pgBouncer
+      docker tag cybertec-pg-container/pgBouncer:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+      docker save -o pgBouncer.tar $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
             
       - name: Upload Containers
         uses: actions/upload-artifact@v2
         with:
           name: docker-images
           path: |
-            base.tar
+            postgres.tar
+            postgres-gis.tar
+            pgbackrest.tar
+            exporter.tar
+            pgbouncer.tar
 
 
 
 
-  tag:
+  push:
     
     runs-on: ubuntu-latest
 
@@ -65,11 +100,26 @@ jobs:
         with:
           name: docker-images
 
-      - name: Load base image
-        run: docker load -i base.tar
+      - name: Load Postgres image
+        run: docker load -i postgres.tar
 
-      - name: Tag and push container1
-        run: |
-          docker tag cybertec-pg-container/base:$BASEOS-$BUILD $IMAGEPRAEFIX/base:$BASEOS-$BUILD-$TYPE
+      - name: Load Postgres-gis image
+        run: docker load -i postgres-gis.tar
+
+      - name: Load Postgres-gis image
+        run: docker load -i postgres-gis.tar
+
+      - name: Load Postgres-gis image
+        run: docker load -i postgres-gis.tar
+
+      - name: Load Postgres-gis image
+        run: docker load -i postgres-gis.tar
+
+      - name: Log in to Docker Hub
+        run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      # - name: push postgres
+      #   run: |
+      #     docker push user/container1:release-${{ github.event.release.tag_name }}
 
 

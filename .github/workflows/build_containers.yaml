@@ -34,6 +34,11 @@ jobs:
         id: build-base
         run: |
           make base
+            
+      - name: printout Images
+        run: |
+          docker images
+
 
 
   tag:

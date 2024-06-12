@@ -12,6 +12,9 @@ jobs:
     env:
       ROOTPATH: /home/runner/work/CYBERTEC-pg-container/CYBERTEC-pg-container
 
+
+
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -24,9 +27,11 @@ jobs:
         with:
           go-version: '1.22'          
 
-      - name: Build base
+      - name: Build base$
+        id: build-base
         run: |
           make base
+
 
   tag:
     
@@ -43,6 +48,6 @@ jobs:
     steps:
       - name: Tag and push container1
         run: |
-          docker tag user/base:latest $IMAGEPRAEFIX/base:base-$BUILD-$TYPE
+          docker tag cybertec-pg-container/base:latest $IMAGEPRAEFIX/base:base-$BUILD-$TYPE
 
 

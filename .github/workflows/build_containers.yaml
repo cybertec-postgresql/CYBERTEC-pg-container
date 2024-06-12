@@ -25,6 +25,11 @@ jobs:
         run: |
           pwd
 
+      - name: test
+        run: |
+          printenv
+          
+
       - name: Build base
         run: |
           make base

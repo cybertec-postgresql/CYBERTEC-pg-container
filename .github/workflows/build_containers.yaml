@@ -21,13 +21,10 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: test
+      - name: Move files to desired path
         run: |
-          pwd
-
-      - name: test
-        run: |
-          printenv
+          mkdir -p /src/github.com/cybertec/cybertec-pg-container
+          mv * /src/github.com/cybertec/cybertec-pg-container
           
 
       - name: Build base

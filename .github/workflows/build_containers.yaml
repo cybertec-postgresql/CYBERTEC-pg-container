@@ -11,10 +11,6 @@ jobs:
 
     env:
       ROOTPATH: /home/runner/work/CYBERTEC-pg-container/CYBERTEC-pg-container
-      IMAGEPRAEFIX: docker.io/cybertecpostgresql/cybertec-pg-container-dev
-      PGVERSION: 16.3
-      BUILD: 1
-      TYPE: dev
 
     steps:
       - name: Checkout repository
@@ -35,6 +31,12 @@ jobs:
   tag:
     
     runs-on: ubuntu-latest
+
+    env:
+      IMAGEPRAEFIX: docker.io/cybertecpostgresql/cybertec-pg-container-dev
+      PGVERSION: 16.3
+      BUILD: 1
+      TYPE: dev
 
     needs: build
     

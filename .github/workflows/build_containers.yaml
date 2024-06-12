@@ -34,7 +34,7 @@ jobs:
         id: build-base
         run: |
           make base
-        docker save -o base.tar cybertec-pg-container/base:$BASEOS-$BUILD
+          docker save -o base.tar cybertec-pg-container/base:$BASEOS-$BUILD
             
       - name: Upload Containers
         uses: actions/upload-artifact@v2

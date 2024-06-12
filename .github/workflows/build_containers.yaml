@@ -53,19 +53,19 @@ jobs:
           docker tag cybertec-pg-container/pgbackrest:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgbackrest-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
           docker save -o pgbackrest.tar $CONTAINER_REPO:pgbackrest-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
 
-    - name: Build exporter
+      - name: Build exporter
         id: build-exporter
         run: |
           make exporter
           docker tag cybertec-pg-container/exporter:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:exporter-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
           docker save -o exporter.tar $CONTAINER_REPO:exporter-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
 
-    - name: Build pgBouncer
-    id: build-pgbouncer
-    run: |
-      make pgBouncer
-      docker tag cybertec-pg-container/pgBouncer:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
-      docker save -o pgBouncer.tar $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+      - name: Build pgBouncer
+        id: build-pgbouncer
+        run: |
+          make pgBouncer
+          docker tag cybertec-pg-container/pgBouncer:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          docker save -o pgBouncer.tar $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
             
       - name: Upload Containers
         uses: actions/upload-artifact@v2
@@ -73,9 +73,10 @@ jobs:
           name: docker-images
           path: |
             postgres.tar
-
-
-
+            postgres-gis.tar
+            pgbackrest.tar
+            exporter.tar
+            pgbouncer.tar
 
 
   push:

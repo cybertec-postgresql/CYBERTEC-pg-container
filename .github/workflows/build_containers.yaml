@@ -73,10 +73,7 @@ jobs:
           name: docker-images
           path: |
             postgres.tar
-            postgres-gis.tar
-            pgbackrest.tar
-            exporter.tar
-            pgbouncer.tar
+
 
 
 

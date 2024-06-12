@@ -9,6 +9,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      ROOTPATH: /home/runner/work/CYBERTEC-pg-container/CYBERTEC-pg-container
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -19,13 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22'
-
-      - name: Move files to desired path
-        run: |
-          mkdir -p /src/github.com/cybertec/cybertec-pg-container
-          mv * /src/github.com/cybertec/cybertec-pg-container
-          
+          go-version: '1.22'          
 
       - name: Build base
         run: |

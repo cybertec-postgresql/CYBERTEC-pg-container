@@ -34,10 +34,15 @@ jobs:
         id: build-base
         run: |
           make base
+        docker save -o base.tar cybertec-pg-container/base:$BASEOS-$BUILD
             
-      - name: printout Images
-        run: |
-          docker images
+      - name: Upload Containers
+        uses: actions/upload-artifact@v2
+        with:
+          name: docker-images
+          path: |
+            base.tar
+
 
 
 
@@ -55,6 +60,14 @@ jobs:
     needs: build
     
     steps:
+      - name: Download Containers
+        uses: actions/download-artifact@v2
+        with:
+          name: docker-images
+
+      - name: Load base image
+        run: docker load -i base.tar
+
       - name: Tag and push container1
         run: |
           docker tag cybertec-pg-container/base:$BASEOS-$BUILD $IMAGEPRAEFIX/base:$BASEOS-$BUILD-$TYPE

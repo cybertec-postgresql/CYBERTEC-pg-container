@@ -11,6 +11,9 @@ jobs:
 
     env:
       ROOTPATH: /home/runner/work/CYBERTEC-pg-container/CYBERTEC-pg-container
+      BASEOS: rocky9
+      BUILD: 1
+
 
 
 
@@ -39,8 +42,9 @@ jobs:
 
     env:
       IMAGEPRAEFIX: docker.io/cybertecpostgresql/cybertec-pg-container-dev
-      PGVERSION: 16.3
+      BASEOS: rocky9
       BUILD: 1
+      PGVERSION: 16.3
       TYPE: dev
 
     needs: build
@@ -48,6 +52,6 @@ jobs:
     steps:
       - name: Tag and push container1
         run: |
-          docker tag cybertec-pg-container/base:latest $IMAGEPRAEFIX/base:base-$BUILD-$TYPE
+          docker tag cybertec-pg-container/base:$BASEOS-$BUILD $IMAGEPRAEFIX/base:$BASEOS-$BUILD-$TYPE
 
 

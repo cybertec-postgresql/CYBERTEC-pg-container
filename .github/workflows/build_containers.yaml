@@ -70,9 +70,9 @@ jobs:
       - name: Build pgBouncer
         id: build-pgbouncer
         run: |
-          make pgBouncer
-          docker tag cybertec-pg-container/pgBouncer:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
-          docker save -o pgBouncer.tar $CONTAINER_REPO:pgBouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          make pgbouncer
+          docker tag cybertec-pg-container/pgbouncer:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgbouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          docker save -o pgbouncer.tar $CONTAINER_REPO:pgbouncer-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
             
       - name: Upload Containers
         uses: actions/upload-artifact@v2
@@ -112,13 +112,13 @@ jobs:
         run: docker load -i postgres-gis.tar
 
       - name: Load Postgres-gis image
-        run: docker load -i postgres-gis.tar
+        run: docker load -i pgbackrest.tar
 
       - name: Load Postgres-gis image
-        run: docker load -i postgres-gis.tar
+        run: docker load -i exporter.tar
 
       - name: Load Postgres-gis image
-        run: docker load -i postgres-gis.tar
+        run: docker load -i pgbouncer.tar
 
       - name: Log in to Docker Hub
         run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin

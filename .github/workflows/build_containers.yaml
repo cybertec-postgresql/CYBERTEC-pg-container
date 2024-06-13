@@ -50,7 +50,7 @@ jobs:
           echo "cybertec-pg-container/postgres:$BASEOS-$PGVERSION_FULL-$BUILD $CONTAINER_REPO:postgres-$BASEOS-$PGVERSION_FULL-$BUILD"
           make postgres-gis
           docker images
-          docker tag cybertec-pg-container/postgres-gis:$BASEOS-$PGVERSION_FULL-$POSTGIS_VERSION-$BUILD $CONTAINER_REPO:postgres-gis-$BASEOS-$PGVERSION_FULL-$POSTGIS_VERSION-$BUILD
+          docker tag cybertec-pg-container/postgres-gis:$BASEOS-$PGVERSION_FULL-$BUILD $CONTAINER_REPO:postgres-gis-$BASEOS-$PGVERSION_FULL-$POSTGIS_VERSION-$BUILD
           docker save -o postgres-gis.tar $CONTAINER_REPO:postgres-gis-$BASEOS-$PGVERSION_FULL-$POSTGIS_VERSION-$BUILD
 
       - name: Build pgBackRest

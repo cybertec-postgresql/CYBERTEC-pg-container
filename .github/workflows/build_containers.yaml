@@ -15,8 +15,8 @@ jobs:
       BUILD: 1
       PGVERSION_FULL: 16.3
       POSTGIS_VERSION: 34
-      IMAGE_TAG_PREFIX: $(BASEOS)-$(PGVERSION_FULL)
-      IMAGE_TAG_SUFFIX: $(BUILD)
+      IMAGE_TAG_PREFIX: $BASEOS-$PGVERSION_FULL
+      IMAGE_TAG_SUFFIX: $BUILD
       CONTAINER_REPO: docker.io/cybertecpostgresql/cybertec-pg-container-dev
 
 

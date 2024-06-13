@@ -68,7 +68,7 @@ jobs:
           make pgbouncer
           docker images
           docker tag cybertec-pg-container/pgbouncer:$BASEOS-$PGVERSION_FULL-$BUILD $CONTAINER_REPO/pgbouncer-$BASEOS-$PGVERSION_FULL-$BUILD
-          docker save -o pgbouncer.tar $CONTAINER_REPO/pgbouncer-$BASEOS-$PGVERSION_FULL-$BUILD
+          docker save -o pgbouncer.tar $CONTAINER_REPO/pgbouncer-$BASEOS-$PGVERSION_FULL-$BUILD 
             
       - name: Upload Containers
         uses: actions/upload-artifact@v2

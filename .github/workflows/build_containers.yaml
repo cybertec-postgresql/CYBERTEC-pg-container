@@ -37,7 +37,9 @@ jobs:
         run: |
           echo "docker.io/cybertec-pg-container/postgres:$BASEOS-$PGVERSION_FULL-$BUILD $CONTAINER_REPO:postgres-$BASEOS-$PGVERSION_FULL-$BUILD"
           make postgres
+          echo "fertig"
           docker tag docker.io/cybertec-pg-container/postgres:$BASEOS-$PGVERSION_FULL-$BUILD $CONTAINER_REPO:postgres-$BASEOS-$PGVERSION_FULL-$BUILD
+          echo "tag"
           docker save -o postgres.tar $CONTAINER_REPO:postgres-$BASEOS-$PGVERSION_FULL-$BUILD
 
       - name: Build Postgres with GIS $IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX

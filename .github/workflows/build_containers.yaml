@@ -44,22 +44,22 @@ jobs:
         id: build-postgres-gis
         run: |
           make postgres-gis
-          docker tag docker.io/cybertec-pg-container/postgres-gis:$IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:postgres-gis-$IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX
-          docker save -o postgres-gis.tar $CONTAINER_REPO:postgres-gis-$IMAGE_TAG_PREFIX-$POSTGIS_VERSION-$IMAGE_TAG_SUFFIX
+          docker tag docker.io/cybertec-pg-container/postgres-gis:$BASEOS-$PGVERSION_FULL-$POSTGIS_VERSION-$BUILD $CONTAINER_REPO:postgres-gis-$BASEOS-$PGVERSION_FULL-$POSTGIS_VERSION-$BUILD
+          docker save -o postgres-gis.tar $CONTAINER_REPO:postgres-gis-$BASEOS-$PGVERSION_FULL-$POSTGIS_VERSION-$BUILD
 
       - name: Build pgBackRest
         id: build-pgbackrest
         run: |
           make pgbackrest
-          docker tag docker.io/cybertec-pg-container/pgbackrest:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:pgbackrest-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
-          docker save -o pgbackrest.tar $CONTAINER_REPO:pgbackrest-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          docker tag docker.io/cybertec-pg-container/pgbackrest:$BASEOS-$PGVERSION_FULL-$BUILD $CONTAINER_REPO:pgbackrest-$BASEOS-$PGVERSION_FULL-$BUILD
+          docker save -o pgbackrest.tar $CONTAINER_REPO:pgbackrest-$BASEOS-$PGVERSION_FULL-$BUILD
 
       - name: Build exporter
         id: build-exporter
         run: |
           make exporter
-          docker tag docker.io/cybertec-pg-container/exporter:$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX $CONTAINER_REPO:exporter-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
-          docker save -o exporter.tar $CONTAINER_REPO:exporter-$IMAGE_TAG_PREFIX-$IMAGE_TAG_SUFFIX
+          docker tag docker.io/cybertec-pg-container/exporter:$BASEOS-$PGVERSION_FULL-$BUILD $CONTAINER_REPO:exporter-$BASEOS-$PGVERSION_FULL-$BUILD
+          docker save -o exporter.tar $CONTAINER_REPO:exporter-$BASEOS-$PGVERSION_FULL-$BUILD
 
       - name: Build pgBouncer
         id: build-pgbouncer

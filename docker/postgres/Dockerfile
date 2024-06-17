@@ -40,6 +40,7 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
         python3-psutil \
         python3-requests \
         python3-etcd \
+        python3-cdiff \
         #python3-pyyaml \
         git \
         patchutils \
@@ -80,6 +81,7 @@ else \
         python3-etcd \
         python3-pyyaml \
         python3-etcd \
+        python3-cdiff \
         git \
         patchutils \
         binutils \

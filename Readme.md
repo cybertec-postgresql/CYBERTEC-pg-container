@@ -16,21 +16,22 @@ On Kubernetes and Kubernetes-based environments, the image uses the k8-etcd, oth
 
     export GOPATH=$HOME/cdev
     export GOBIN=$GOPATH/bin
-    export CCPROOT=$GOPATH/src/github.com/cybertec/cybertec-pg-container
     export PATH=$PATH:$GOBIN
     export BASE_IMAGE=rockylinux:9
+    export CONTAINERIMAGE=rockylinux/rockylinux:9-ubi-micro
     export IMAGE_REPOSITORY=docker.io
     export BASEOS=rocky9
     export PACKAGER=dnf
     export CONTAINERSUITE=cybertec-pg-container
-    export PGBACKREST_VERSION=2.50
-    export PATRONI_VERSION=3.2.2
-    export PG_MAJOR=16
-    export PG_VERSION=16.2
-    export OLD_PG_VERSIONS="13 14 15"
+    export PGBACKREST_VERSION=2.51
+    export CCPROOT=$GOPATH/src/github.com/cybertec/cybertec-pg-container
+    export PATRONI_VERSION=3.3.1
     export POSTGIS_VERSION=34
+    export PGVERSION=16
+    export PGVERSION_FULL=16.3
+    export OLD_PG_VERSIONS="13 14 15"
     export BUILD=1
-    export ARCH=x86_64
+    export ARCH=amd64
 
 <p>You can build all images with make
 - make all

@@ -156,4 +156,3 @@ ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 USER 26
 
 CMD ["dumb-init", "/launch.sh", "init"]
-

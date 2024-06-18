@@ -285,6 +285,14 @@ def PostgresqlUpgrade(config):
     is_running = _PostgresqlUpgrade.is_running
     _PostgresqlUpgrade.is_running = lambda s: False
     try:
-        return _PostgresqlUpgrade(config['postgresql'])
+        args = [config['postgresql']]
+        try:
+            from patroni.postgresql.mpp import get_mpp
+            args.append(get_mpp(config))
+        except ImportError:
+            # Patroni version < 3.3
+            pass
+
+        return _PostgresqlUpgrade(*args)
     finally:
         _PostgresqlUpgrade.is_running = is_running

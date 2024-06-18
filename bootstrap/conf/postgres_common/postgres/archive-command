@@ -1,1 +1,0 @@
-archive_command = 'test ! -f $PGWAL/%f && cp %p $PGWAL/%f'

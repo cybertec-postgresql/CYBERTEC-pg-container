@@ -9,28 +9,25 @@ ARG PACKAGER
 
 RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
-		git \
-		go \
 		dumb-init \ 
 		pgbouncer \
-		&& ${PACKAGER} -y clean all ;
+		&& ${PACKAGER} -y autoremove \
+		&& ${PACKAGER} -y clean dbcache \
+		&& ${PACKAGER} -y clean all;
 
+RUN chown root:root /var/log/pgbouncer && touch /var/log/pgbouncer/pgbouncer.log && chmod 664 /var/log/pgbouncer/pgbouncer.log
+RUN mkdir -p /etc/pgbouncer/certs && chmod 775 /etc/pgbouncer/certs && chmod 664 /etc/pgbouncer/pgbouncer.ini && touch /etc/pgbouncer/auth_file.txt && chmod 664 /etc/pgbouncer/auth_file.txt&& chmod 664 /etc/passwd && usermod -a -G root pgbouncer;
 
-# FROM ${CONTAINERIMAGE}
-# COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
-# COPY --from=builder ./postgres_exporter/postgres_exporter /bin/postgres_exporter
+		
+FROM scratch 
 
- COPY launcher/pgbouncer/launch.sh /
- COPY scripts/pgbouncer/* /etc/pgbouncer/
- # add pgbackrest-common files
-ADD /scripts/nss_wrapper/nss_wrapper_pgbouncer.sh /scripts/nss_wrapper/nss_wrapper_pgbouncer.sh
+COPY --from=builder / /
 
- RUN mkdir -p /etc/pgbouncer/certs && chown -R pgbouncer:pgbouncer /etc/pgbouncer
+COPY launcher/pgbouncer/launch.sh /
+COPY scripts/pgbouncer/* /etc/pgbouncer/
 
-# EXPOSE 9187
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 
-ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper_pgbouncer.sh"]
+USER 998
 
-USER 996
-
-CMD ["/bin/sh", "/launch.sh", "init"]
+CMD ["/bin/bash", "/launch.sh", "init"]

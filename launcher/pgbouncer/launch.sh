@@ -1,4 +1,11 @@
 #!/bin/bash
+
+if [ "$(id -u)" -ne 0 ]; then
+    sed -e "s/^pgbouncer:x:[^:]*:[^:]*:/pgbouncer:x:$(id -u):$(id -g):/" /etc/passwd > "$RW_DIR/tmp/passwd"
+    cat "$RW_DIR/tmp/passwd" > /etc/passwd
+    rm "$RW_DIR/tmp/passwd"
+fi
+
 set -ex
 
 if [ "$PGUSER" = "postgres" ]; then
@@ -28,4 +35,4 @@ fi
 envsubst < /etc/pgbouncer/pgbouncer.ini.tmpl > /etc/pgbouncer/pgbouncer.ini
 envsubst < /etc/pgbouncer/auth_file.txt.tmpl > /etc/pgbouncer/auth_file.txt
 
-exec /bin/pgbouncer /etc/pgbouncer/pgbouncer.ini
+./bin/pgbouncer /etc/pgbouncer/pgbouncer.ini

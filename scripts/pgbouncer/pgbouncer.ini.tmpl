@@ -12,10 +12,9 @@ auth_type = scram-sha-256
 auth_file = /etc/pgbouncer/auth_file.txt
 auth_dbname = postgres
 admin_users = $PGUSER
-stats_users_prefix = robot_
 auth_query = SELECT * FROM $PGSCHEMA.user_lookup($1)
-logfile = /var/log/pgbouncer/pgbouncer.log
-pidfile = /var/run/pgbouncer/pgbouncer.pid
+logfile = /dev/stdout
+pidfile = /tmp/pgbouncer.pid
 
 server_tls_sslmode = require
 server_tls_ca_file = /etc/pgbouncer/certs/pgbouncer.crt

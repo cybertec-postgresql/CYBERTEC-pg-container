@@ -15,6 +15,7 @@ ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
 ARG ARCH
+
 # Spilo-specific
 ENV SET_USER=REL3_0_0 \
     PLPROFILER=REL4_1 \
@@ -25,8 +26,7 @@ ENV SET_USER=REL3_0_0 \
     PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
 
 # Get some Standard-Stuff
-RUN if [ "$BASEOS" = "ubi8" ] ; then \
-	${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
 		--setopt=skip_missing_names_on_install=False \
         openssh-clients \
         openssh-server \
@@ -37,11 +37,6 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
         python3 \
         python3-pip \
         python3-psycopg2 \
-        # python3-psutil \
-        # python3-requests \
-        # python3-etcd \
-        # python3-pyyaml \
-        # python3-setuptools \
         git \
         patchutils \
         binutils \
@@ -62,55 +57,15 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
         dumb-init \ 
         libicu \
         pgbackrest-${PGBACKREST_VERSION} \
-		&& ${PACKAGER} -y clean all ; \
-else \
-	${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
-		--setopt=skip_missing_names_on_install=False \
-        openssh-clients \
-        openssh-server \
-        shadow-utils \
-        tar \
-        bzip2 \
-        lz4 \
-        python3 \
-        python3-pip \
-        python3-psycopg2 \
-        # python3-psutil \
-        # python3-requests \
-        # python3-etcd \
-        # python3-pyyaml \
-        # python3-setuptools \
-        git \
-        patchutils \
-        binutils \
-        make \
-        cmake \
-        gcc \
-        pam-devel \
-        wget \
-        mlocate \
-        git-clang-format \
-        openssl-devel \
-        ccache \
-        redhat-rpm-config \
-        krb5-devel \
-        busybox \
-        jq \
-        rsync \
-        dumb-init \ 
-        libicu \
-        pgbackrest-${PGBACKREST_VERSION} \
-		&& ${PACKAGER} -y clean all ; \
-fi
+		&& ${PACKAGER} -y clean all;
 
 # install etcdctl
-RUN ETCDVERSION=3.5.13 \
-    && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz \
-    | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+RUN ETCDVERSION=3.5.1 \
+    && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH
 
-COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
+RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
 
 # Install pam_oauth2.so
 #RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
@@ -187,16 +142,6 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;
-
-# RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
-#     && ${PACKAGER} -y clean all \
-#     && mkdir -p /package \
-#     && cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
-#     && cd admin/runit-2.1.2 && package/install \
-#     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-#     && ${PACKAGER} -y remove $(rpm -qa "*-devel") \
-#     && ${PACKAGER} -y autoremove \
-#     && ${PACKAGER} -y clean all;
 
 FROM scratch 
 

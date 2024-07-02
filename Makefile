@@ -16,6 +16,7 @@ PACKAGER ?= dnf
 BUILD ?= 1
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
+ARCH ?= amd64
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
@@ -76,7 +77,8 @@ postgres-build:
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
-			--build-arg PGVERSION=$(PGVERSION)							
+			--build-arg PGVERSION=$(PGVERSION)									\
+			--build-arg ARCH=$(ARCH)						
 
 postgres: postgres-build
 

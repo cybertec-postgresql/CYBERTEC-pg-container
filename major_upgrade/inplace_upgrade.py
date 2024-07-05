@@ -14,6 +14,7 @@ import yaml
 from collections import defaultdict
 from threading import Thread
 from multiprocessing.pool import ThreadPool
+from patroni import global_config
 
 logger = logging.getLogger(__name__)
 
@@ -130,12 +131,11 @@ class InplaceUpgrade(object):
             return logger.error('API request to %s name failed: %r', member.name, e)
 
     def toggle_pause(self, paused):
-        from patroni.config import get_global_config
         from patroni.utils import polling_loop
 
         cluster = self.dcs.get_cluster()
         config = cluster.config.data.copy()
-        if get_global_config(cluster).is_paused == paused:
+        if global_config.from_cluster(cluster).is_paused == paused:
             return logger.error('Cluster is %spaused, can not continue', ('' if paused else 'not '))
 
         config['pause'] = paused
@@ -203,15 +203,13 @@ class InplaceUpgrade(object):
         return all(ensure_replica_state(member) for member in cluster.members if member.name != self.postgresql.name)
 
     def sanity_checks(self, cluster):
-        from patroni.config import get_global_config
-
         if not cluster.initialize:
             return logger.error('Upgrade can not be triggered because the cluster is not initialized')
 
         if len(cluster.members) != self.replica_count:
             return logger.error('Upgrade can not be triggered because the number of replicas does not match (%s != %s)',
                                 len(cluster.members), self.replica_count)
-        if get_global_config(cluster).is_paused:
+        if global_config.from_cluster(cluster).is_paused:
             return logger.error('Upgrade can not be triggered because Patroni is in maintenance mode')
 
         lock_owner = cluster.leader and cluster.leader.name
@@ -490,7 +488,7 @@ hosts deny = *
                         self.cluster_version, self.desired_version)
             return True
 
-        if not (self.postgresql.is_running() and self.postgresql.is_leader()):
+        if not (self.postgresql.is_running() and self.postgresql.is_primary()):
             return logger.error('PostgreSQL is not running or in recovery')
 
         cluster = self.dcs.get_cluster()

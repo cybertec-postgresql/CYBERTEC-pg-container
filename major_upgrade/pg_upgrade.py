@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class _PostgresqlUpgrade(Postgresql):
 
-    _INCOMPATIBLE_EXTENSIONS = ('amcheck_next', 'pg_repack',)
+    _INCOMPATIBLE_EXTENSIONS = ('pgaudit',)
 
     def adjust_shared_preload_libraries(self, version):
         from spilo_commons import adjust_extensions
@@ -58,7 +58,7 @@ class _PostgresqlUpgrade(Postgresql):
 
     @property
     def local_conn_kwargs(self):
-        conn_kwargs = self.config.local_connect_kwargs
+        conn_kwargs = self.connection_pool.conn_kwargs
         conn_kwargs['options'] = '-c synchronous_commit=local -c statement_timeout=0 -c search_path='
         conn_kwargs.pop('connect_timeout', None)
         return conn_kwargs
@@ -71,7 +71,6 @@ class _PostgresqlUpgrade(Postgresql):
 
         logger.info('Dropping extensions from the cluster which could be incompatible')
         conn_kwargs = self.local_conn_kwargs
-
         for d in self._get_all_databases():
             conn_kwargs['dbname'] = d
             with get_connection_cursor(**conn_kwargs) as cur:
@@ -189,10 +188,10 @@ class _PostgresqlUpgrade(Postgresql):
     def prepare_new_pgdata(self, version):
         from spilo_commons import append_extensions
 
-        locale = self.query('SHOW lc_collate').fetchone()[0]
-        encoding = self.query('SHOW server_encoding').fetchone()[0]
+        locale = self.query('SHOW lc_collate')[0][0]
+        encoding = self.query('SHOW server_encoding')[0][0]
         initdb_config = [{'locale': locale}, {'encoding': encoding}]
-        if self.query("SELECT current_setting('data_checksums')::bool").fetchone()[0]:
+        if self.query("SELECT current_setting('data_checksums')::bool")[0][0]:
             initdb_config.append('data-checksums')
 
         logger.info('initdb config: %s', initdb_config)

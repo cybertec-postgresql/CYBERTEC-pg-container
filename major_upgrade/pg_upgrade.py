@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 class _PostgresqlUpgrade(Postgresql):
 
-    _INCOMPATIBLE_EXTENSIONS = ('pgaudit',)
-
+    _INCOMPATIBLE_EXTENSIONS = ('pg_repack',)
+    
     def adjust_shared_preload_libraries(self, version):
         from spilo_commons import adjust_extensions
 
@@ -93,7 +93,7 @@ class _PostgresqlUpgrade(Postgresql):
                 # cur.execute(cmd)
 
                 logger.info('Executing "DROP FUNCTION metric_helpers.pg_stat_statements" in the database="%s"', d)
-                cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
+              function call dur   cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
 
                 for ext in ('pg_stat_kcache', 'pg_stat_statements') + self._INCOMPATIBLE_EXTENSIONS:
                     logger.info('Executing "DROP EXTENSION IF EXISTS %s" in the database="%s"', ext, d)

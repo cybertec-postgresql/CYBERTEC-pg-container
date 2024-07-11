@@ -1083,8 +1083,8 @@ def main():
     config = deep_update(user_config_copy, config)
 
     if provider == PROVIDER_LOCAL and not any(1 for key in config.keys() if key in PATRONI_DCS):
-        link_runit_service(placeholders, 'etcd')
-        config['etcd'] = {'host': '127.0.0.1:2379'}
+        link_runit_service(placeholders, 'etcd3')
+        config['etcd3'] = {'host': '127.0.0.1:2379'}
 
     pgdata = config['postgresql']['data_dir']
     version_file = os.path.join(pgdata, 'PG_VERSION')

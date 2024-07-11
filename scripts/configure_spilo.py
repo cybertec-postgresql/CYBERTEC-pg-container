@@ -202,7 +202,7 @@ bootstrap:
       parameters:
         archive_mode: "on"
         archive_timeout: 1800s
-        wal_level: hot_standby
+        wal_level: replica
         wal_log_hints: 'on'
         wal_compression: 'on'
         max_wal_senders: 10
@@ -220,6 +220,7 @@ bootstrap:
         log_disconnections: 'on'
         log_statement: 'ddl'
         log_temp_files: 0
+        password_encryption: 'scram-sha-256'
         track_functions: all
         checkpoint_completion_target: 0.9
         autovacuum_max_workers: 5
@@ -538,9 +539,9 @@ def get_placeholders(provider):
     placeholders.setdefault('PGPASSWORD_STANDBY', 'standby')
     placeholders.setdefault('USE_ADMIN', 'PGPASSWORD_ADMIN' in placeholders)
     placeholders.setdefault('PGUSER_ADMIN', 'admin')
-    placeholders.setdefault('PGPASSWORD_ADMIN', 'cola')
+    placeholders.setdefault('PGPASSWORD_ADMIN', 'cpo_defaultAdminPW!')
     placeholders.setdefault('PGUSER_SUPERUSER', 'postgres')
-    placeholders.setdefault('PGPASSWORD_SUPERUSER', 'zalando')
+    placeholders.setdefault('PGPASSWORD_SUPERUSER', 'cpo_defaultAdminPg')
     placeholders.setdefault('ALLOW_NOSSL', '')
     placeholders.setdefault('BGMON_LISTEN_IP', '0.0.0.0')
     placeholders.setdefault('PGPORT', '5432')
@@ -1084,7 +1085,7 @@ def main():
 
     if provider == PROVIDER_LOCAL and not any(1 for key in config.keys() if key in PATRONI_DCS):
         link_runit_service(placeholders, 'etcd')
-        config['etcd'] = {'host': '127.0.0.1:2379'}
+        config['etcd3'] = {'host': '127.0.0.1:2379'}
 
     pgdata = config['postgresql']['data_dir']
     version_file = os.path.join(pgdata, 'PG_VERSION')

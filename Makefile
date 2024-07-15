@@ -37,10 +37,10 @@ postgres-gis: base postgres-gis
 postgres-oracle: base postgres-oracle
 pgbouncer: pgbouncer
 exporter: exporter
-publicbeta: publicbeta
+publicbeta: publicbeta-pg publicbeta-pgbackrest
 
 base-build:
-		docker build $(ROOTPATH) --no-cache								\
+		docker build $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/base/Dockerfile 		 	\
 			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) \
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)				\
@@ -174,7 +174,7 @@ exporter-build:
 
 exporter: exporter-build
 
-publicbeta-build:
+publicbeta-pg-build:
 		docker build $(ROOTPATH)													\
 			--file $(ROOTPATH)/docker/pg-public-beta/Dockerfile 					\
 			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)-beta${PUBLICBETA}		\
@@ -191,4 +191,21 @@ publicbeta-build:
 			--build-arg PGVERSION=$(BETAVERSION)									\
 			--build-arg ARCH=$(ARCH)	
 
-publicbeta: publicbeta-build
+publicbeta-pg: publicbeta-pg-build
+
+publicbeta-pgbackrest-build:
+		docker build $(ROOTPATH)													\
+			--file $(ROOTPATH)/docker/pgbackrest-public-beta/Dockerfile 			\
+			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG)-beta${PUBLICBETA} 	\
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
+			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 							\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
+			--build-arg BASEOS=$(BASEOS)											\
+			--build-arg PACKAGER=$(PACKAGER)										\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE)							\
+			--build-arg BUILD=$(BUILD)												\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)					\
+			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
+			--build-arg PGVERSION=$(BETAVERSION)
+
+publicbeta-pgbackrest: publicbeta-pgbackrest-build;

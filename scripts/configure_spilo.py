@@ -255,7 +255,6 @@ bootstrap:
       --port={{CLONE_PORT}} --user="{{CLONE_USER}}"
   {{/CLONE_WITH_BASEBACKUP}}
   initdb:
-    - encoding: UTF8
     - locale: {{INITDB_LOCALE}}.UTF-8
     - data-checksums
     - locale-provider: icu 

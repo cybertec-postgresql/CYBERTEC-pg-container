@@ -93,7 +93,7 @@ class _PostgresqlUpgrade(Postgresql):
                 # cur.execute(cmd)
 
                 logger.info('Executing "DROP FUNCTION metric_helpers.pg_stat_statements" in the database="%s"', d)
-              function call dur   cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
+                cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
 
                 for ext in ('pg_stat_kcache', 'pg_stat_statements') + self._INCOMPATIBLE_EXTENSIONS:
                     logger.info('Executing "DROP EXTENSION IF EXISTS %s" in the database="%s"', ext, d)
@@ -187,10 +187,10 @@ class _PostgresqlUpgrade(Postgresql):
 
     def prepare_new_pgdata(self, version):
         from spilo_commons import append_extensions
-
-        locale = self.query('SHOW lc_collate')[0][0]
-        encoding = self.query('SHOW server_encoding')[0][0]
-        initdb_config = [{'locale': locale}, {'encoding': encoding}]
+        
+        locale = self.query("SELECT datcollate FROM pg_database WHERE datname = 'template1'")[0][0]
+        # encoding = self.query('SHOW server_encoding')[0][0]
+        initdb_config = [{'locale': locale}, {'locale-provider': 'icu'}]
         if self.query("SELECT current_setting('data_checksums')::bool")[0][0]:
             initdb_config.append('data-checksums')
 

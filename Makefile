@@ -18,6 +18,10 @@ ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 
+# Public-Beta
+PUBLICBETA ?= 2
+BETAVERSION ?= 17
+
 # Settings for the Build-Process
 BUILDWITH ?= docker
 ROOTPATH ?= $(GOPATH)/src/github.com/cybertec/cybertec-pg-container
@@ -33,9 +37,10 @@ postgres-gis: base postgres-gis
 postgres-oracle: base postgres-oracle
 pgbouncer: pgbouncer
 exporter: exporter
+publicbeta: publicbeta
 
 base-build:
-		docker build $(ROOTPATH) 								\
+		docker build $(ROOTPATH) --no-cache								\
 			--file $(ROOTPATH)/docker/base/Dockerfile 		 	\
 			--tag cybertec-pg-container/base:$(BASEOS)-$(BUILD) \
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)				\
@@ -78,7 +83,7 @@ postgres-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
 			--build-arg PGVERSION=$(PGVERSION)									\
-			--build-arg ARCH=$(ARCH)						
+			--build-arg ARCH=$(ARCH)			
 
 postgres: postgres-build
 
@@ -168,3 +173,22 @@ exporter-build:
 			--build-arg PGVERSION=$(PGVERSION)
 
 exporter: exporter-build
+
+publicbeta-build:
+		docker build $(ROOTPATH)													\
+			--file $(ROOTPATH)/docker/pg-public-beta/Dockerfile 					\
+			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)-beta${PUBLICBETA}		\
+			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
+			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 							\
+			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
+			--build-arg BASEOS=$(BASEOS) 											\
+			--build-arg PACKAGER=$(PACKAGER) 										\
+			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 							\
+			--build-arg BUILD=$(BUILD) 												\
+			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 					\
+			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
+			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
+			--build-arg PGVERSION=$(BETAVERSION)									\
+			--build-arg ARCH=$(ARCH)	
+
+publicbeta: publicbeta-build

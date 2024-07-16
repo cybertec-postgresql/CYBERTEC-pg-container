@@ -5,4 +5,4 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 exec 2>&1
-exec env -i LD_PRELOAD=$LD_PRELOAD /usr/sbin/cron -f
+exec env -i LD_PRELOAD=$LD_PRELOAD /usr/sbin/crond -n

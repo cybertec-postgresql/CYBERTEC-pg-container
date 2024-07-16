@@ -527,7 +527,8 @@ def get_placeholders(provider):
 
     placeholders.setdefault('PGHOME', os.path.expanduser('~'))
     placeholders.setdefault('APIPORT', '8008')
-    placeholders.setdefault('BACKUP_SCHEDULE', '0 1 * * *')
+    placeholders.setdefault('BACKUP_SCHEDULE', '0 1 * * SAT')
+    placeholders.setdefault('BACKUP_SCHEDULE_INCREMENTAL', '0 1 * * *')
     placeholders.setdefault('BACKUP_NUM_TO_RETAIN', '5')
     placeholders.setdefault('CRONTAB', '[]')
     placeholders.setdefault('PGROOT', os.path.join(placeholders['PGHOME'], 'pgroot'))
@@ -959,8 +960,17 @@ def check_crontab(user):
 
 def setup_crontab(user, lines):
     lines += ['']  # EOF requires empty line for cron
-    c = subprocess.Popen(['crontab', '-u', user, '-'], stdin=subprocess.PIPE)
-    c.communicate(input='\n'.join(lines).encode())
+    c = subprocess.Popen(['crontab', '-u', user, '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = c.communicate(input='\n'.join(lines).encode())
+    if stderr:
+        return logging.error('Error while adding a crontab: %s', stderr)
+
+def setup_crontab_postgres(lines):
+    lines += ['']  # EOF requires empty line for cron
+    c = subprocess.Popen(['crontab','-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = c.communicate(input='\n'.join(lines).encode())
+    if stderr:
+        return logging.error('Error while adding a crontab for user postgres: %s', stderr)
 
 
 def setup_runit_cron(placeholders):
@@ -1006,6 +1016,12 @@ def write_crontab(placeholders, overwrite):
         hash_dir = os.path.join(placeholders['RW_DIR'], 'tmp')
         lines += ['*/5 * * * * {0} /scripts/test_reload_ssl.sh {1}'.format(env, hash_dir)]
 
+
+    if bool(placeholders.get('USE_PGBACKREST')) and not USE_KUBERNETES:
+        lines += [('{BACKUP_SCHEDULE} /usr/bin/pgbackrest --stanza=db --type=full backup').format(**placeholders)]
+        lines += [('{BACKUP_SCHEDULE_INCREMENTAL} /usr/bin/pgbackrest --stanza=db --type=incr backup').format(**placeholders)]
+
+
     if bool(placeholders.get('USE_WALE')):
         lines += [('{BACKUP_SCHEDULE} envdir "{WALE_ENV_DIR}" /scripts/postgres_backup.sh' +
                    ' "{PGDATA}"').format(**placeholders)]
@@ -1020,7 +1036,7 @@ def write_crontab(placeholders, overwrite):
         setup_runit_cron(placeholders)
 
     if len(lines) > 1 and (overwrite or check_crontab('postgres')):
-        setup_crontab('postgres', lines)
+        setup_crontab_postgres(lines)
 
     if root_lines and (overwrite or check_crontab('root')):
         setup_crontab('root', root_lines)

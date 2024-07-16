@@ -61,6 +61,7 @@ RUN if [ "$BASEOS" = "ubi8" ] ; then \
         rsync \
         dumb-init \ 
         libicu \
+        cronie \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 else \
@@ -99,9 +100,13 @@ else \
         rsync \
         dumb-init \ 
         libicu \
+        cronie \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all ; \
 fi
+
+RUN ETCDVERSION=3.5.13 \
+&& echo "https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz"
 
 # install etcdctl
 RUN ETCDVERSION=3.5.13 \
@@ -111,6 +116,7 @@ RUN ETCDVERSION=3.5.13 \
 ENV PATHBACKUP = $PATH
 
 COPY runit-2.1.2.tar.gz /package/runit-2.1.2.tar.gz
+COPY cron_unprivileged.c /package/
 
 # Install pam_oauth2.so
 #RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
@@ -177,6 +183,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
+    RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
@@ -187,6 +194,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;
+
 
 # RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-devel glibc-static \
 #     && ${PACKAGER} -y clean all \

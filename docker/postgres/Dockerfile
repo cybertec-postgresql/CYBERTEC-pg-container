@@ -100,21 +100,22 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
 \
-            # Install TimescaleDB           
-            && cd /timescaledb \
-            && for v in $TIMESCALEDB; do \
-                    git checkout $v \
-                    && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
-                    && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
-                        -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
-                            make -C build install \
-                            && strip /usr/pgsql-$version/lib/timescaledb*.so; \
-                    fi \
-                    && git reset --hard \
-                    && git clean -f -d; \
-                done \
-            && cd .. \
+            # Install TimescaleDB  
+            && ${PACKAGER} -y install timescaledb_${version} \       
+            # && cd /timescaledb \
+            # && for v in $TIMESCALEDB; do \
+            #         git checkout $v \
+            #         && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
+            #         && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
+            #             -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
+            #             -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
+            #                 make -C build install \
+            #                 && strip /usr/pgsql-$version/lib/timescaledb*.so; \
+            #         fi \
+            #         && git reset --hard \
+            #         && git clean -f -d; \
+            #     done \
+            # && cd .. \
             && for n in set_user pg_permissions $EXTRA_EXTENSIONS; do \ 
                 #pg_profile-${PG_PROFILE} pg_tm_aux-${PG_TM_AUX_COMMIT} bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT}
                 make -C $n USE_PGXS=1 clean install-strip; \ 

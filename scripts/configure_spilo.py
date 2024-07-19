@@ -247,6 +247,13 @@ bootstrap:
         recovery_target_inclusive: false
         {{/CLONE_TARGET_INCLUSIVE}}
   {{/CLONE_WITH_WALE}}
+  {{#CLONE_WITH_PGBACKREST}}
+  method: clone_with_pgbackrest
+  clone_with_pgbackrest:
+    command: python3 /scripts/clone_with_pgbackrest.py
+    recovery_conf: 
+        restore_command: pgbackrest --stanza=db archive-get %f "%p"
+  {{/CLONE_WITH_PGBACKREST}}
   {{#CLONE_WITH_BASEBACKUP}}
   method: clone_with_basebackup
   clone_with_basebackup:
@@ -588,6 +595,7 @@ def get_placeholders(provider):
     placeholders.setdefault('USE_PAUSE_AT_RECOVERY_TARGET', False)
     placeholders.setdefault('CLONE_METHOD', '')
     placeholders.setdefault('CLONE_WITH_WALE', '')
+    placeholders.setdefault('CLONE_WITH_PGBACKREST', '')
     placeholders.setdefault('CLONE_WITH_BASEBACKUP', '')
     placeholders.setdefault('CLONE_TARGET_TIME', '')
     placeholders.setdefault('CLONE_TARGET_INCLUSIVE', True)

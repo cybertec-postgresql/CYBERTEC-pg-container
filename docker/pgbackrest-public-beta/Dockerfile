@@ -12,6 +12,11 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 
+# Enable Beta-Repo
+RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
+    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-source-updates-testing \
+	&& ${PACKAGER} -y update;
+
 RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
 		openssh-clients \

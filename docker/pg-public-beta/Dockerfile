@@ -13,15 +13,11 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
-ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
 ARG ARCH
 
-# Spilo-specific
-ENV SET_USER=REL4_0_1 \
-    PAM_OAUTH2=v1.0.1 \
-    PG_PERMISSIONS=REL_1_3 \
-    PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006 \
-    PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+# Enable Beta-Repo
+RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
+    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-source-updates-testing;
 
 # Get some Standard-Stuff
 RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
@@ -54,12 +50,8 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         rsync \
         dumb-init \ 
         libicu \
-        cronie \
         pgbackrest-${PGBACKREST_VERSION} \
 		&& ${PACKAGER} -y clean all;
-
-RUN ETCDVERSION=3.5.13 \
-&& echo "https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz"
 
 # install etcdctl
 RUN ETCDVERSION=3.5.1 \
@@ -68,75 +60,32 @@ RUN ETCDVERSION=3.5.1 \
 ENV PATHBACKUP = $PATH
 
 RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
-COPY cron_unprivileged.c /package/
-
-# Install pam_oauth2.so
-#RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
-    #&& make -C pam-oauth2 install \
-    #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
-    #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
 
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff --upgrade \
     && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade \
     && mkdir /usr/lib/postgresql \
-    && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
-    && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
-    && git clone https://github.com/timescale/timescaledb.git \
-    #&& git clone https://github.com/dimitri/pgextwlist.git \
-    && git clone https://github.com/crunchydata/pgnodemx \
-\    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all \
-\
-    # forbid creation of a main cluster when package is installed
-    #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
 \
 # Install PostgreSQL
     && for version in $PG_SUPPORTED_VERSIONS; do \
         ${PACKAGER} -y update && \
         ${PACKAGER} -y install postgresql${version}-pltcl \
-                             pgaudit*${version} \
-                             credcheck_*${version} \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
-                    postgresql${version}-plpython3 postgresql${version}-devel \
-                    pg_cron_${version} \
+                    postgresql${version}-devel \
+                     \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
-            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
-\
-            # Install TimescaleDB           
-            && cd /timescaledb \
-            && for v in $TIMESCALEDB; do \
-                    git checkout $v \
-                    && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
-                    && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
-                        -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
-                            make -C build install \
-                            && strip /usr/pgsql-$version/lib/timescaledb*.so; \
-                    fi \
-                    && git reset --hard \
-                    && git clean -f -d; \
-                done \
-            && cd .. \
-            && for n in set_user pg_permissions $EXTRA_EXTENSIONS; do \ 
-                #pg_profile-${PG_PROFILE} pg_tm_aux-${PG_TM_AUX_COMMIT} bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT}
-                make -C $n USE_PGXS=1 clean install-strip; \ 
-            done \
-            #&& cd /pgextwlist && make clean && make && make install \
-            #&& cd /pg_stat_kcache && make clean && make && make install \
-            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
-            #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
+            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin; \           
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
-    RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
+    && rm -rf /pg_permissions* /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
     && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
     && ${PACKAGER} -y autoremove \

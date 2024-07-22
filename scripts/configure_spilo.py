@@ -32,7 +32,7 @@ PROVIDER_OPENSTACK = "openstack"
 PROVIDER_LOCAL = "local"
 PROVIDER_UNSUPPORTED = "unsupported"
 USE_KUBERNETES = os.environ.get('KUBERNETES_SERVICE_HOST') is not None
-KUBERNETES_DEFAULT_LABELS = '{"application": "cpo", "member.cpo.opensource.cybertec.at/type": "postgres"}'
+KUBERNETES_DEFAULT_LABELS = '{"application": "spilo"}'
 PATRONI_DCS = ('kubernetes', 'zookeeper', 'exhibitor', 'consul', 'etcd3', 'etcd')
 AUTO_ENABLE_WALG_RESTORE = ('WAL_S3_BUCKET', 'WALE_S3_PREFIX', 'WALG_S3_PREFIX', 'WALG_AZ_PREFIX', 'WALG_SSH_PREFIX')
 WALG_SSH_NAMES = ['WALG_SSH_PREFIX', 'SSH_PRIVATE_KEY_PATH', 'SSH_USERNAME', 'SSH_PORT']
@@ -202,7 +202,7 @@ bootstrap:
       parameters:
         archive_mode: "on"
         archive_timeout: 1800s
-        wal_level: hot_standby
+        wal_level: replica
         wal_log_hints: 'on'
         wal_compression: 'on'
         max_wal_senders: 10
@@ -220,6 +220,7 @@ bootstrap:
         log_disconnections: 'on'
         log_statement: 'ddl'
         log_temp_files: 0
+        password_encryption: 'scram-sha-256'
         track_functions: all
         checkpoint_completion_target: 0.9
         autovacuum_max_workers: 5
@@ -261,7 +262,6 @@ bootstrap:
       --port={{CLONE_PORT}} --user="{{CLONE_USER}}"
   {{/CLONE_WITH_BASEBACKUP}}
   initdb:
-    - encoding: UTF8
     - locale: {{INITDB_LOCALE}}.UTF-8
     - data-checksums
     - locale-provider: icu 
@@ -315,7 +315,7 @@ postgresql:
     {{/SSL_CRL_FILE}}
     ssl_cert_file: {{SSL_CERTIFICATE_FILE}}
     ssl_key_file: {{SSL_PRIVATE_KEY_FILE}}
-    shared_preload_libraries: 'pg_stat_statements,set_user'
+    shared_preload_libraries: 'pg_stat_statements'
     pg_stat_statements.track_utility: 'off'
     extwlist.extensions: 'btree_gin,btree_gist,citext,extra_window_functions,first_last_agg,hll,\
 hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefunc,uuid-ossp'
@@ -546,9 +546,9 @@ def get_placeholders(provider):
     placeholders.setdefault('PGPASSWORD_STANDBY', 'standby')
     placeholders.setdefault('USE_ADMIN', 'PGPASSWORD_ADMIN' in placeholders)
     placeholders.setdefault('PGUSER_ADMIN', 'admin')
-    placeholders.setdefault('PGPASSWORD_ADMIN', 'cola')
+    placeholders.setdefault('PGPASSWORD_ADMIN', 'cpo_defaultAdminPW!')
     placeholders.setdefault('PGUSER_SUPERUSER', 'postgres')
-    placeholders.setdefault('PGPASSWORD_SUPERUSER', 'zalando')
+    placeholders.setdefault('PGPASSWORD_SUPERUSER', 'cpo_defaultAdminPg')
     placeholders.setdefault('ALLOW_NOSSL', '')
     placeholders.setdefault('BGMON_LISTEN_IP', '0.0.0.0')
     placeholders.setdefault('PGPORT', '5432')

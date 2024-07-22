@@ -1,5 +1,0 @@
-# exclude some folders
-docker/postgres-stage
-docker/postgres-oracle
-docker/newpg
-docker/benchmark

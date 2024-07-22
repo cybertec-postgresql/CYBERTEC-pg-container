@@ -9,7 +9,7 @@ export CURRENT_GROUP=$(id -g)
 # Prepare Folders and Files
 NSS_ROOT_DIR="/tmp/nss_wrapper"
 NSS_PASSWD="${NSS_ROOT_DIR}/passwd"
-NSS_GROUP="${NSS_ROOT_DIR}//group"
+NSS_GROUP="${NSS_ROOT_DIR}/group"
 
 mkdir -p ${NSS_ROOT_DIR}
 chmod g+rwx ${NSS_ROOT_DIR}

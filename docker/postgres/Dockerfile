@@ -13,7 +13,6 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
-ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
 ARG ARCH
 
 # Spilo-specific
@@ -76,7 +75,6 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && mkdir /usr/lib/postgresql \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
-    && git clone https://github.com/timescale/timescaledb.git \
     #&& git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/crunchydata/pgnodemx \
 \    
@@ -99,32 +97,15 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
-\
             # Install TimescaleDB  
             && ${PACKAGER} -y install timescaledb_${version} \       
-            # && cd /timescaledb \
-            # && for v in $TIMESCALEDB; do \
-            #         git checkout $v \
-            #         && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
-            #         && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-            #             -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
-            #             -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
-            #                 make -C build install \
-            #                 && strip /usr/pgsql-$version/lib/timescaledb*.so; \
-            #         fi \
-            #         && git reset --hard \
-            #         && git clean -f -d; \
-            #     done \
-            # && cd .. \
             && cd / \
             && for n in set_user pg_permissions $EXTRA_EXTENSIONS; do \ 
                 #pg_profile-${PG_PROFILE} pg_tm_aux-${PG_TM_AUX_COMMIT} bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT}
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
             #&& cd /pgextwlist && make clean && make && make install \
-            #&& cd /pg_stat_kcache && make clean && make && make install \
             && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
-            #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
@@ -139,78 +120,78 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;
 
-# FROM scratch 
+FROM scratch 
 
-# ARG PGVERSION
+ARG PGVERSION
 
-# COPY --from=builder / /
+COPY --from=builder / /
 
-# EXPOSE 5432 8008 8080
-# ENV LC_ALL=en_US.utf-8 \
-#     PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
-#     PGHOME=/home/postgres \
-#     RW_DIR=/run \
-#     TIMESCALEDB=$TIMESCALEDB \
-#     DEMO=$DEMO
+EXPOSE 5432 8008 8080
+ENV LC_ALL=en_US.utf-8 \
+    PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
+    PGHOME=/home/postgres \
+    RW_DIR=/run \
+    TIMESCALEDB=$TIMESCALEDB \
+    DEMO=$DEMO
 
-# ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
-#     PGROOT=$PGHOME/pgdata/pgroot
+ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
+    PGROOT=$PGHOME/pgdata/pgroot
 
-# ENV PGDATA=$PGROOT/data \
-#     PGLOG=$PGROOT/pg_log
+ENV PGDATA=$PGROOT/data \
+    PGLOG=$PGROOT/pg_log
 
-# WORKDIR $PGHOME
+WORKDIR $PGHOME
 
-# COPY motd /etc/
-# #COPY runit /etc/service/
+COPY motd /etc/
+#COPY runit /etc/service/
 
-# COPY runit /etc/runit/runsvdir/default/
-# COPY pgq_ticker.ini $PGHOME/
-# RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata \
-#     && sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
-#     && chown -R postgres:postgres $PGHOME $PGHOME/pgdata $RW_DIR \
-#     && rm -fr /var/spool/cron /var/tmp \
-#     && mkdir -p /var/spool \
-#     && ln -s $RW_DIR/cron /var/spool/cron \
-#     && ln -s $RW_DIR/tmp /var/tmp \
-#     && for d in /etc/runit/runsvdir/default/*; do \
-#         chmod 755 $d/* \
-#         && ln -s /run/supervise/$(basename $d) $d/supervise; \
-#     done \
-#     && ln -snf $RW_DIR/service /etc/service \
-#     #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
-#     && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
-#     && ln -s $RW_DIR/.bash_history /root/.bash_history \
-#     && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history \
-#     && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history \
-#     && ln -s $RW_DIR/etc $PGHOME/etc \
-#     && for d in $PGHOME /root; do \
-#         d=$d/.config/patroni \
-#         && mkdir -p $d \
-#         && ln -s $PGHOME/postgres.yml $d/patronictl.yaml; \
-#     done \
-#     && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
-#     && echo "PATH=\"$PATH\"" > /etc/environment \
-#     && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor; \
-#         do echo "export $e" >> /etc/bash.bashrc; \
-#     done \
-#     && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
-#     && echo "source /etc/motd" >> /root/.bashrc \
-#     # Allow users in the root group to access the following files and dirs
-#     && if [ "$COMPRESS" != "true" ]; then \
-#         chmod 664 /etc/passwd \
-#         && chmod o+r /etc/shadow \
-#         && chgrp -R 0 $PGHOME $RW_DIR \
-#         && chmod -R g=u $PGHOME $RW_DIR \
-#         && usermod -a -G root postgres; \
-#     fi
+COPY runit /etc/runit/runsvdir/default/
+COPY pgq_ticker.ini $PGHOME/
+RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata \
+    && sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
+    && chown -R postgres:postgres $PGHOME $PGHOME/pgdata $RW_DIR \
+    && rm -fr /var/spool/cron /var/tmp \
+    && mkdir -p /var/spool \
+    && ln -s $RW_DIR/cron /var/spool/cron \
+    && ln -s $RW_DIR/tmp /var/tmp \
+    && for d in /etc/runit/runsvdir/default/*; do \
+        chmod 755 $d/* \
+        && ln -s /run/supervise/$(basename $d) $d/supervise; \
+    done \
+    && ln -snf $RW_DIR/service /etc/service \
+    #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
+    && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
+    && ln -s $RW_DIR/.bash_history /root/.bash_history \
+    && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history \
+    && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history \
+    && ln -s $RW_DIR/etc $PGHOME/etc \
+    && for d in $PGHOME /root; do \
+        d=$d/.config/patroni \
+        && mkdir -p $d \
+        && ln -s $PGHOME/postgres.yml $d/patronictl.yaml; \
+    done \
+    && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
+    && echo "PATH=\"$PATH\"" > /etc/environment \
+    && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor; \
+        do echo "export $e" >> /etc/bash.bashrc; \
+    done \
+    && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
+    && echo "source /etc/motd" >> /root/.bashrc \
+    # Allow users in the root group to access the following files and dirs
+    && if [ "$COMPRESS" != "true" ]; then \
+        chmod 664 /etc/passwd \
+        && chmod o+r /etc/shadow \
+        && chgrp -R 0 $PGHOME $RW_DIR \
+        && chmod -R g=u $PGHOME $RW_DIR \
+        && usermod -a -G root postgres; \
+    fi
         
 
-# COPY scripts bootstrap major_upgrade /scripts/
-# COPY launcher/postgres/launch.sh /
+COPY scripts bootstrap major_upgrade /scripts/
+COPY launcher/postgres/launch.sh /
 
-# ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
+ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
-# USER 26
+USER 26
 
-# CMD ["/bin/sh", "/launch.sh", "init"]
+CMD ["/bin/sh", "/launch.sh", "init"]

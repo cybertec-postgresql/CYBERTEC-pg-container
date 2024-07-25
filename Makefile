@@ -121,7 +121,9 @@ postgres-gis-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(PGVERSION)										\
-			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							
+			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							\
+			--build-arg ARCH=$(ARCH)			
+					
 
 postgres-gis: postgres-gis-build
 

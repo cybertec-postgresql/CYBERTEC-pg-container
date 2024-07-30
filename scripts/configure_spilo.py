@@ -255,10 +255,15 @@ bootstrap:
       --port={{CLONE_PORT}} --user="{{CLONE_USER}}"
   {{/CLONE_WITH_BASEBACKUP}}
   initdb:
-    - locale: {{INITDB_LOCALE}}.UTF-8
     - data-checksums
+    - locale: {{INITDB_LOCALE}}.UTF-8
+  {{#USE_ICU}}
     - locale-provider: icu 
     - icu-locale: {{INITDB_LOCALE}}
+  {{/USE_ICU}}
+  {{^USE_ICU}}
+    - encoding: UTF8
+  {{/USE_ICU}}
   {{#USE_ADMIN}}
   users:
     {{PGUSER_ADMIN}}:
@@ -597,6 +602,12 @@ def get_placeholders(provider):
     placeholders.setdefault('LOG_S3_ENDPOINT', '')
     placeholders.setdefault('LOG_TMPDIR', os.path.abspath(os.path.join(placeholders['PGROOT'], '../tmp')))
     placeholders.setdefault('LOG_BUCKET_SCOPE_SUFFIX', '')
+
+    placeholders.setdefault('USE_ICU', False)
+
+    # Define USE_ICU if PGVERSION is higher then 14
+    if int(os.environ.get('PGVERSION', '16')) > 14:
+        placeholders['USE_ICU'] = True
 
     # see comment for wal-e bucket prefix
     placeholders.setdefault('LOG_BUCKET_SCOPE_PREFIX', '{0}-'.format(placeholders['NAMESPACE'])

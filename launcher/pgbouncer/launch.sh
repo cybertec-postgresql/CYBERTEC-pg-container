@@ -32,7 +32,12 @@ else
     # fi
 fi
 
-envsubst < /etc/pgbouncer/pgbouncer.ini.tmpl > /etc/pgbouncer/pgbouncer.ini
-envsubst < /etc/pgbouncer/auth_file.txt.tmpl > /etc/pgbouncer/auth_file.txt
+if [ "$ADDITIONAL_PGBOUNCER_CONFIG" ]; then
+    bouncerConfigPath="$ADDITIONAL_PGBOUNCER_CONFIG"
+else
+    envsubst < /etc/pgbouncer/pgbouncer.ini.tmpl > /etc/pgbouncer/pgbouncer.ini
+    envsubst < /etc/pgbouncer/auth_file.txt.tmpl > /etc/pgbouncer/auth_file.txt
+    bouncerConfigPath="/etc/pgbouncer/pgbouncer.ini"
+fi
 
-./bin/pgbouncer /etc/pgbouncer/pgbouncer.ini
+./bin/pgbouncer $bouncerConfigPath

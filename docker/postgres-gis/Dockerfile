@@ -15,6 +15,8 @@ ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG ARCH
 ARG POSTGIS_VERSION
+ARG ETCD_VERSION
+ARG ARCH
 
 # Spilo-specific
 ENV SET_USER=REL4_0_1 \
@@ -58,8 +60,15 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
 		&& ${PACKAGER} -y clean all;
 
 # install etcdctl
-RUN ETCDVERSION=3.5.1 \
-    && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+
+# Install Patroni
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
+#swiftclient
+RUN ${PACKAGER} -y install python3-etcd python3-consul  \
+                         python3-gevent python3-greenlet python3-cachetools \
+                        python3-rsa python3-pyasn1-modules  python3-cffi \
+    && ${PACKAGER} -y clean all;
 
 ENV PATHBACKUP = $PATH
 

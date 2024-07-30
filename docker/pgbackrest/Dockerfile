@@ -11,6 +11,7 @@ ARG PGBACKREST_VERSION
 ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
+ARG ARCH
 
 RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
@@ -37,7 +38,7 @@ RUN rm /etc/pgbackrest.conf
 RUN rm -rf /var/spool/pgbackrest
 
 # Add kubectl
-RUN curl -LO https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl && chmod +x kubectl 
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl" && chmod +x kubectl 
 
 RUN mkdir -p /tmp/pgsql && cp -r /usr/pgsql* /tmp/pgsql
 RUN mkdir -p /tmp/pg && cp -r /usr/bin/pg* /tmp/pg

@@ -14,6 +14,8 @@ ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.11.1"
 ARG POSTGIS_VERSION
+ARG ETCD_VERSION
+ARG ARCH
 
 # Spilo-specific
 ENV SET_USER=REL3_0_0 \
@@ -77,9 +79,7 @@ else \
 fi
 
 # install etcdctl
-RUN ETCDVERSION=3.3.27 \
-    && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-$(dpkg --print-architecture).tar.gz \
-    | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 # Install Patroni
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 

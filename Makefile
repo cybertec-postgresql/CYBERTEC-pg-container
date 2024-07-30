@@ -64,7 +64,8 @@ pgbackrest-build:
 			--build-arg BUILD=$(BUILD)										\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)			\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"				\
-			--build-arg PGVERSION=$(PGVERSION)
+			--build-arg PGVERSION=$(PGVERSION)								\
+			--build-arg ARCH=$(ARCH)
 
 pgbackrest: pgbackrest-build;
 			

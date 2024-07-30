@@ -58,7 +58,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
 		&& ${PACKAGER} -y clean all;
 
 # install etcdctl
-RUN ETCDVERSION=3.5.1 \
+RUN ETCDVERSION=3.5.15 \
     && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH

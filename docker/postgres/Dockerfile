@@ -15,6 +15,7 @@ ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
 ARG ARCH
+ARG INSTALL_CRON=false
 
 # Spilo-specific
 ENV SET_USER=REL4_0_1 \
@@ -54,8 +55,8 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         rsync \
         dumb-init \ 
         libicu \
-        cronie \
         pgbackrest-${PGBACKREST_VERSION} \
+        && if [ "$INSTALL_CRON" = "true" ]; then ${PACKAGER} -y install cronie; fi \
 		&& ${PACKAGER} -y clean all;
 
 RUN ETCDVERSION=3.5.13 \

@@ -960,9 +960,12 @@ def write_clone_pgpass(placeholders, overwrite):
 
 def check_crontab(user):
     with open(os.devnull, 'w') as devnull:
-        cron_exit = subprocess.call(['crontab', '-lu', user], stdout=devnull, stderr=devnull)
-        if cron_exit == 0:
-            return logging.warning('Cron for %s is already configured. (Use option --force to overwrite cron)', user)
+        try: 
+            cron_exit = subprocess.call(['crontab', '-lu', user], stdout=devnull, stderr=devnull)
+            if cron_exit == 0:
+                return logging.warning('Cron for %s is already configured. (Use option --force to overwrite cron)', user)
+        except:
+            logging.error('We were not able to add cron for user %s. Is cron enabled during build?', user)
     return True
 
 
@@ -1044,7 +1047,10 @@ def write_crontab(placeholders, overwrite):
         setup_runit_cron(placeholders)
 
     if len(lines) > 1 and (overwrite or check_crontab('postgres')):
-        setup_crontab_postgres(lines)
+        try:
+            setup_crontab_postgres(lines)
+        except:
+            logging.error('Unable to add crontab, is cron as service enabled during build? ')
 
     if root_lines and (overwrite or check_crontab('root')):
         setup_crontab('root', root_lines)

@@ -17,6 +17,7 @@ BUILD ?= 1
 ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
+INSTALL_CRON ?= true
 
 # Public-Beta
 PUBLICBETA ?= 2
@@ -69,6 +70,7 @@ pgbackrest-build:
 pgbackrest: pgbackrest-build;
 			
 postgres-build:
+
 		docker build $(ROOTPATH)												\
 			--file $(ROOTPATH)/docker/postgres/Dockerfile 						\
 			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)	\
@@ -82,8 +84,9 @@ postgres-build:
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
-			--build-arg PGVERSION=$(PGVERSION)									\
-			--build-arg ARCH=$(ARCH)			
+			--build-arg PGVERSION=$(PGVERSION) 									\
+			--build-arg ARCH=$(ARCH) 											\
+			--build-arg INSTALL_CRON=$(INSTALL_CRON) 
 
 postgres: postgres-build
 

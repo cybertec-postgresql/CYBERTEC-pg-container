@@ -252,6 +252,7 @@ bootstrap:
   method: clone_with_pgbackrest
   clone_with_pgbackrest:
     command: python3 /scripts/clone_with_pgbackrest.py
+      --recovery-target-time="{{CLONE_TARGET_TIME}}"
     recovery_conf: 
         restore_command: pgbackrest --stanza=db archive-get %f "%p"
   {{/CLONE_WITH_PGBACKREST}}

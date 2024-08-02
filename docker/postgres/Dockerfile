@@ -14,6 +14,7 @@ ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
+ARG ETCD_VERSION
 ARG ARCH
 ARG INSTALL_CRON=false
 
@@ -63,8 +64,7 @@ RUN ETCDVERSION=3.5.13 \
 && echo "https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz"
 
 # install etcdctl
-RUN ETCDVERSION=3.5.1 \
-    && curl -L https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH
 
@@ -82,7 +82,6 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && mkdir /usr/lib/postgresql \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
-    && git clone https://github.com/timescale/timescaledb.git \
     #&& git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/crunchydata/pgnodemx \
 \    
@@ -105,30 +104,15 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
-\
-            # Install TimescaleDB           
-            && cd /timescaledb \
-            && for v in $TIMESCALEDB; do \
-                    git checkout $v \
-                    && sed -i "s/VERSION 3.11/VERSION 3.10/" CMakeLists.txt \
-                    && if BUILD_FORCE_REMOVE=true ./bootstrap -DREGRESS_CHECKS=OFF -DWARNINGS_AS_ERRORS=OFF \
-                        -DTAP_CHECKS=OFF -DPG_CONFIG=/usr/pgsql-$version/bin/pg_config \
-                        -DAPACHE_ONLY=$TIMESCALEDB_APACHE_ONLY -DSEND_TELEMETRY_DEFAULT=NO; then \
-                            make -C build install \
-                            && strip /usr/pgsql-$version/lib/timescaledb*.so; \
-                    fi \
-                    && git reset --hard \
-                    && git clean -f -d; \
-                done \
-            && cd .. \
+            # Install TimescaleDB  
+            && ${PACKAGER} -y install timescaledb_${version} \       
+            && cd / \
             && for n in set_user pg_permissions $EXTRA_EXTENSIONS; do \ 
                 #pg_profile-${PG_PROFILE} pg_tm_aux-${PG_TM_AUX_COMMIT} bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT}
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
             #&& cd /pgextwlist && make clean && make && make install \
-            #&& cd /pg_stat_kcache && make clean && make && make install \
             && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
-            #&& cd /pgqd && ./configure --prefix=/opt && make && make install \
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;

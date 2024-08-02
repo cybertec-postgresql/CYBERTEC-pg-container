@@ -642,7 +642,7 @@ hosts deny = *
         self.postgresql.bootstrap.call_post_bootstrap(self.config['bootstrap'])
         self.postgresql.cleanup_old_pgdata()
 
-        if envdir:
+        if os.getenv('USE_PGBACKREST') == 'true':
             self.start_backup(envdir)
 
         return ret
@@ -665,10 +665,14 @@ hosts deny = *
             self.post_cleanup()
 
     def start_backup(self, envdir):
-        logger.info('Initiating a new backup...')
-        if not os.fork():
-            subprocess.call(['nohup', 'envdir', envdir, '/scripts/postgres_backup.sh', self.postgresql.data_dir],
-                            stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+        logger.info('Upgrade Stanza and Initiating a new backup...')
+        # if not os.fork():
+        subprocess.call(['nohup', '/scripts/postgres/stanza_upgrade.sh', self.postgresql.data_dir],
+                        stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+        if os.getenv('COMMAND') != 'repo-host':
+            subprocess.call(['nohup', 'pgbackrest backup --stanza=db --type=full --repo=1', self.postgresql.data_dir],
+                        stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+
 
 
 # this function will be running in a clean environment, therefore we can't rely on DCS connection

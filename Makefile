@@ -10,14 +10,15 @@ PGVERSION ?= 16
 PGVERSION_FULL ?= 16.3
 OLD_PG_VERSIONS ?= 13 14 15
 PATRONI_VERSION ?= 3.3.1
-PGBACKREST_VERSION ?= 2.52.1
+PGBACKREST_VERSION ?= 2.53
 POSTGIS_VERSION ?= 34
+ETCD_VERSION ?= 3.5.15
 PACKAGER ?= dnf
 BUILD ?= 1
 ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
-INSTALL_CRON ?= true
+INSTALL_CRON ?= false
 
 # Public-Beta
 PUBLICBETA ?= 2
@@ -65,7 +66,8 @@ pgbackrest-build:
 			--build-arg BUILD=$(BUILD)										\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)			\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"				\
-			--build-arg PGVERSION=$(PGVERSION)
+			--build-arg PGVERSION=$(PGVERSION)								\
+			--build-arg ARCH=$(ARCH)
 
 pgbackrest: pgbackrest-build;
 			
@@ -84,30 +86,13 @@ postgres-build:
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
+			--build-arg PGVERSION=$(PGVERSION)									\
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)							\
 			--build-arg PGVERSION=$(PGVERSION) 									\
 			--build-arg ARCH=$(ARCH) 											\
 			--build-arg INSTALL_CRON=$(INSTALL_CRON) 
 
 postgres: postgres-build
-
-postgres-stage-build:
-		docker build $(ROOTPATH)															\
-			--file $(ROOTPATH)/docker/postgres-stage/Dockerfile 							\
-			--tag cybertec-pg-container/postgres-stage:$(PGVERSION_FULL)					\
-			--build-arg BASE_IMAGE=$(BASE_IMAGE)											\
-			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 									\
-			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)								\
-			--build-arg BASEOS=$(BASEOS) 													\
-			--build-arg PACKAGER=$(PACKAGER) 												\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 									\
-			--build-arg BUILD=$(BUILD) 														\
-			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 							\
-			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 									\
-			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"								\
-			--build-arg PGVERSION=$(PGVERSION)												\
-			--build-arg ARCH=$(ARCH)
-
-postgres-stage: postgres-stage-build
 
 postgres-gis-build:
 		docker build $(ROOTPATH)													\
@@ -124,7 +109,9 @@ postgres-gis-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(PGVERSION)										\
-			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							
+			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							\
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)								\
+			--build-arg ARCH=$(ARCH)	
 
 postgres-gis: postgres-gis-build
 
@@ -142,7 +129,9 @@ postgres-oracle-build:
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 								\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"							\
-			--build-arg PGVERSION=$(PGVERSION)
+			--build-arg PGVERSION=$(PGVERSION)											\
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)									\
+			--build-arg ARCH=$(ARCH)
 
 postgres-oracle: postgres-oracle-build
 
@@ -192,6 +181,7 @@ publicbeta-pg-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(BETAVERSION)									\
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)								\
 			--build-arg ARCH=$(ARCH)	
 
 publicbeta-pg: publicbeta-pg-build
@@ -209,6 +199,7 @@ publicbeta-pgbackrest-build:
 			--build-arg BUILD=$(BUILD)												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)					\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
-			--build-arg PGVERSION=$(BETAVERSION)
+			--build-arg PGVERSION=$(BETAVERSION)									\
+			--build-arg ARCH=$(ARCH)	
 
 publicbeta-pgbackrest: publicbeta-pgbackrest-build;

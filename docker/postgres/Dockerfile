@@ -16,6 +16,7 @@ ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG TIMESCALEDB="1.7.5 2.3.1 2.13.0"
 ARG ETCD_VERSION
 ARG ARCH
+ARG INSTALL_CRON=false
 
 # Spilo-specific
 ENV SET_USER=REL4_0_1 \
@@ -56,7 +57,11 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         dumb-init \ 
         libicu \
         pgbackrest-${PGBACKREST_VERSION} \
+        && if [ "$INSTALL_CRON" = "true" ]; then ${PACKAGER} -y install cronie; fi \
 		&& ${PACKAGER} -y clean all;
+
+RUN ETCDVERSION=3.5.13 \
+&& echo "https://github.com/coreos/etcd/releases/download/v${ETCDVERSION}/etcd-v${ETCDVERSION}-linux-${ARCH}.tar.gz"
 
 # install etcdctl
 RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
@@ -64,6 +69,7 @@ RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/et
 ENV PATHBACKUP = $PATH
 
 RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
+COPY cron_unprivileged.c /package/
 
 # Install pam_oauth2.so
 #RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
@@ -110,6 +116,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
+    RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \

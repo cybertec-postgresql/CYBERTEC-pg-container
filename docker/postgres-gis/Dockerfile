@@ -43,6 +43,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         make \
         cmake \
         gcc \
+        clang \
         pam-devel \
         wget \
         mlocate \
@@ -61,14 +62,6 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
 
 # install etcdctl
 RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
-
-# Install Patroni
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader dumb-init kazoo meld3 boto 
-#swiftclient
-RUN ${PACKAGER} -y install python3-etcd python3-consul  \
-                         python3-gevent python3-greenlet python3-cachetools \
-                        python3-rsa python3-pyasn1-modules  python3-cffi \
-    && ${PACKAGER} -y clean all;
 
 ENV PATHBACKUP = $PATH
 

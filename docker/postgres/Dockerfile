@@ -42,6 +42,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         make \
         cmake \
         gcc \
+        clang \
         pam-devel \
         wget \
         mlocate \

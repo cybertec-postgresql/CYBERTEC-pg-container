@@ -33,6 +33,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         python3-pip \
         python3-psycopg2 \
         git \
+        clang \
         patchutils \
         binutils \
         make \

@@ -9,7 +9,7 @@ pool_mode = $CONNECTION_POOLER_MODE
 listen_port = $CONNECTION_POOLER_PORT
 listen_addr = *
 auth_type = scram-sha-256
-auth_file = /etc/pgbouncer/auth_file.txt
+auth_file = /tmp/pgbouncer/auth_file.txt
 auth_dbname = postgres
 admin_users = $PGUSER
 auth_query = SELECT * FROM $PGSCHEMA.user_lookup($1)
@@ -17,11 +17,11 @@ logfile = /dev/stdout
 pidfile = /tmp/pgbouncer.pid
 
 server_tls_sslmode = require
-server_tls_ca_file = /etc/pgbouncer/certs/pgbouncer.crt
+server_tls_ca_file = /tmp/pgbouncer/certs/pgbouncer.crt
 server_tls_protocols = secure
 client_tls_sslmode = require
-client_tls_key_file = /etc/pgbouncer/certs/pgbouncer.key
-client_tls_cert_file = /etc/pgbouncer/certs/pgbouncer.crt
+client_tls_key_file = /tmp/pgbouncer/certs/pgbouncer.key
+client_tls_cert_file = /tmp/pgbouncer/certs/pgbouncer.crt
 
 log_connections = 0
 log_disconnections = 0

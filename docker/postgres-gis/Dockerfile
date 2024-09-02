@@ -13,7 +13,6 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
-ARG ARCH
 ARG POSTGIS_VERSION
 ARG ETCD_VERSION
 ARG ARCH
@@ -103,7 +102,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             # Install Postgis
             && ${PACKAGER} -y install postgis${POSTGIS_VERSION}_${version} \
             # Install TimescaleDB  
-            && ${PACKAGER} -y install timescaledb_${version} \       \
+            && ${PACKAGER} -y install timescaledb_${version} \       
             && cd / \
             && for n in set_user pg_permissions $EXTRA_EXTENSIONS; do \ 
                 #pg_profile-${PG_PROFILE} pg_tm_aux-${PG_TM_AUX_COMMIT} bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT}

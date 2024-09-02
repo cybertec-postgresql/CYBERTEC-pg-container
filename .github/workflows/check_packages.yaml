@@ -1,0 +1,49 @@
+name: Check Dependencies for Postgis and store it in container-build-file
+
+on:
+  # merge:
+  #   branches:
+  #     - action_check_packages 
+  workflow_dispatch:  # Manuelles Auslösen des Workflows
+
+jobs:
+  run-in-container:
+    runs-on: rocky-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v2
+
+    - name: Pull Docker image
+      run: docker pull docker.io/cybertecpostgresql/cybertec-pg-container:postgres-16.4-34-1
+
+    - name: Run commands in Docker container
+      id: run_commands
+      run: |
+        # Create Container
+        container_id=$(docker run -d docker.io/cybertecpostgresql/cybertec-pg-container:postgres-16.4-34-1 sleep infinity)
+
+        # Get Package-Version for postgis-dependencies
+        proj=$(docker exec "$container_id" /usr/proj94/bin/proj --version 2>&1 | head -n 1 )
+
+        # Write infos into txt
+        echo "$proj" > output.txt
+
+        # Stop and remove Container
+        docker stop "$container_id"
+        docker rm "$container_id"
+
+    - name: Display results
+      run: cat output.txt
+
+    # - name: Save output to the repository
+    #   run: |
+    #     mv output.txt results.txt
+    #     git config --local user.name "github-actions"
+    #     git config --local user.email "github-actions@github.com"
+    #     git add results.txt
+    #     git commit -m "Save results from Docker container"
+    #     git push

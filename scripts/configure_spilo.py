@@ -403,7 +403,7 @@ multisite:
   etcd3:
     hosts: {{MULTISITE_ETCD_HOST}}
     {{#MULTISITE_ETCD_USER}}
-    user: {{MULTISITE_ETCD_USER}}
+    username: {{MULTISITE_ETCD_USER}}
     {{/MULTISITE_ETCD_USER}}
     {{#MULTISITE_ETCD_PASSWORD}}
     password: {{MULTISITE_ETCD_PASSWORD}}

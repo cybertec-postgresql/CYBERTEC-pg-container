@@ -415,6 +415,7 @@ multisite:
   {{#UPDATE_CRD}}
   update_crd: "{{UPDATE_CRD}}"
   crd_uid: {{CRD_UID}}
+  crd_api: cpo.opensource.cybertec.at/v1
   {{/UPDATE_CRD}}
 {{/USE_MULTISITE}}
 

@@ -788,6 +788,10 @@ def get_dcs_config(config, placeholders):
             kubernetes_labels = json.loads(KUBERNETES_DEFAULT_LABELS)
         config['kubernetes']['labels'] = kubernetes_labels
 
+        # Patroni 4 compatibility
+        config['kubernetes']['leader_label_value'] = 'master'
+        config['kubernetes']['standby_leader_label_value'] = 'master'
+
         if not config['kubernetes'].pop('use_configmaps'):
             config['kubernetes'].update({'use_endpoints': True,
                                          'pod_ip': placeholders['instance_data']['ip'],

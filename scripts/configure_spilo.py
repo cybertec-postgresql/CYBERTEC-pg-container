@@ -401,13 +401,16 @@ multisite:
   name: '{{MULTISITE_SITE}}-{{SCOPE}}'
   namespace: {{MULTISITE_NAMESPACE}}
   etcd3:
-    hosts: {{MULTISITE_ETCD_HOST}}
+    hosts: {{MULTISITE_ETCD_HOSTS}}
     {{#MULTISITE_ETCD_USER}}
     username: {{MULTISITE_ETCD_USER}}
     {{/MULTISITE_ETCD_USER}}
     {{#MULTISITE_ETCD_PASSWORD}}
     password: {{MULTISITE_ETCD_PASSWORD}}
     {{/MULTISITE_ETCD_PASSWORD}}
+    {{#MULTISITE_ETCD_PROTOCOL}}
+    protocol: {{MULTISITE_ETCD_PROTOCOL}}
+    {{/MULTISITE_ETCD_PROTOCOL}}
   host: {{EXTERNAL_HOST}}
   port: {{EXTERNAL_PORT}}
   ttl: {{MULTISITE_TTL}}
@@ -743,9 +746,10 @@ def get_placeholders(provider):
         placeholders['SSL_RESTAPI_CA_FILE'] = os.path.join(placeholders['RW_DIR'], 'certs', 'rest-api-ca.crt')
 
     placeholders.setdefault('MULTISITE_SITE', '')
-    placeholders.setdefault('MULTISITE_ETCD_HOST', '')
+    placeholders.setdefault('MULTISITE_ETCD_HOSTS', '')
     placeholders.setdefault('MULTISITE_ETCD_USER', '')
     placeholders.setdefault('MULTISITE_ETCD_PASSWORD', '')
+    placeholders.setdefault('MULTISITE_ETCD_PROTOCOL', 'http')
     placeholders.setdefault('MULTISITE_TTL', '90')
     placeholders.setdefault('MULTISITE_RETRY_TIMEOUT', '40')
     placeholders.setdefault('EXTERNAL_HOST', placeholders['instance_data']['ip'])

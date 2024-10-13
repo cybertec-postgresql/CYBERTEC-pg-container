@@ -756,7 +756,7 @@ def get_placeholders(provider):
     placeholders.setdefault('EXTERNAL_PORT', placeholders['PGPORT'])
     placeholders.setdefault('MULTISITE_NAMESPACE', '/multisite/{}'.format(placeholders['NAMESPACE']))
     placeholders.setdefault('USE_MULTISITE', placeholders['MULTISITE_SITE'] != '')
-    if placeholders['USE_MULTISITE'] and not placeholders['MULTISITE_ETCD_HOST']:
+    if placeholders['USE_MULTISITE'] and not placeholders['MULTISITE_ETCD_HOSTS']:
         logging.warning("etcd location not configured for multisite operation")
 
     return placeholders

@@ -383,7 +383,7 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     threshold_megabytes: {{WALE_BACKUP_THRESHOLD_MEGABYTES}}
     threshold_backup_size_percentage: {{WALE_BACKUP_THRESHOLD_PERCENTAGE}}
     retries: 2
-    no_master: 1
+    no_leader: 1
   {{/USE_WALE}}
   basebackup_fast_xlog:
     command: /scripts/basebackup.sh
@@ -394,8 +394,36 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     threshold_megabytes: {{WALE_BACKUP_THRESHOLD_MEGABYTES}}
     threshold_backup_size_percentage: {{WALE_BACKUP_THRESHOLD_PERCENTAGE}}
     retries: 2
-    no_master: 1
+    no_leader: 1
 {{/STANDBY_WITH_WALE}}
+{{#USE_MULTISITE}}
+multisite:
+  name: '{{MULTISITE_SITE}}-{{SCOPE}}'
+  namespace: {{MULTISITE_NAMESPACE}}
+  etcd3:
+    hosts: {{MULTISITE_ETCD_HOSTS}}
+    {{#MULTISITE_ETCD_USER}}
+    username: {{MULTISITE_ETCD_USER}}
+    {{/MULTISITE_ETCD_USER}}
+    {{#MULTISITE_ETCD_PASSWORD}}
+    password: {{MULTISITE_ETCD_PASSWORD}}
+    {{/MULTISITE_ETCD_PASSWORD}}
+    {{#MULTISITE_ETCD_PROTOCOL}}
+    protocol: {{MULTISITE_ETCD_PROTOCOL}}
+    {{/MULTISITE_ETCD_PROTOCOL}}
+  host: {{EXTERNAL_HOST}}
+  port: {{EXTERNAL_PORT}}
+  ttl: {{MULTISITE_TTL}}
+  retry_timeout: {{MULTISITE_RETRY_TIMEOUT}}
+  {{#UPDATE_CRD}}
+  update_crd: "{{UPDATE_CRD}}"
+  crd_uid: {{CRD_UID}}
+  crd_api: cpo.opensource.cybertec.at/v1
+  {{/UPDATE_CRD}}
+{{/USE_MULTISITE}}
+
+watchdog:
+  mode: off
 '''
 
 
@@ -717,6 +745,20 @@ def get_placeholders(provider):
     if placeholders.get('SSL_RESTAPI_CA') and not placeholders['SSL_RESTAPI_CA_FILE']:
         placeholders['SSL_RESTAPI_CA_FILE'] = os.path.join(placeholders['RW_DIR'], 'certs', 'rest-api-ca.crt')
 
+    placeholders.setdefault('MULTISITE_SITE', '')
+    placeholders.setdefault('MULTISITE_ETCD_HOSTS', '')
+    placeholders.setdefault('MULTISITE_ETCD_USER', '')
+    placeholders.setdefault('MULTISITE_ETCD_PASSWORD', '')
+    placeholders.setdefault('MULTISITE_ETCD_PROTOCOL', 'http')
+    placeholders.setdefault('MULTISITE_TTL', '90')
+    placeholders.setdefault('MULTISITE_RETRY_TIMEOUT', '40')
+    placeholders.setdefault('EXTERNAL_HOST', placeholders['instance_data']['ip'])
+    placeholders.setdefault('EXTERNAL_PORT', placeholders['PGPORT'])
+    placeholders.setdefault('MULTISITE_NAMESPACE', '/multisite/{}'.format(placeholders['NAMESPACE']))
+    placeholders.setdefault('USE_MULTISITE', placeholders['MULTISITE_SITE'] != '')
+    if placeholders['USE_MULTISITE'] and not placeholders['MULTISITE_ETCD_HOSTS']:
+        logging.warning("etcd location not configured for multisite operation")
+
     return placeholders
 
 
@@ -750,6 +792,10 @@ def get_dcs_config(config, placeholders):
                             "reverting to the default: %s", e, KUBERNETES_DEFAULT_LABELS)
             kubernetes_labels = json.loads(KUBERNETES_DEFAULT_LABELS)
         config['kubernetes']['labels'] = kubernetes_labels
+
+        # Patroni 4 compatibility
+        config['kubernetes']['leader_label_value'] = 'master'
+        config['kubernetes']['standby_leader_label_value'] = 'master'
 
         if not config['kubernetes'].pop('use_configmaps'):
             config['kubernetes'].update({'use_endpoints': True,

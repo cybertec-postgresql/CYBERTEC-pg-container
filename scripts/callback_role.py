@@ -78,7 +78,7 @@ def record_role_change(action, new_role, cluster):
     new_role = None if action == 'on_stop' else new_role
     logger.debug("Changing the pod's role to %s", new_role)
     pod_namespace = os.environ.get('POD_NAMESPACE', read_first_line(KUBE_NAMESPACE_FILENAME)) or 'default'
-    if new_role == 'master':
+    if new_role in ['master', 'primary']:
         change_endpoints(pod_namespace, cluster)
     change_pod_role_label(pod_namespace, new_role)
 

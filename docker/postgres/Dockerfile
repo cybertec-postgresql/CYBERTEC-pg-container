@@ -72,7 +72,12 @@ RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
 
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff --upgrade \
-    && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade \
+    && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
+        git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
+        pip3 install ./patroni[kubernetes,etcd,etcd3]; \
+    else \
+        pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade; \
+    fi \
     && mkdir /usr/lib/postgresql \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \

@@ -10,9 +10,12 @@ ARG PACKAGER
 RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
 		git \
-		go \
 		dumb-init \ 
+		wget \
+		make \
 		&& ${PACKAGER} -y clean all ;
+
+RUN wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz  && tar -xzf go1.23.0.linux-amd64.tar.gz && mv go /usr/local 
 
 RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build
 

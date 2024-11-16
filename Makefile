@@ -18,7 +18,6 @@ BUILD ?= 1
 ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
-INSTALL_CRON ?= false
 
 # Public-Beta
 PUBLICBETA ?= 2
@@ -89,8 +88,7 @@ postgres-build:
 			--build-arg PGVERSION=$(PGVERSION)									\
 			--build-arg ETCD_VERSION=$(ETCD_VERSION)							\
 			--build-arg PGVERSION=$(PGVERSION) 									\
-			--build-arg ARCH=$(ARCH) 											\
-			--build-arg INSTALL_CRON=$(INSTALL_CRON) 
+			--build-arg ARCH=$(ARCH) 											
 
 postgres: postgres-build
 

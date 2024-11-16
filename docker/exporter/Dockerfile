@@ -11,8 +11,6 @@ RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
 		git \
 		dumb-init \ 
-		wget \
-		make \
 		&& ${PACKAGER} -y clean all ;
 
 RUN wget https://go.dev/dl/go1.23.0.linux-amd64.tar.gz  && tar -xzf go1.23.0.linux-amd64.tar.gz && mv go /usr/local 

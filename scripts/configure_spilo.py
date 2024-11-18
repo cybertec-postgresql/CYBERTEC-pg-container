@@ -248,6 +248,14 @@ bootstrap:
         recovery_target_inclusive: false
         {{/CLONE_TARGET_INCLUSIVE}}
   {{/CLONE_WITH_WALE}}
+  {{#CLONE_WITH_PGBACKREST}}
+  method: clone_with_pgbackrest
+  clone_with_pgbackrest:
+    command: python3 /scripts/clone_with_pgbackrest.py
+      --recovery-target-time="{{CLONE_TARGET_TIME}}"
+    recovery_conf: 
+        restore_command: pgbackrest --stanza=db archive-get %f "%p"
+  {{/CLONE_WITH_PGBACKREST}}
   {{#CLONE_WITH_BASEBACKUP}}
   method: clone_with_basebackup
   clone_with_basebackup:
@@ -560,7 +568,8 @@ def get_placeholders(provider):
 
     placeholders.setdefault('PGHOME', os.path.expanduser('~'))
     placeholders.setdefault('APIPORT', '8008')
-    placeholders.setdefault('BACKUP_SCHEDULE', '0 1 * * *')
+    placeholders.setdefault('BACKUP_SCHEDULE', '0 1 * * SAT')
+    placeholders.setdefault('BACKUP_SCHEDULE_INCREMENTAL', '0 1 * * *')
     placeholders.setdefault('BACKUP_NUM_TO_RETAIN', '5')
     placeholders.setdefault('CRONTAB', '[]')
     placeholders.setdefault('PGROOT', os.path.join(placeholders['PGHOME'], 'pgroot'))
@@ -620,6 +629,7 @@ def get_placeholders(provider):
     placeholders.setdefault('USE_PAUSE_AT_RECOVERY_TARGET', False)
     placeholders.setdefault('CLONE_METHOD', '')
     placeholders.setdefault('CLONE_WITH_WALE', '')
+    placeholders.setdefault('CLONE_WITH_PGBACKREST', '')
     placeholders.setdefault('CLONE_WITH_BASEBACKUP', '')
     placeholders.setdefault('CLONE_TARGET_TIME', '')
     placeholders.setdefault('CLONE_TARGET_INCLUSIVE', True)
@@ -1008,16 +1018,28 @@ def write_clone_pgpass(placeholders, overwrite):
 
 def check_crontab(user):
     with open(os.devnull, 'w') as devnull:
-        cron_exit = subprocess.call(['crontab', '-lu', user], stdout=devnull, stderr=devnull)
-        if cron_exit == 0:
-            return logging.warning('Cron for %s is already configured. (Use option --force to overwrite cron)', user)
+        try: 
+            cron_exit = subprocess.call(['crontab', '-lu', user], stdout=devnull, stderr=devnull)
+            if cron_exit == 0:
+                return logging.warning('Cron for %s is already configured. (Use option --force to overwrite cron)', user)
+        except:
+            logging.error('We were not able to add cron for user %s. Is cron enabled during build?', user)
     return True
 
 
 def setup_crontab(user, lines):
     lines += ['']  # EOF requires empty line for cron
-    c = subprocess.Popen(['crontab', '-u', user, '-'], stdin=subprocess.PIPE)
-    c.communicate(input='\n'.join(lines).encode())
+    c = subprocess.Popen(['crontab', '-u', user, '-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = c.communicate(input='\n'.join(lines).encode())
+    if stderr:
+        return logging.error('Error while adding a crontab: %s', stderr)
+
+def setup_crontab_postgres(lines):
+    lines += ['']  # EOF requires empty line for cron
+    c = subprocess.Popen(['crontab','-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout, stderr = c.communicate(input='\n'.join(lines).encode())
+    if stderr:
+        return logging.error('Error while adding a crontab for user postgres: %s', stderr)
 
 
 def setup_runit_cron(placeholders):
@@ -1063,6 +1085,12 @@ def write_crontab(placeholders, overwrite):
         hash_dir = os.path.join(placeholders['RW_DIR'], 'tmp')
         lines += ['*/5 * * * * {0} /scripts/test_reload_ssl.sh {1}'.format(env, hash_dir)]
 
+
+    if bool(placeholders.get('USE_PGBACKREST')) and not USE_KUBERNETES:
+        lines += [('{BACKUP_SCHEDULE} /usr/bin/pgbackrest --stanza=db --type=full backup').format(**placeholders)]
+        lines += [('{BACKUP_SCHEDULE_INCREMENTAL} /usr/bin/pgbackrest --stanza=db --type=incr backup').format(**placeholders)]
+
+
     if bool(placeholders.get('USE_WALE')):
         lines += [('{BACKUP_SCHEDULE} envdir "{WALE_ENV_DIR}" /scripts/postgres_backup.sh' +
                    ' "{PGDATA}"').format(**placeholders)]
@@ -1077,7 +1105,10 @@ def write_crontab(placeholders, overwrite):
         setup_runit_cron(placeholders)
 
     if len(lines) > 1 and (overwrite or check_crontab('postgres')):
-        setup_crontab('postgres', lines)
+        try:
+            setup_crontab_postgres(lines)
+        except:
+            logging.error('Unable to add crontab, is cron as service enabled during build? ')
 
     if root_lines and (overwrite or check_crontab('root')):
         setup_crontab('root', root_lines)

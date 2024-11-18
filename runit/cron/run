@@ -3,6 +3,16 @@
 if [ "$(id -u)" -ne 0 ]; then
     LD_PRELOAD=/usr/local/lib/cron_unprivileged.so
 fi
+CROND_PATH=/usr/sbin/crond
 
 exec 2>&1
-exec env -i LD_PRELOAD=$LD_PRELOAD /usr/sbin/cron -f
+# Check if the crond binary exists
+if [ -f "$CROND_PATH" ]; then
+    # Execute the command if the file exists
+    exec env -i LD_PRELOAD=$LD_PRELOAD $CROND_PATH -n
+else
+    # Print a message or handle the case where the file does not exist
+    echo "Error: $CROND_PATH does not exist (is cron enabled durring build time?). Command not executed."
+    sv -w 86400 stop /etc/service/cron
+    exit 1
+fi

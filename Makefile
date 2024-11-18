@@ -71,6 +71,7 @@ pgbackrest-build:
 pgbackrest: pgbackrest-build;
 			
 postgres-build:
+
 		docker build $(ROOTPATH)												\
 			--file $(ROOTPATH)/docker/postgres/Dockerfile 						\
 			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)	\
@@ -86,7 +87,8 @@ postgres-build:
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
 			--build-arg PGVERSION=$(PGVERSION)									\
 			--build-arg ETCD_VERSION=$(ETCD_VERSION)							\
-			--build-arg ARCH=$(ARCH)			
+			--build-arg PGVERSION=$(PGVERSION) 									\
+			--build-arg ARCH=$(ARCH) 											
 
 postgres: postgres-build
 

@@ -608,6 +608,7 @@ def get_placeholders(provider):
     #pgBackRest
     placeholders.setdefault('USE_PGBACKREST', False)
     placeholders.setdefault('REPO_HOST', False)
+    placeholders.setdefault('cpo_monitoring_stack', False)
     # use namespaces to set WAL bucket prefix scope naming the folder namespace-clustername for non-default namespace.
     placeholders.setdefault('WAL_BUCKET_SCOPE_PREFIX', '{0}-'.format(placeholders['NAMESPACE'])
                             if placeholders['NAMESPACE'] not in ('default', '') else '')
@@ -1198,6 +1199,11 @@ def main():
     if 'extwlist.extensions' not in user_config.get('postgresql', {}).get('parameters', {}):
         config['postgresql']['parameters']['extwlist.extensions'] =\
                 append_extensions(config['postgresql']['parameters']['extwlist.extensions'], version, True)
+    # check if cpo-monitoring enabled
+    if placeholders['cpo_monitoring_stack']:
+        config['postgresql']['parameters']['shared_preload_libraries'] = \
+            append_extensions(config['postgresql']['parameters']['shared_preload_libraries'], 'pgnodemx')
+
 
     # Ensure replication is available
     if 'pg_hba' in config['bootstrap'] and not any(['replication' in i for i in config['bootstrap']['pg_hba']]):

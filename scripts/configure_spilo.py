@@ -1206,7 +1206,7 @@ def main():
     # Check if cpo_monitoring is enabled
     if 'pgnodemx' not in current_libraries.split(','):
         current_libraries = config['postgresql']['parameters'].get('shared_preload_libraries', '')
-        if current_libraries:
+        if current_libraries and 'pgnodemx' not in current_libraries.split(','):
             config['postgresql']['parameters']['shared_preload_libraries'] = current_libraries + ',' + 'pgnodemx'
         else:
             config['postgresql']['parameters']['shared_preload_libraries'] = 'pgnodemx'

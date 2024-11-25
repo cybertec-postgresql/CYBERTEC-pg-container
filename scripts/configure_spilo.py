@@ -608,6 +608,8 @@ def get_placeholders(provider):
     #pgBackRest
     placeholders.setdefault('USE_PGBACKREST', False)
     placeholders.setdefault('REPO_HOST', False)
+    # CPO-Monitoring
+    placeholders.setdefault('cpo_monitoring_stack', False)
     # use namespaces to set WAL bucket prefix scope naming the folder namespace-clustername for non-default namespace.
     placeholders.setdefault('WAL_BUCKET_SCOPE_PREFIX', '{0}-'.format(placeholders['NAMESPACE'])
                             if placeholders['NAMESPACE'] not in ('default', '') else '')
@@ -1198,6 +1200,18 @@ def main():
     if 'extwlist.extensions' not in user_config.get('postgresql', {}).get('parameters', {}):
         config['postgresql']['parameters']['extwlist.extensions'] =\
                 append_extensions(config['postgresql']['parameters']['extwlist.extensions'], version, True)
+    if placeholders['cpo_monitoring_stack']:
+       current_libraries = config['postgresql']['parameters'].get('shared_preload_libraries', '')
+
+    # Check if cpo_monitoring is enabled
+    if 'pgnodemx' not in current_libraries.split(','):
+        current_libraries = config['postgresql']['parameters'].get('shared_preload_libraries', '')
+        if current_libraries and 'pgnodemx' not in current_libraries.split(','):
+            config['postgresql']['parameters']['shared_preload_libraries'] = current_libraries + ',' + 'pgnodemx'
+        else:
+            config['postgresql']['parameters']['shared_preload_libraries'] = 'pgnodemx'
+
+     
 
     # Ensure replication is available
     if 'pg_hba' in config['bootstrap'] and not any(['replication' in i for i in config['bootstrap']['pg_hba']]):

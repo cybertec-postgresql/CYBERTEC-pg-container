@@ -1,4 +1,10 @@
 # This file adds Queries to monitor pgbackrest
+cpo_lastcheck_update_pgbackrest_info:
+    query: "SELECT now() as last_check from exporter.update_pgbackrest_info();"
+    metrics:
+        - last_check:
+            usage: "GAUGE"
+            description: "last_check"
 
 cpo_pgbackrest_time_since_backup:
     query: "WITH backups AS (

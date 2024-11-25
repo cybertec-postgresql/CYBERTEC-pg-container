@@ -57,6 +57,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         dumb-init \ 
         libicu \
         pgbackrest-${PGBACKREST_VERSION} \
+        cronie \
 		&& ${PACKAGER} -y clean all;
 
 # install etcdctl
@@ -65,6 +66,7 @@ RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/et
 ENV PATHBACKUP = $PATH
 
 RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
+COPY cron_unprivileged.c /package/
 
 # Install pam_oauth2.so
 #RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
@@ -73,7 +75,12 @@ RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
 
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff --upgrade \
-    && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade \
+    && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
+        git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
+        pip3 install ./patroni[kubernetes,etcd,etcd3]; \
+    else \
+        pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade; \
+    fi \
     && mkdir /usr/lib/postgresql \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
@@ -113,13 +120,14 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
+    RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
     && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
-    && ${PACKAGER} -y remove python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
+    && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;

@@ -1200,18 +1200,14 @@ def main():
     if 'extwlist.extensions' not in user_config.get('postgresql', {}).get('parameters', {}):
         config['postgresql']['parameters']['extwlist.extensions'] =\
                 append_extensions(config['postgresql']['parameters']['extwlist.extensions'], version, True)
-    if placeholders['cpo_monitoring_stack']:
-       current_libraries = config['postgresql']['parameters'].get('shared_preload_libraries', '')
-
+    
     # Check if cpo_monitoring is enabled
-    if 'pgnodemx' not in current_libraries.split(','):
+    if placeholders['cpo_monitoring_stack']:
         current_libraries = config['postgresql']['parameters'].get('shared_preload_libraries', '')
-        if current_libraries and 'pgnodemx' not in current_libraries.split(','):
-            config['postgresql']['parameters']['shared_preload_libraries'] = current_libraries + ',' + 'pgnodemx'
-        else:
+        if not current_libraries:
             config['postgresql']['parameters']['shared_preload_libraries'] = 'pgnodemx'
-
-     
+        elif current_libraries and 'pgnodemx' not in current_libraries.split(','):
+            config['postgresql']['parameters']['shared_preload_libraries'] = current_libraries + ',' + 'pgnodemx'     
 
     # Ensure replication is available
     if 'pg_hba' in config['bootstrap'] and not any(['replication' in i for i in config['bootstrap']['pg_hba']]):

@@ -71,7 +71,6 @@ pgbackrest-build:
 pgbackrest: pgbackrest-build;
 			
 postgres-build:
-
 		docker build $(ROOTPATH)												\
 			--file $(ROOTPATH)/docker/postgres/Dockerfile 						\
 			--tag cybertec-pg-container/postgres:$(IMAGE_TAG)	\

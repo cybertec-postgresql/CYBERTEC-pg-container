@@ -384,6 +384,7 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     command: pgbackrest --stanza=db --delta restore
     keep_data: True
     no_params: True
+    no_leader: True
   {{/USE_PGBACKREST}}
   {{#USE_WALE}}
   wal_e:

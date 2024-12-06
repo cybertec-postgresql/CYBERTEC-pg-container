@@ -29,7 +29,7 @@ RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0  \
 RUN ${PACKAGER} -y config-manager --set-enabled crb
 #Add PostgreSQL-Repo to Base
 RUN ${PACKAGER} --nodocs --noplugins --setopt=install_weak_deps=0 install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-9-$(uname -i)/pgdg-redhat-repo-latest.noarch.rpm && ${PACKAGER} -y update && ${PACKAGER} -y clean all
-RUN dnf -qy module disable postgresql
+RUN ${PACKAGER} -qy module disable postgresql
 
 
 

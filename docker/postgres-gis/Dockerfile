@@ -18,7 +18,7 @@ ARG ETCD_VERSION
 ARG ARCH
 
 # Spilo-specific
-ENV SET_USER=REL4_0_1 \
+ENV SET_USER=REL4_1_0 \
     PAM_OAUTH2=v1.0.1 \
     PG_PERMISSIONS=REL_1_3 \
     PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006 \
@@ -126,8 +126,9 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
     && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
-    && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
-    && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
+    && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
+
+    RUN ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel --exclude libgeotiff17-devel --exclude libtiff-devel --exclude libspatialite50-devel \
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;

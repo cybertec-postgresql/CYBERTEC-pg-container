@@ -251,10 +251,24 @@ bootstrap:
   {{#CLONE_WITH_PGBACKREST}}
   method: clone_with_pgbackrest
   clone_with_pgbackrest:
-    command: python3 /scripts/clone_with_pgbackrest.py
+    command: python3 /scripts/clone_with_pgbackrest.py 
       --recovery-target-time="{{CLONE_TARGET_TIME}}"
+      --config-include-path="{{CLONE_PGBACKREST_CONFIG}}"
     recovery_conf: 
-        restore_command: pgbackrest --stanza=db archive-get %f "%p"
+        restore_command: pgbackrest --config-include-path="{{CLONE_PGBACKREST_CONFIG}}" --stanza=db archive-get %f "%p"
+        recovery_target_timeline: "{{CLONE_TARGET_TIMELINE}}"
+        {{#USE_PAUSE_AT_RECOVERY_TARGET}}
+        recovery_target_action: pause
+        {{/USE_PAUSE_AT_RECOVERY_TARGET}}
+        {{^USE_PAUSE_AT_RECOVERY_TARGET}}
+        recovery_target_action: promote
+        {{/USE_PAUSE_AT_RECOVERY_TARGET}}
+        {{#CLONE_TARGET_TIME}}
+        recovery_target_time: "{{CLONE_TARGET_TIME}}"
+        {{/CLONE_TARGET_TIME}}
+        {{^CLONE_TARGET_INCLUSIVE}}
+        recovery_target_inclusive: false
+        {{/CLONE_TARGET_INCLUSIVE}}
   {{/CLONE_WITH_PGBACKREST}}
   {{#CLONE_WITH_BASEBACKUP}}
   method: clone_with_basebackup
@@ -673,6 +687,9 @@ def get_placeholders(provider):
         else:
             logging.warning("Clone method is set to basebackup, but no 'CLONE_SCOPE' "
                             "or 'CLONE_HOST' or 'CLONE_USER' or 'CLONE_PASSWORD' specified")
+    elif placeholders['CLONE_METHOD'] == 'CLONE_WITH_PGBACKREST':
+        placeholders['CLONE_WITH_PGBACKREST'] = True
+        placeholders.setdefault('CLONE_PGBACKREST_CONFIG', '/etc/pgbackrest/clone-conf.d')
     else:
         if set_extended_wale_placeholders(placeholders, 'STANDBY_') == 'S3':
             placeholders.setdefault('STANDBY_USE_WALG', 'true')

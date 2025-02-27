@@ -1,9 +1,9 @@
-ARG CONTAINERSUITE
+ARG IMAGE_PATH
 ARG BUILD
 ARG BASEOS
 ARG PGVERSION
  
-FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD} as builder
+FROM ${IMAGE_PATH}/base:${BASEOS}-${BUILD} as builder
 
 # Dockerfile specific informations
 ARG PACKAGER

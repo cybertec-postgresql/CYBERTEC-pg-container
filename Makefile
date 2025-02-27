@@ -5,7 +5,6 @@ BASEOS ?= rocky9
 CONTAINERIMAGE ?= rockylinux/rockylinux:9-ubi-micro
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
-CONTAINERSUITE ?= cybertec-pg-container
 PGVERSION ?= 17
 PGVERSION_FULL ?= 17.4
 OLD_PG_VERSIONS ?= 13 14 15 16
@@ -49,20 +48,20 @@ base-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)	\
 			--build-arg BASEOS=$(BASEOS) 						\
 			--build-arg PACKAGER=$(PACKAGER) 					\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 		
+			--build-arg IMAGE_PATH=$(IMAGE_PATH) 		
 
 base: base-build;		
 
 pgbackrest-build:
 		docker build $(ROOTPATH)											\
 			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 				\
-			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG) 	\
+			--tag cybertec-pg-container/pgbackrest:$(IMAGE_TAG) 			\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)							\
 			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 					\
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)				\
 			--build-arg BASEOS=$(BASEOS)									\
 			--build-arg PACKAGER=$(PACKAGER)								\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE)					\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH)							\
 			--build-arg BUILD=$(BUILD)										\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)			\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"				\
@@ -80,7 +79,7 @@ postgres-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)					\
 			--build-arg BASEOS=$(BASEOS) 										\
 			--build-arg PACKAGER=$(PACKAGER) 									\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 						\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH) 								\
 			--build-arg BUILD=$(BUILD) 											\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 				\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
@@ -101,7 +100,7 @@ postgres-gis-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
 			--build-arg BASEOS=$(BASEOS) 											\
 			--build-arg PACKAGER=$(PACKAGER) 										\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 							\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH) 									\
 			--build-arg BUILD=$(BUILD) 												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 					\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
@@ -122,7 +121,7 @@ postgres-oracle-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)							\
 			--build-arg BASEOS=$(BASEOS) 												\
 			--build-arg PACKAGER=$(PACKAGER) 											\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH) 										\
 			--build-arg BUILD=$(BUILD) 													\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 								\
@@ -142,7 +141,7 @@ pgbouncer-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)							\
 			--build-arg BASEOS=$(BASEOS) 												\
 			--build-arg PACKAGER=$(PACKAGER) 											\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH) 										\
 			--build-arg BUILD=$(BUILD) 													\
 			--build-arg PGBOUNCER_VERSION=${PGBOUNCER_VERSION}							\
 			--build-arg PGVERSION=$(PGVERSION)
@@ -158,7 +157,7 @@ exporter-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)							\
 			--build-arg BASEOS=$(BASEOS) 												\
 			--build-arg PACKAGER=$(PACKAGER) 											\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH) 										\
 			--build-arg BUILD=$(BUILD) 													\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 						\
 			--build-arg PGVERSION=$(PGVERSION)
@@ -174,7 +173,7 @@ publicbeta-pg-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
 			--build-arg BASEOS=$(BASEOS) 											\
 			--build-arg PACKAGER=$(PACKAGER) 										\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 							\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH) 									\
 			--build-arg BUILD=$(BUILD) 												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 					\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
@@ -194,7 +193,7 @@ publicbeta-pgbackrest-build:
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
 			--build-arg BASEOS=$(BASEOS)											\
 			--build-arg PACKAGER=$(PACKAGER)										\
-			--build-arg CONTAINERSUITE=$(CONTAINERSUITE)							\
+			--build-arg IMAGE_PATH=$(IMAGE_PATH)									\
 			--build-arg BUILD=$(BUILD)												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)					\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\

@@ -74,7 +74,7 @@ COPY cron_unprivileged.c /package/
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff --upgrade \
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.3 --upgrade \
     && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
         git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
         pip3 install ./patroni[kubernetes,etcd,etcd3]; \
@@ -126,9 +126,8 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
     && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
-    && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest;
-
-    RUN ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel --exclude libgeotiff17-devel --exclude libtiff-devel --exclude libspatialite50-devel \
+    && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
+    && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel --exclude libgeotiff17-devel --exclude libtiff-devel --exclude libspatialite50-devel \
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;
@@ -205,6 +204,6 @@ COPY launcher/postgres/launch.sh /
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
-USER 26
+USER postgres
 
 CMD ["/bin/sh", "/launch.sh", "init"]

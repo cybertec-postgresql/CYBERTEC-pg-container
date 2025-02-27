@@ -154,6 +154,6 @@ VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
-USER 26
+USER postgres
 
 CMD ["dumb-init", "/launch.sh", "init"]

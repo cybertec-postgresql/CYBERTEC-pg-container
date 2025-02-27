@@ -7,14 +7,15 @@ IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
 CONTAINERSUITE ?= cybertec-pg-container
 PGVERSION ?= 17
-PGVERSION_FULL ?= 17.0
+PGVERSION_FULL ?= 17.4
 OLD_PG_VERSIONS ?= 13 14 15 16
 PATRONI_VERSION ?= multisite-4.0.2.1
-PGBACKREST_VERSION ?= 2.53
+PGBACKREST_VERSION ?= 2.54.2
 POSTGIS_VERSION ?= 34
-ETCD_VERSION ?= 3.5.15
+ETCD_VERSION ?= 3.5.18
+PGBOUNCER_VERSION ?= 1.24
 PACKAGER ?= dnf
-BUILD ?= 2
+BUILD ?= 1
 ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
@@ -143,12 +144,13 @@ pgbouncer-build:
 			--build-arg PACKAGER=$(PACKAGER) 											\
 			--build-arg CONTAINERSUITE=$(CONTAINERSUITE) 								\
 			--build-arg BUILD=$(BUILD) 													\
+			--build-arg PGBOUNCER_VERSION=${PGBOUNCER_VERSION}							\
 			--build-arg PGVERSION=$(PGVERSION)
 
 pgbouncer: pgbouncer-build
 
 exporter-build:
-		docker build $(ROOTPATH)														\
+		docker build $(ROOTPATH)	 --no-cache											\
 			--file $(ROOTPATH)/docker/exporter/Dockerfile 								\
 			--tag cybertec-pg-container/exporter:$(IMAGE_TAG)							\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\

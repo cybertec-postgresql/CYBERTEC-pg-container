@@ -73,7 +73,7 @@ COPY cron_unprivileged.c /package/
     #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
     #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff --upgrade \
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.3 --upgrade \
     && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
         git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
         pip3 install ./patroni[kubernetes,etcd,etcd3]; \
@@ -201,6 +201,6 @@ COPY launcher/postgres/launch.sh /
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
-USER 26
+USER postgres
 
 CMD ["/bin/sh", "/launch.sh", "init"]

@@ -4,6 +4,7 @@ docker/postgres-oracle
 docker/newpg
 docker/benchmark
 docker/pgbackrest-old
+setup/helm/pgcluster
 
 #FerretDB
 docker/ferretdb
@@ -17,3 +18,4 @@ launcher/exporter_v2
 # logical backup 
 docker/logical_backup/
 scripts/logical_backup/
+

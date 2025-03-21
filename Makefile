@@ -13,6 +13,7 @@ PGBACKREST_VERSION ?= 2.54.2
 POSTGIS_VERSION ?= 34
 ETCD_VERSION ?= 3.5.18
 PGBOUNCER_VERSION ?= 1.24
+PGVECTOR ?= v0.8.0
 PACKAGER ?= dnf
 BUILD ?= 1
 ARCH ?= amd64
@@ -87,6 +88,7 @@ postgres-build:
 			--build-arg PGVERSION=$(PGVERSION)									\
 			--build-arg ETCD_VERSION=$(ETCD_VERSION)							\
 			--build-arg PGVERSION=$(PGVERSION) 									\
+			--build-arg PGVECTOR=$(PGVECTOR)									\
 			--build-arg ARCH=$(ARCH) 											
 
 postgres: postgres-build
@@ -108,6 +110,7 @@ postgres-gis-build:
 			--build-arg PGVERSION=$(PGVERSION)										\
 			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							\
 			--build-arg ETCD_VERSION=$(ETCD_VERSION)								\
+			--build-arg PGVECTOR=$(PGVECTOR)										\
 			--build-arg ARCH=$(ARCH)	
 
 postgres-gis: postgres-gis-build

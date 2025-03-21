@@ -15,6 +15,7 @@ ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG POSTGIS_VERSION
 ARG ETCD_VERSION
+ARG PGVECTOR
 ARG ARCH
 
 # Spilo-specific
@@ -84,7 +85,8 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && mkdir /usr/lib/postgresql \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
     && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
-    #&& git clone https://github.com/dimitri/pgextwlist.git \
+    && git clone -b $PGVECTOR https://github.com/pgvector/pgvector.git \
+    && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/crunchydata/pgnodemx \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
@@ -111,11 +113,11 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             # Install TimescaleDB  
             && ${PACKAGER} -y install timescaledb_${version} \       
             && cd / \
-            && for n in set_user pg_permissions $EXTRA_EXTENSIONS; do \ 
+            && for n in set_user pg_permissions pgvector $EXTRA_EXTENSIONS; do \ 
                 #pg_profile-${PG_PROFILE} pg_tm_aux-${PG_TM_AUX_COMMIT} bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT}
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
-            #&& cd /pgextwlist && make clean && make && make install \
+            && cd /pgextwlist && make clean && make && make install \
             && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
@@ -125,7 +127,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
+    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgvector /pgnodemx /timescaledb /set_user /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
     && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel --exclude libgeotiff17-devel --exclude libtiff-devel --exclude libspatialite50-devel \
     && ${PACKAGER} -y autoremove \

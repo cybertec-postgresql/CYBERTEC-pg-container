@@ -15,15 +15,11 @@ ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG POSTGIS_VERSION
 ARG ETCD_VERSION
-ARG PGVECTOR
 ARG ARCH
 
 # Spilo-specific
-ENV SET_USER=REL4_1_0 \
-    PAM_OAUTH2=v1.0.1 \
-    PG_PERMISSIONS=REL_1_3 \
-    PLANTUNER_COMMIT=800d81bc85da64ff3ef66e12aed1d4e1e54fc006 \
-    PG_TM_AUX_COMMIT=6c012d38a4c1b0ba4a36952d60b0ce3a22ac9c3d
+ENV PAM_OAUTH2=v1.0.1 \
+    PG_PERMISSIONS=REL_1_3
 
 # Get some Standard-Stuff
 RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
@@ -59,6 +55,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         libicu \
         pgbackrest-${PGBACKREST_VERSION} \
         cronie \
+        libcurl-devel \
 		&& ${PACKAGER} -y clean all;
 
 # install etcdctl
@@ -69,12 +66,6 @@ ENV PATHBACKUP = $PATH
 RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
 COPY cron_unprivileged.c /package/
 
-# Install pam_oauth2.so
-#RUN #git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git \
-    #&& make -C pam-oauth2 install \
-    #&& curl -sL https://github.com/zalando-pg/bg_mon/archive/$BG_MON_COMMIT.tar.gz | tar xz \
-    #&& curl -sL https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.tar.gz | tar xz \
-
 RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.3 --upgrade \
     && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
         git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
@@ -83,9 +74,9 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
         pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade; \
     fi \
     && mkdir /usr/lib/postgresql \
+    # Install pam_oauth2.so
+    && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
-    && git clone -b $SET_USER https://github.com/pgaudit/set_user.git \
-    && git clone -b $PGVECTOR https://github.com/pgvector/pgvector.git \
     && git clone https://github.com/dimitri/pgextwlist.git \
     && git clone https://github.com/crunchydata/pgnodemx \
 \    
@@ -104,7 +95,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
                     postgresql${version}-plpython3 postgresql${version}-devel \
-                    pg_cron_${version} \
+                    pg_cron_${version} pgvector_${version} set_user_${version} \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
@@ -113,8 +104,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             # Install TimescaleDB  
             && ${PACKAGER} -y install timescaledb_${version} \       
             && cd / \
-            && for n in set_user pg_permissions pgvector $EXTRA_EXTENSIONS; do \ 
-                #pg_profile-${PG_PROFILE} pg_tm_aux-${PG_TM_AUX_COMMIT} bg_mon-${BG_MON_COMMIT} pg_auth_mon-${PG_AUTH_MON_COMMIT}
+            && for n in pg_permissions $EXTRA_EXTENSIONS; do \ 
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
             && cd /pgextwlist && make clean && make && make install \
@@ -127,7 +117,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgvector /pgnodemx /timescaledb /set_user /pam-oauth2 \
+    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
     && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel --exclude libgeotiff17-devel --exclude libtiff-devel --exclude libspatialite50-devel \
     && ${PACKAGER} -y autoremove \

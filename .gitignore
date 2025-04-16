@@ -19,3 +19,5 @@ launcher/exporter_v2
 docker/logical_backup/
 scripts/logical_backup/
 
+# grid-files
+/docker/add-grid-files/grid-files/*

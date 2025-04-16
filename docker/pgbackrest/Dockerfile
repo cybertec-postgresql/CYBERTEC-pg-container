@@ -1,9 +1,9 @@
-ARG CONTAINERSUITE
+ARG IMAGE_PATH
 ARG BUILD
 ARG BASEOS
 ARG CONTAINERIMAGE
  
-FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD} AS builder
+FROM ${IMAGE_PATH}/base:${BASEOS}-${BUILD} AS builder
 
 # Dockerfile specific informations
 ARG PACKAGER
@@ -154,6 +154,6 @@ VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
-USER 26
+USER postgres
 
 CMD ["dumb-init", "/launch.sh", "init"]

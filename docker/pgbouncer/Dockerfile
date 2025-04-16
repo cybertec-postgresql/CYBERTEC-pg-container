@@ -1,16 +1,17 @@
-ARG CONTAINERSUITE
+ARG IMAGE_PATH
 ARG BUILD
 ARG BASEOS
 ARG CONTAINERIMAGE
  
-FROM ${CONTAINERSUITE}/base:${BASEOS}-${BUILD} AS builder
+FROM ${IMAGE_PATH}/base:${BASEOS}-${BUILD} AS builder
 
 ARG PACKAGER
+ARG PGBOUNCER_VERSION
 
 RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
 		dumb-init \ 
-		pgbouncer \
+		"pgbouncer-${PGBOUNCER_VERSION}.*" \
 		&& ${PACKAGER} -y autoremove \
 		&& ${PACKAGER} -y clean dbcache \
 		&& ${PACKAGER} -y clean all;

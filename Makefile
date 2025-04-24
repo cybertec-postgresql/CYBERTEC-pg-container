@@ -29,7 +29,7 @@ ROOTPATH ?= $(GOPATH)/src/github.com/cybertec/cybertec-pg-container
 
 # Build Images
 
-all: base pgbackrest postgres
+all: base postgres postgres-gis pgbackrest pgbouncer exporter
 base: base
 pgbackrest: pgbackrest
 postgres: base postgres

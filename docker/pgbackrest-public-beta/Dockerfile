@@ -15,8 +15,7 @@ ARG ARCH
 
 # Enable Beta-Repo
 RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
-    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-source-updates-testing \
-	&& ${PACKAGER} -y update;
+    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing-source;
 
 RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \

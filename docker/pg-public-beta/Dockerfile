@@ -18,7 +18,7 @@ ARG ARCH
 
 # Enable Beta-Repo
 RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
-    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-source-updates-testing;
+    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing-source;
 
 # Spilo-specific
 ENV PAM_OAUTH2=v1.0.1 \
@@ -98,7 +98,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
                     postgresql${version}-devel \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
-            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
+            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin; \
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;

@@ -9,7 +9,7 @@ PGVERSION ?= 17
 PGVERSION_FULL ?= 17.4
 OLD_PG_VERSIONS ?= 13 14 15 16
 PATRONI_VERSION ?= multisite-4.0.5.1
-PGBACKREST_VERSION ?= 2.54.2
+PGBACKREST_VERSION ?= 2.55.0
 POSTGIS_VERSION ?= 35
 ETCD_VERSION ?= 3.5.21
 PGBOUNCER_VERSION ?= 1.24
@@ -29,7 +29,7 @@ ROOTPATH ?= $(GOPATH)/src/github.com/cybertec/cybertec-pg-container
 
 # Build Images
 
-all: base pgbackrest postgres
+all: base postgres postgres-gis pgbackrest pgbouncer exporter
 base: base
 pgbackrest: pgbackrest
 postgres: base postgres

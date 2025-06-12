@@ -65,7 +65,7 @@ ENV PATHBACKUP = $PATH
 RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
 COPY cron_unprivileged.c /package/
 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.3 --upgrade \
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.4.2 --upgrade \
     && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
         git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
         pip3 install ./patroni[kubernetes,etcd,etcd3]; \
@@ -159,6 +159,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         chmod 755 $d/* \
         && ln -s /run/supervise/$(basename $d) $d/supervise; \
     done \
+    && chmod +r /etc/motd \
     && ln -snf $RW_DIR/service /etc/service \
     #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
     && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
@@ -177,7 +178,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         do echo "export $e" >> /etc/bash.bashrc; \
     done \
     && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
-    && echo "source /etc/motd" >> /root/.bashrc \
+    && echo "source /etc/motd" >> /home/postgres/.bashrc \
     # Allow users in the root group to access the following files and dirs
     && if [ "$COMPRESS" != "true" ]; then \
         chmod 664 /etc/passwd \

@@ -1,203 +1,164 @@
 ARG IMAGE_PATH
 ARG BUILD
 ARG BASEOS
-ARG PGVERSION
+ARG CONTAINERIMAGE
  
-FROM ${IMAGE_PATH}/base:${BASEOS}-${BUILD} as builder
+FROM ${IMAGE_PATH}/base:${BASEOS}-${BUILD} AS builder
 
 # Dockerfile specific informations
 ARG PACKAGER
 ARG PGBACKREST_VERSION
-ARG PATRONI_VERSION
 ARG PGVERSION
 ARG OLD_PG_VERSIONS
-ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
-ARG ETCD_VERSION
 ARG ARCH
 
 # Enable Beta-Repo
 RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
-    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-source-updates-testing;
+    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-source-updates-testing \
+	&& ${PACKAGER} -y update;
 
-# Spilo-specific
-ENV PAM_OAUTH2=v1.0.1 \
-    PG_PERMISSIONS=REL_1_3
-
-# Get some Standard-Stuff
-RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
+RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
-        openssh-clients \
-        openssh-server \
-        shadow-utils \
-        tar \
-        bzip2 \
-        lz4 \
-        python3 \
-        python3-pip \
-        python3-psycopg2 \
-        git \
-        patchutils \
-        binutils \
-        make \
-        cmake \
-        gcc \
-        clang \
-        pam-devel \
-        wget \
-        mlocate \
-        git-clang-format \
-        openssl-devel \
-        ccache \
-        redhat-rpm-config \
-        krb5-devel \
-        busybox \
-        jq \
-        rsync \
-        dumb-init \ 
-        libicu \
-        pgbackrest-${PGBACKREST_VERSION} \
-        cronie \
-        libcurl-devel \
-		&& ${PACKAGER} -y clean all;
+		openssh-clients \
+		openssh-server \
+		bzip2 \
+		lz4 \
+		zstd \
+		libicu \
+		dumb-init \
+		jq \
+		pgbackrest-${PGBACKREST_VERSION} \
+	&& ${PACKAGER} -y clean all ; 
 
-# install etcdctl
-RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
-
-ENV PATHBACKUP = $PATH
-
-RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
-COPY cron_unprivileged.c /package/
-
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.4.2 --upgrade \
-    && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
-        git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
-        pip3 install ./patroni[kubernetes,etcd,etcd3]; \
-    else \
-        pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade; \
-    fi \
-    && mkdir /usr/lib/postgresql \
-    # Install pam_oauth2.so
-    && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
-    && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
-    && git clone https://github.com/dimitri/pgextwlist.git \
-    && git clone https://github.com/crunchydata/pgnodemx \
-\    
-    && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
-    && ${PACKAGER} -y clean all \
-\
-    # forbid creation of a main cluster when package is installed
-    #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
-\
-# Install PostgreSQL
-    && for version in $PG_SUPPORTED_VERSIONS; do \
-        ${PACKAGER} -y update && \
-        ${PACKAGER} -y install postgresql${version}-pltcl \
-                             pgaudit*${version} \
-                             credcheck_*${version} \
-        # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
-            && ${PACKAGER} -y install -y postgresql${version}-contrib \
-                    postgresql${version}-plpython3 postgresql${version}-devel \
-                    pg_cron_${version} pgvector_${version} set_user_${version} \
-            # Modify for using origial-spilo scripts
-            && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
-            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
-            # Install TimescaleDB  
-            && ${PACKAGER} -y install timescaledb_${version} \       
-            && cd / \
-            && for n in pg_permissions $EXTRA_EXTENSIONS; do \ 
-                make -C $n USE_PGXS=1 clean install-strip; \ 
-            done \
-            && cd /pgextwlist && make clean && make && make install \
-            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
+# Install postgres-server
+RUN ${PACKAGER} -y update \
+	&& for version in $PG_SUPPORTED_VERSIONS; do \
+		${PACKAGER} -y install --nodocs postgresql${version}-server; \
     done \
-    && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
-    && ${PACKAGER} -y clean all;
-    RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
-    
-    RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
-    && cd admin/runit-2.1.2 && package/install \
-    && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /pam-oauth2 \
-    && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
-    && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
-    && ${PACKAGER} -y autoremove \
-    && ${PACKAGER} -y clean dbcache \
-    && ${PACKAGER} -y clean all;
+	&& ${PACKAGER} -y clean all;
 
-FROM scratch 
+# Remove default pgbackrest-config
+RUN rm /etc/pgbackrest.conf
+RUN rm -rf /var/spool/pgbackrest
+
+# Add kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl" && chmod +x kubectl 
+
+RUN mkdir -p /tmp/pgsql && cp -r /usr/pgsql* /tmp/pgsql
+RUN mkdir -p /tmp/pg && cp -r /usr/bin/pg* /tmp/pg
+RUN mkdir -p /tmp/lz4 && cp -r /usr/bin/lz4* /tmp/lz4
+RUN mkdir -p /tmp/zstd && cp -r /usr/bin/zstd* /tmp/zstd
+
+
+FROM ${CONTAINERIMAGE} as micro
 
 ARG PGVERSION
 
-COPY --from=builder / /
+COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+COPY --from=builder /usr/lib64 /usr/lib64
+# SSH-client
+COPY --from=builder /etc/ssh /etc/ssh
+COPY --from=builder /usr/bin/ssh /usr/bin/ssh
+COPY --from=builder /usr/libexec/openssh /usr/libexec/openssh
+# pgBackRest
+COPY --from=builder /usr/bin/pgbackrest /usr/bin/pgbackrest
+COPY --from=builder /usr/share/licenses/pgbackrest/LICENSE /usr/share/licenses/pgbackrest/LICENSE
+COPY --from=builder /var/lib/pgbackrest /var/lib/pgbackrest
+COPY --from=builder /var/log/pgbackrest /var/log/pgbackrest
+# Postgres
+COPY --from=builder /tmp/pgsql/ /usr/
+COPY --from=builder /var/lib/pgsql /var/lib/pgsql
+COPY --from=builder /tmp/pg /usr/bin/
 
-EXPOSE 5432 8008 8080
-ENV LC_ALL=en_US.utf-8 \
-    PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
-    PGHOME=/home/postgres \
-    RW_DIR=/run \
-    TIMESCALEDB=$TIMESCALEDB \
-    DEMO=$DEMO
+COPY --from=builder ./kubectl /usr/local/bin/
+# lz4
+COPY --from=builder /tmp/lz4 /usr/bin/
+# zstd
+COPY --from=builder /tmp/zstd /usr/bin/
+# Others
+COPY --from=builder /usr/bin/sed /usr/bin/sed
+COPY --from=builder /usr/bin/jq /usr/bin/jq
+COPY --from=builder /usr/bin/watch /usr/bin/watch
+COPY --from=builder /usr/share/locale /usr/share/locale
+COPY --from=builder /usr/lib /usr/lib
+COPY --from=builder /usr/lib64 /usr/lib64
+# CA
+COPY --from=builder /usr/bin/ca-legacy /usr/bin/ca-legacy
+COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
+# grep 
+COPY --from=builder /etc/profile.d /etc/profile.d
+COPY --from=builder /usr/bin/grep /usr/bin/grep
+COPY --from=builder /usr/libexec /usr/libexec
+# COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
+# COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
 
-ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
-    PGROOT=$PGHOME/pgdata/pgroot
+# p11-kit
+COPY --from=builder /etc/pkcs11 /etc/pkcs11
+COPY --from=builder /usr/libexec/p11-kit /usr/libexec/p11-kit
+COPY --from=builder /usr/share/bash-completion/completions /usr/share/bash-completion/completions
+COPY --from=builder /usr/share/p11-kit /usr/share/p11-kit
+COPY --from=builder /usr/share/polkit-1 /usr/share/polkit-1
 
-ENV PGDATA=$PGROOT/data \
-    PGLOG=$PGROOT/pg_log
+COPY --from=builder /usr/bin/p11-kit /usr/bin/p11-kit
+COPY --from=builder /etc/pki /etc/pki
+COPY --from=builder /usr/share/pki /usr/share/pki
+COPY --from=builder /etc/ssl /etc/ssl
+COPY --from=builder /etc/pkcs11 /etc/pkcs11
 
-WORKDIR $PGHOME
+# p11-kit-trust
+COPY --from=builder /usr/bin/trust /usr/bin/
 
-COPY motd /etc/
-#COPY runit /etc/service/
+# libraries
+COPY --from=builder /usr/bin/nss_wrapper.pl /usr/bin/nss_wrapper.pl 
+# COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
+COPY --from=builder /usr/share/man/man1 /usr/share/man/man1
+COPY --from=builder /usr/bin/envsubst /usr/bin/envsubst
 
-COPY runit /etc/runit/runsvdir/default/
-COPY pgq_ticker.ini $PGHOME/
-RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata \
-    && sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
-    && chown -R postgres:postgres $PGHOME $PGHOME/pgdata $RW_DIR \
-    && rm -fr /var/spool/cron /var/tmp \
-    && mkdir -p /var/spool \
-    && ln -s $RW_DIR/cron /var/spool/cron \
-    && ln -s $RW_DIR/tmp /var/tmp \
-    && for d in /etc/runit/runsvdir/default/*; do \
-        chmod 755 $d/* \
-        && ln -s /run/supervise/$(basename $d) $d/supervise; \
-    done \
-    && chmod +r /etc/motd \
-    && ln -snf $RW_DIR/service /etc/service \
-    #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
-    && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
-    && ln -s $RW_DIR/.bash_history /root/.bash_history \
-    && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history \
-    && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history \
-    && ln -s $RW_DIR/etc $PGHOME/etc \
-    && for d in $PGHOME /root; do \
-        d=$d/.config/patroni \
-        && mkdir -p $d \
-        && ln -s $PGHOME/postgres.yml $d/patronictl.yaml; \
-    done \
-    && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
-    && echo "PATH=\"$PATH\"" > /etc/environment \
-    && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor; \
-        do echo "export $e" >> /etc/bash.bashrc; \
-    done \
-    && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
-    && echo "source /etc/motd" >> /home/postgres/.bashrc \
-    # Allow users in the root group to access the following files and dirs
-    && if [ "$COMPRESS" != "true" ]; then \
-        chmod 664 /etc/passwd \
-        && chmod o+r /etc/shadow \
-        && chgrp -R 0 $PGHOME $RW_DIR \
-        && chmod -R g=u $PGHOME $RW_DIR \
-        && usermod -a -G root postgres; \
-    fi
-        
+RUN /usr/bin/update-ca-trust extract
 
-COPY scripts bootstrap major_upgrade /scripts/
-COPY launcher/postgres/launch.sh /
+# add postgres user and group
+#RUN groupadd postgres -g 26 && useradd postgres -u 26 -g 26
+
+# Prepare all needed stuff
+Run mkdir -p /opt/pgbackrest /backrestrepo /home/postgres /home/postgres/pgdata/pgbackrest/log
+
+# add pgbackrest-restore files
+ADD scripts/pgbackrest/ /opt/pgbackrest/bin/
+
+# add pgbackrest-common files
+ADD /scripts/nss_wrapper /scripts/nss_wrapper
+
+FROM scratch 
+COPY --from=micro / /
+
+ARG PGVERSION
+
+# set user and group ownership
+RUN chown -R postgres:postgres /opt/pgbackrest  \
+	/backrestrepo /home/postgres/pgdata/pgbackrest /home/postgres/pgdata
+
+RUN  mkdir -p /etc/pgbackrest \
+	&& chown -R postgres:postgres /etc/pgbackrest
+
+RUN chmod -R g=u /etc/pgbackrest \
+	&& rm -f /run/nologin
+
+RUN mkdir /.ssh && chown postgres:postgres /.ssh && chmod o+rwx /.ssh
+
+# set user and group ownership
+RUN chown -R postgres:postgres /opt/pgbackrest  \
+	/backrestrepo /home/postgres/pgdata
+
+#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
+COPY launcher/pgbackrest/launch.sh /
+	
+VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
 USER postgres
 
-CMD ["/bin/sh", "/launch.sh", "init"]
+CMD ["dumb-init", "/launch.sh", "init"]

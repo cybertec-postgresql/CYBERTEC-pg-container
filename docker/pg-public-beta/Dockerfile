@@ -93,23 +93,12 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && for version in $PG_SUPPORTED_VERSIONS; do \
         ${PACKAGER} -y update && \
         ${PACKAGER} -y install postgresql${version}-pltcl \
-                             pgaudit*${version} \
-                             credcheck_*${version} \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
-                    postgresql${version}-plpython3 postgresql${version}-devel \
-                    pg_cron_${version} pgvector_${version} set_user_${version} \
+                    postgresql${version}-devel \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
-            # Install TimescaleDB  
-            && ${PACKAGER} -y install timescaledb_${version} \       
-            && cd / \
-            && for n in pg_permissions $EXTRA_EXTENSIONS; do \ 
-                make -C $n USE_PGXS=1 clean install-strip; \ 
-            done \
-            && cd /pgextwlist && make clean && make && make install \
-            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;

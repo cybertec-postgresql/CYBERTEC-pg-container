@@ -159,6 +159,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         chmod 755 $d/* \
         && ln -s /run/supervise/$(basename $d) $d/supervise; \
     done \
+    && chmod +r /etc/motd \
     && ln -snf $RW_DIR/service /etc/service \
     #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
     && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
@@ -177,7 +178,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         do echo "export $e" >> /etc/bash.bashrc; \
     done \
     && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
-    && echo "source /etc/motd" >> /root/.bashrc \
+    && echo "source /etc/motd" >> /home/postgres/.bashrc \
     # Allow users in the root group to access the following files and dirs
     && if [ "$COMPRESS" != "true" ]; then \
         chmod 664 /etc/passwd \

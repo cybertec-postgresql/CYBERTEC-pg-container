@@ -18,7 +18,7 @@ RUN ${PACKAGER} -y install --nodocs  \
 RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz  && tar -xzf go1.24.4.linux-amd64.tar.gz && mv go /usr/local 
 ENV PATH=$PATH:/usr/local/go/bin
 
-RUN git clone https://github.com/cybertec-postgresql/postgres_exporter.git && cd postgres_exporter && make build;
+RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build;
 
 FROM ${CONTAINERIMAGE}
 COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init

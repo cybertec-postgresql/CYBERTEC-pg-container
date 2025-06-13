@@ -24,7 +24,7 @@ RUN ${PACKAGER} -y install --nodocs  \
 		dumb-init \
 		jq \
 		pgbackrest-${PGBACKREST_VERSION} \
-	&& ${PACKAGER} -y clean all ; 
+	&& ${PACKAGER} -y clean all; 
 
 # Install postgres-server
 RUN ${PACKAGER} -y update \

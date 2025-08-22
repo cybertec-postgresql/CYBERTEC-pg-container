@@ -43,4 +43,3 @@ export NSS_WRAPPER_PASSWD="${NSS_PASSWD}"
 export NSS_WRAPPER_GROUP="${NSS_GROUP}"
 
 exec "$@"
-

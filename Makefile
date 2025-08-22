@@ -1,17 +1,17 @@
 
 # Define Default if Values not exist
-BASE_IMAGE ?= rockylinux:9
+BASE_IMAGE ?= rockylinux/rockylinux:9
 BASEOS ?= rocky9
 CONTAINERIMAGE ?= rockylinux/rockylinux:9-ubi-micro
 IMAGE_REPOSITORY ?= docker.io
 IMAGE_PATH ?= cybertec-pg-container
 PGVERSION ?= 17
-PGVERSION_FULL ?= 17.4
+PGVERSION_FULL ?= 17.6
 OLD_PG_VERSIONS ?= 13 14 15 16
 PATRONI_VERSION ?= multisite-4.0.5.1
-PGBACKREST_VERSION ?= 2.55.0
+PGBACKREST_VERSION ?= 2.56.0
 POSTGIS_VERSION ?= 35
-ETCD_VERSION ?= 3.5.21
+ETCD_VERSION ?= 3.6.4
 PGBOUNCER_VERSION ?= 1.24
 PACKAGER ?= dnf
 BUILD ?= 1
@@ -20,8 +20,8 @@ IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 
 # Public-Beta
-PUBLICBETA ?= 2
-BETAVERSION ?= 17
+PUBLICBETA ?= 3
+BETAVERSION ?= 18
 
 # Settings for the Build-Process
 BUILDWITH ?= docker

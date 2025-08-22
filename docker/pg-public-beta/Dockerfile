@@ -18,7 +18,11 @@ ARG ARCH
 
 # Enable Beta-Repo
 RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
-    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-source-updates-testing;
+    && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing-source;
+
+# Spilo-specific
+ENV PAM_OAUTH2=v1.0.1 \
+    PG_PERMISSIONS=REL_1_3
 
 # Get some Standard-Stuff
 RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
@@ -33,12 +37,12 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         python3-pip \
         python3-psycopg2 \
         git \
-        clang \
         patchutils \
         binutils \
         make \
         cmake \
         gcc \
+        clang \
         pam-devel \
         wget \
         mlocate \
@@ -53,6 +57,8 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         dumb-init \ 
         libicu \
         pgbackrest-${PGBACKREST_VERSION} \
+        cronie \
+        libcurl-devel \
 		&& ${PACKAGER} -y clean all;
 
 # install etcdctl
@@ -61,12 +67,27 @@ RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/et
 ENV PATHBACKUP = $PATH
 
 RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
+COPY cron_unprivileged.c /package/
 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff --upgrade \
-    && pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade \
+RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.4.2 --upgrade \
+    && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
+        git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
+        pip3 install ./patroni[kubernetes,etcd,etcd3]; \
+    else \
+        pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade; \
+    fi \
     && mkdir /usr/lib/postgresql \
+    # Install pam_oauth2.so
+    && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
+    && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
+    && git clone https://github.com/dimitri/pgextwlist.git \
+    && git clone https://github.com/crunchydata/pgnodemx \
+\    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all \
+\
+    # forbid creation of a main cluster when package is installed
+    #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
 \
 # Install PostgreSQL
     && for version in $PG_SUPPORTED_VERSIONS; do \
@@ -75,18 +96,18 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
                     postgresql${version}-devel \
-                     \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
-            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin; \           
+            && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin; \
     done \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
+    RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf /pg_permissions* /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /set_user /pam-oauth2 \
+    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
     && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
     && ${PACKAGER} -y autoremove \
@@ -131,6 +152,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         chmod 755 $d/* \
         && ln -s /run/supervise/$(basename $d) $d/supervise; \
     done \
+    && chmod +r /etc/motd \
     && ln -snf $RW_DIR/service /etc/service \
     #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
     && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
@@ -149,7 +171,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         do echo "export $e" >> /etc/bash.bashrc; \
     done \
     && ln -s /etc/skel/.bashrc $PGHOME/.bashrc \
-    && echo "source /etc/motd" >> /root/.bashrc \
+    && echo "source /etc/motd" >> /home/postgres/.bashrc \
     # Allow users in the root group to access the following files and dirs
     && if [ "$COMPRESS" != "true" ]; then \
         chmod 664 /etc/passwd \
@@ -165,6 +187,6 @@ COPY launcher/postgres/launch.sh /
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
-USER 26
+USER postgres
 
 CMD ["/bin/sh", "/launch.sh", "init"]

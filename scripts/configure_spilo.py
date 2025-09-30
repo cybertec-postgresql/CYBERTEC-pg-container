@@ -434,6 +434,15 @@ multisite:
     {{#MULTISITE_ETCD_PROTOCOL}}
     protocol: {{MULTISITE_ETCD_PROTOCOL}}
     {{/MULTISITE_ETCD_PROTOCOL}}
+    {{#MULTISITE_ETCD_CA_CERT}}
+    ca_cert: {{MULTISITE_ETCD_CA_CERT}}
+    {{/MULTISITE_ETCD_CA_CERT}}
+    {{#MULTISITE_ETCD_CERT}}
+    cert: {{MULTISITE_ETCD_CERT}}
+    {{/MULTISITE_ETCD_CERT}}
+    {{#MULTISITE_ETCD_KEY}}
+    key: {{MULTISITE_ETCD_KEY}}
+    {{/MULTISITE_ETCD_KEY}}
   host: {{EXTERNAL_HOST}}
   port: {{EXTERNAL_PORT}}
   ttl: {{MULTISITE_TTL}}
@@ -780,6 +789,9 @@ def get_placeholders(provider):
     placeholders.setdefault('MULTISITE_ETCD_USER', '')
     placeholders.setdefault('MULTISITE_ETCD_PASSWORD', '')
     placeholders.setdefault('MULTISITE_ETCD_PROTOCOL', 'http')
+    placeholders.setdefault('MULTISITE_ETCD_CA_CERT', '')
+    placeholders.setdefault('MULTISITE_ETCD_CERT', '')
+    placeholders.setdefault('MULTISITE_ETCD_KEY', '')
     placeholders.setdefault('MULTISITE_TTL', '90')
     placeholders.setdefault('MULTISITE_RETRY_TIMEOUT', '40')
     placeholders.setdefault('EXTERNAL_HOST', placeholders['instance_data']['ip'])

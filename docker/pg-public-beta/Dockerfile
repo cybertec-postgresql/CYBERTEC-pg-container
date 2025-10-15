@@ -118,6 +118,9 @@ FROM scratch
 
 ARG PGVERSION
 
+LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
+LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - HA-Postgres-Container with Patroni and pgBackRest (public-beta)"
+LABEL org.opencontainers.image.licenses=Apache-2.0
 COPY --from=builder / /
 
 EXPOSE 5432 8008 8080

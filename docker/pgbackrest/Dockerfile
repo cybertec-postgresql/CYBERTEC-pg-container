@@ -131,6 +131,10 @@ COPY --from=micro / /
 
 ARG PGVERSION
 
+LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
+LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - pgBackRest-Container for restore-Container and as Repo-Host"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
 # set user and group ownership
 RUN chown -R postgres:postgres /opt/pgbackrest  \
 	/backrestrepo /home/postgres/pgdata/pgbackrest /home/postgres/pgdata

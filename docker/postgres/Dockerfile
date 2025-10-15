@@ -130,6 +130,7 @@ COPY --from=builder / /
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
     PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
+    HOME=/home/postgres \
     PGHOME=/home/postgres \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \

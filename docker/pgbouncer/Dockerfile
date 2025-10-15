@@ -22,6 +22,10 @@ RUN mkdir -p /etc/pgbouncer/certs && chmod 775 /etc/pgbouncer/certs && chmod 664
 		
 FROM scratch 
 
+LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
+LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - pgBouncer"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
 COPY --from=builder / /
 
 COPY launcher/pgbouncer/launch.sh /

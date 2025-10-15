@@ -52,6 +52,10 @@ RUN mkdir -p /tmp/zstd && cp -r /usr/bin/zstd* /tmp/zstd
 
 FROM ${CONTAINERIMAGE} as micro
 
+LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
+LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - pgBackRest-Container for restore-Container and as Repo-Host (public-beta)"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
 ARG PGVERSION
 
 COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init

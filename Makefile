@@ -25,7 +25,8 @@ BETAVERSION ?= 18
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
-ROOTPATH ?= $(GOPATH)/src/github.com/cybertec/cybertec-pg-container
+BASEPATH ?= $(HOME)
+ROOTPATH ?= $(BASEPATH)/src/github.com/cybertec/cybertec-pg-container
 
 # Build Images
 

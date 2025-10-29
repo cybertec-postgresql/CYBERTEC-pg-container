@@ -21,3 +21,7 @@ scripts/logical_backup/
 
 # grid-files
 /docker/add-grid-files/grid-files/*
+
+# Public-betas
+docker/pg-public-beta
+docker/pgbackrest-public-beta

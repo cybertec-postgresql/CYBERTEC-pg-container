@@ -21,6 +21,11 @@ ENV PATH=$PATH:/usr/local/go/bin
 RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build;
 
 FROM ${CONTAINERIMAGE}
+
+LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
+LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - Metric-Exporter for Prometheus"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
 COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
 COPY --from=builder ./postgres_exporter/postgres_exporter /bin/postgres_exporter
 

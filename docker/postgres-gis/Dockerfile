@@ -53,7 +53,6 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         rsync \
         dumb-init \ 
         libicu \
-        pgbackrest-${PGBACKREST_VERSION} \
         cronie \
         libcurl-devel \
 		&& ${PACKAGER} -y clean all;
@@ -110,6 +109,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             && cd /pgextwlist && make clean && make && make install \
             && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
     done \
+    && ${PACKAGER} -y install pgbackrest-${PGBACKREST_VERSION} \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
     RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c

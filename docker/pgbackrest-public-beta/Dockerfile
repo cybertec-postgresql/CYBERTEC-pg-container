@@ -27,7 +27,6 @@ RUN ${PACKAGER} -y install --nodocs  \
 		libicu \
 		dumb-init \
 		jq \
-		pgbackrest-${PGBACKREST_VERSION} \
 	&& ${PACKAGER} -y clean all ; 
 
 # Install postgres-server
@@ -35,6 +34,7 @@ RUN ${PACKAGER} -y update \
 	&& for version in $PG_SUPPORTED_VERSIONS; do \
 		${PACKAGER} -y install --nodocs postgresql${version}-server; \
     done \
+	&& ${PACKAGER} -y install pgbackrest-${PGBACKREST_VERSION} \
 	&& ${PACKAGER} -y clean all;
 
 # Remove default pgbackrest-config

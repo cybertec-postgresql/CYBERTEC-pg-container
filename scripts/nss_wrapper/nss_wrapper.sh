@@ -19,7 +19,7 @@ chmod g+rwx ${NSS_ROOT_DIR}
 
 # Check if User and Group already exists, if not add it
 if [[ ! $(cat "${NSS_PASSWD}") =~ ${NSS_USERNAME}:x:${CURRENT_USER} ]]; then
-    passwd_tmp="${NSS_WRAPPER_DIR}/passwd_tmp"
+    passwd_tmp="${NSS_ROOT_DIR}/passwd_tmp"
     cp "${NSS_PASSWD}" "${NSS_PASSWD}.tmp"
     sed -i "/${NSS_USERNAME}:x:/d" "${NSS_PASSWD}.tmp"
     sed -i "/${CURRENT_USER}:x:/d" "${NSS_PASSWD}.tmp"

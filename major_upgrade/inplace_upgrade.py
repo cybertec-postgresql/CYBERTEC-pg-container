@@ -317,7 +317,7 @@ hosts deny = *
                 shutil.rmtree(self.rsyncd_conf_dir)
                 self.rsyncd_configs_created = False
             except Exception as e:
-                logger.error('Failed to remove %s: %r', self.rsync_conf_dir, e)
+                logger.error('Failed to remove %s: %r', self.rsyncd_conf_dir, e)
 
     def checkpoint(self, member):
         name, (_, cur) = member

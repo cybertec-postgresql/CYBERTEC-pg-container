@@ -18,11 +18,11 @@ fi
 sysctl -w vm.dirty_background_bytes=67108864 > /dev/null 2>&1
 sysctl -w vm.dirty_bytes=134217728 > /dev/null 2>&1
 mkdir -p "$PGLOG" "$PGDATA" "$RW_DIR/postgresql" "$RW_DIR/tmp" "$RW_DIR/certs"
-if [ "$(id -u)" -ne 0 ]; then
-    sed -e "s/^postgres:x:[^:]*:[^:]*:/postgres:x:$(id -u):$(id -g):/" /etc/passwd > "$RW_DIR/tmp/passwd"
-    cat "$RW_DIR/tmp/passwd" > /etc/passwd
-    rm "$RW_DIR/tmp/passwd"
-fi
+# if [ "$(id -u)" -ne 0 ]; then
+#     sed -e "s/^postgres:x:[^:]*:[^:]*:/postgres:x:$(id -u):$(id -g):/" /etc/passwd > "$RW_DIR/tmp/passwd"
+#     cat "$RW_DIR/tmp/passwd" > /etc/passwd
+#     rm "$RW_DIR/tmp/passwd"
+# fi
 
 ## Ensure all logfiles exist, most appliances will have
 ## a foreign data wrapper pointing to these files

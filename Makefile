@@ -134,7 +134,7 @@ postgres-oracle-build:
 postgres-oracle: postgres-oracle-build
 
 pgbouncer-build:
-		docker build $(ROOTPATH)														\
+		docker build $(ROOTPATH)	--no-cache											\
 			--file $(ROOTPATH)/docker/pgbouncer/Dockerfile 								\
 			--tag cybertec-pg-container/pgbouncer:$(IMAGE_TAG)							\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\

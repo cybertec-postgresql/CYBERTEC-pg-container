@@ -131,6 +131,9 @@ COPY --from=micro / /
 
 ARG PGVERSION
 
+ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
+	LD_LIBRARY_PATH=/usr/pgsql-$PGVERSION/lib:$LD_LIBRARY_PATH
+
 LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
 LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - pgBackRest-Container for restore-Container and as Repo-Host"
 LABEL org.opencontainers.image.licenses=Apache-2.0

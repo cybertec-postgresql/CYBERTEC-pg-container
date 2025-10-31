@@ -16,13 +16,33 @@ status=$(echo $stanza | jq '.[0].status.code')
  
 if [ "$db" == "[]" ] && [ "$archive" == "[]" ] || [ "$status" == "1" ]; then
     # Check if Primary is ready
-    pgbackrest stanza-create --stanza=db
+        count=0
+        while true
+        do
+            pgbackrest stanza-create --stanza=db
+            returnCode=$?
+            ((count++))
+
+            if [ "$returnCode" -eq 56 ]; then
+                echo "WARNING: pgbackrest could not create stanza – No primary found - Attempt $count / 10"
+                sleep 5
+            elif [ "$returnCode" -eq 0 ]; then
+                echo "INFO: pgbackrest stanza successfully created."
+                break
+            fi
+
+            if [ "$count" -eq 10 ]; then
+                echo "ERROR: pgbackrest could not create stanza - reached max attempts."
+                break
+            fi
+        done
+    echo "INFO: create initial backup"
     pgbackrest backup --type=full --stanza=db --repo=1
-    echo "Finished: pgBackRest is ready for use"
+    echo "INFO: pgBackRest is ready for use"
 else
     backupCount=$(pgbackrest info --output=json | jq '.[0].backup'| jq length)
     if [ "$backupCount" == "0" ]; then
         pgbackrest backup --type=full --stanza=db --repo=1
-        echo "Finished: pgBackRest is ready for use"
+        echo "INFO: pgBackRest is ready for use"
     fi
 fi

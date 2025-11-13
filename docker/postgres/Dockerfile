@@ -138,7 +138,7 @@ ENV LC_ALL=en_US.utf-8 \
     PGHOME=/home/postgres \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \
-    DEMO=$DEMO
+    DEMO=$DEMO 
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
@@ -198,6 +198,10 @@ COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
+
+ENV LD_PRELOAD=/usr/lib64/libnss_wrapper.so \
+    NSS_WRAPPER_PASSWD=/tmp/nss_wrapper/passwd \
+    NSS_WRAPPER_GROUP=/tmp/nss_wrapper/group 
 
 USER postgres
 

@@ -87,7 +87,6 @@ postgres-build:
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
 			--build-arg PGVERSION=$(PGVERSION)									\
 			--build-arg ETCD_VERSION=$(ETCD_VERSION)							\
-			--build-arg PGVERSION=$(PGVERSION) 									\
 			--build-arg ARCH=$(ARCH) 											
 
 postgres: postgres-build

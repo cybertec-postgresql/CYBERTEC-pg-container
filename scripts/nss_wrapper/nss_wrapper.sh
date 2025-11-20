@@ -38,8 +38,4 @@ if [[ ! $(cat "${NSS_GROUP}") =~ ${NSS_USERNAME}:x:${CURRENT_USER} ]]; then
     echo "Group was added via nss_wrapper"
 fi
 
-export LD_PRELOAD=/usr/lib64/libnss_wrapper.so
-export NSS_WRAPPER_PASSWD="${NSS_PASSWD}"
-export NSS_WRAPPER_GROUP="${NSS_GROUP}"
-
 exec "$@"

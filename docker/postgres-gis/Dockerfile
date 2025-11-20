@@ -202,6 +202,10 @@ COPY launcher/postgres/launch.sh /
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
 
+ENV LD_PRELOAD=/usr/lib64/libnss_wrapper.so \
+    NSS_WRAPPER_PASSWD=/tmp/nss_wrapper/passwd \
+    NSS_WRAPPER_GROUP=/tmp/nss_wrapper/group 
+
 USER postgres
 
 CMD ["/bin/sh", "/launch.sh", "init"]

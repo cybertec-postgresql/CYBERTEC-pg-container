@@ -77,7 +77,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
     && git clone https://github.com/dimitri/pgextwlist.git \
-    && git clone https://github.com/crunchydata/pgnodemx \
+    # && git clone https://github.com/crunchydata/pgnodemx \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all \
@@ -94,7 +94,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
                     postgresql${version}-plpython3 postgresql${version}-devel \
-                    pg_cron_${version} pgvector_${version} set_user_${version} \
+                    pg_cron_${version} pgvector_${version} set_user_${version} pgnodemx_${version} \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
@@ -106,8 +106,8 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
             && for n in pg_permissions $EXTRA_EXTENSIONS; do \ 
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
-            && cd /pgextwlist && make clean && make && make install \
-            && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
+            && cd /pgextwlist && make clean && make && make install; \
+            # && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
     done \
     && ${PACKAGER} -y install pgbackrest-${PGBACKREST_VERSION} \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
@@ -194,8 +194,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         && chgrp -R 0 $PGHOME $RW_DIR \
         && chmod -R g=u $PGHOME $RW_DIR \
         && usermod -a -G root postgres; \
-    fi
-        
+    fi  
 
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /

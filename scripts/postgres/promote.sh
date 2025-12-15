@@ -10,5 +10,6 @@ done
 
 source "/scripts/postgres/shell_lib.sh"
 output_info "pgBackRest: Promote Database because of earlier pgBackRest-Restore."
-pg_ctl promote -D ${PGDATA}
+DETECTED_VERSION=$(cat "${PGDATA}/PG_VERSION")
+/usr/pgsql-${DETECTED_VERSION}/bin/pg_ctl promote -D ${PGDATA}
 rm -f "${PGDATA}/promote_after_restore.signal"

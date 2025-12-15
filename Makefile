@@ -18,6 +18,8 @@ BUILD ?= 2
 ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
+PGBOUNCER_IMAGE_TAG ?= $(BASEOS)-$(PGBOUNCER_VERSION)-$(BUILD)
+REPOSITORY ?= containers.cybertec.at
 
 # Public-Beta
 PUBLICBETA ?= 3
@@ -94,7 +96,7 @@ postgres: postgres-build
 postgres-gis-build:
 		docker build $(ROOTPATH)													\
 			--file $(ROOTPATH)/docker/postgres-gis/Dockerfile 						\
-			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres-gis:$(IMAGE_TAG)					\
+			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres-gis:$(POSTGIS_IMAGE_TAG)		\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
 			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 							\
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
@@ -135,7 +137,7 @@ postgres-oracle: postgres-oracle-build
 pgbouncer-build:
 		docker build $(ROOTPATH)	--no-cache											\
 			--file $(ROOTPATH)/docker/pgbouncer/Dockerfile 								\
-			--tag $(REPOSITORY)/$(IMAGE_PATH)/pgbouncer:$(IMAGE_TAG)							\
+			--tag $(REPOSITORY)/$(IMAGE_PATH)/pgbouncer:$(PGBOUNCER_IMAGE_TAG)							\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\
 			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 								\
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)							\

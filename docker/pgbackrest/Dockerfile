@@ -108,7 +108,7 @@ COPY --from=builder /usr/bin/trust /usr/bin/
 
 # libraries
 COPY --from=builder /usr/bin/nss_wrapper.pl /usr/bin/nss_wrapper.pl 
-# COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
+COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
 COPY --from=builder /usr/share/man/man1 /usr/share/man/man1
 COPY --from=builder /usr/bin/envsubst /usr/bin/envsubst
 
@@ -160,6 +160,10 @@ COPY launcher/pgbackrest/launch.sh /
 VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
+
+ENV LD_PRELOAD=/usr/lib64/libnss_wrapper.so \
+    NSS_WRAPPER_PASSWD=/tmp/nss_wrapper/passwd \
+    NSS_WRAPPER_GROUP=/tmp/nss_wrapper/group 
 
 USER postgres
 

@@ -667,11 +667,11 @@ hosts deny = *
     def start_backup(self, envdir):
         logger.info('Upgrade Stanza and Initiating a new backup...')
         # if not os.fork():
-        subprocess.call(['nohup', '/scripts/postgres/stanza_upgrade.sh', self.postgresql.data_dir],
-                        stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+        subprocess.call(['nohup', '/scripts/postgres/stanza_upgrade.sh'],
+                        stdout=sys.stdout, stderr=sys.stderr)
         if os.getenv('COMMAND') != 'repo-host':
-            subprocess.call(['nohup', 'pgbackrest backup --stanza=db --type=full --repo=1', self.postgresql.data_dir],
-                        stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
+            subprocess.call(['nohup', 'pgbackrest', 'backup', '--stanza=db', '--type=full', '--repo=1'],
+                        stdout=sys.stdout, stderr=sys.stderr)
 
 
 

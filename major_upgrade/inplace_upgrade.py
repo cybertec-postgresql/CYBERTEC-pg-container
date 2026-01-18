@@ -10,6 +10,7 @@ import subprocess
 import sys
 import time
 import yaml
+import ipaddress
 
 from collections import defaultdict
 from threading import Thread
@@ -19,6 +20,15 @@ from patroni import global_config
 logger = logging.getLogger(__name__)
 
 RSYNC_PORT = 5432
+
+# Ensuring the processing of IPv4, IPv6 and host names with rsync
+def format_host_for_rsync(host):
+    try:
+        if ipaddress.ip_address(host).version == 6:
+            return f"[{host}]"
+    except ValueError:
+        pass
+    return host
 
 
 def patch_wale_prefix(value, new_version):
@@ -717,11 +727,12 @@ def rsync_replica(config, desired_version, primary_ip, pid):
 
     env = os.environ.copy()
     env['RSYNC_PASSWORD'] = postgresql.config.replication['password']
+    formatted_primary_ip = format_host_for_rsync(primary_ip)
     if subprocess.call(['rsync', '--archive', '--delete', '--hard-links', '--size-only', '--omit-dir-times',
                         '--no-inc-recursive', '--include=/data/***', '--include=/data_old/***',
                         '--exclude=/data/pg_xlog/*', '--exclude=/data_old/pg_xlog/*',
                         '--exclude=/data/pg_wal/*', '--exclude=/data_old/pg_wal/*', '--exclude=*',
-                        'rsync://{0}@{1}:{2}/pgroot'.format(postgresql.name, primary_ip, RSYNC_PORT),
+                        'rsync://{0}@{1}:{2}/pgroot'.format(postgresql.name, formatted_primary_ip, RSYNC_PORT),
                         os.path.dirname(postgresql.data_dir)], env=env) != 0:
         logger.error('Failed to rsync from %s', primary_ip)
         postgresql.switch_back_pgdata()

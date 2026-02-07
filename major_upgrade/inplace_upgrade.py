@@ -667,12 +667,7 @@ hosts deny = *
     def start_backup(self, envdir):
         logger.info('Upgrade Stanza and Initiating a new backup...')
         # if not os.fork():
-        subprocess.call(['nohup', '/scripts/postgres/stanza_upgrade.sh', self.postgresql.data_dir],
-                        stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
-        subprocess.call(['nohup', 'pgbackrest backup --stanza=db --type=full --repo=1', self.postgresql.data_dir],
-                        stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
-
-
+        subprocess.call(['/bin/bash', '/scripts/postgres/stanza_upgrade.sh', self.postgresql.data_dir])
 
 # this function will be running in a clean environment, therefore we can't rely on DCS connection
 def rsync_replica(config, desired_version, primary_ip, pid):

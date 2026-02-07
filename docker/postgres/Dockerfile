@@ -29,9 +29,9 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         tar \
         bzip2 \
         lz4 \
-        python3 \
-        python3-pip \
-        python3-psycopg2 \
+        python3.12 \
+        python3.12-pip \
+        python3.12-psycopg2 \
         git \
         patchutils \
         binutils \
@@ -56,15 +56,19 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         libcurl-devel \
 		&& ${PACKAGER} -y clean all;
 
+# create links for python to ensure correct version is used everywhere
+RUN ln -sf /usr/bin/python3.12 /usr/local/bin/python3 && ln -sf /usr/bin/python3.12 /usr/local/bin/python \
+    && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip3 && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip;
+
 # install etcdctl
 RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH
 
-RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
+RUN wget https://smarden.org/runit/runit-2.3.0.tar.gz -P /package/
 COPY cron_unprivileged.c /package/
 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.4.2 --upgrade \
+RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd psutil requests cdiff ydiff==1.4.2 --upgrade \
     && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
         git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
         pip3 install ./patroni[kubernetes,etcd,etcd3]; \
@@ -76,13 +80,9 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
     && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
     && git clone https://github.com/dimitri/pgextwlist.git \
-    # && git clone https://github.com/crunchydata/pgnodemx \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all \
-\
-    # forbid creation of a main cluster when package is installed
-    #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
 \
 # Install PostgreSQL
     && for version in $PG_SUPPORTED_VERSIONS; do \
@@ -104,24 +104,23 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
                 make -C $n USE_PGXS=1 clean install-strip; \ 
             done \
             && cd /pgextwlist && make clean && make && make install; \
-            # && cd /pgnodemx && make USE_PGXS=1 clean && make USE_PGXS=1 && make USE_PGXS=1 install; \
     done \
     && ${PACKAGER} -y install pgbackrest-${PGBACKREST_VERSION} \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
     RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
-    RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
-    && cd admin/runit-2.1.2 && package/install \
+    RUN cd /package && tar -xvzf runit-2.3.0.tar.gz && rm runit-2.3.0.tar.gz \
+    && cd admin/runit-2.3.0 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
     && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
-    && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
+    && ${PACKAGER} -y remove $(rpm -qa "*devel*") "python3*-pip" "python3*-dev" "python3*-setuptools" git patchutils flatpak glibc-static gcc glibc-devel \
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;
 
-FROM scratch 
+FROM scratch
 
 ARG PGVERSION
 
@@ -138,7 +137,7 @@ ENV LC_ALL=en_US.utf-8 \
     PGHOME=/home/postgres \
     RW_DIR=/run \
     TIMESCALEDB=$TIMESCALEDB \
-    DEMO=$DEMO 
+    DEMO=$DEMO
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \
     PGROOT=$PGHOME/pgdata/pgroot
@@ -191,7 +190,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         && chgrp -R 0 $PGHOME $RW_DIR \
         && chmod -R g=u $PGHOME $RW_DIR \
         && usermod -a -G root postgres; \
-    fi 
+    fi
 
 COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /

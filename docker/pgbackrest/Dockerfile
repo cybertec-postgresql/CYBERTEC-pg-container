@@ -23,7 +23,7 @@ RUN ${PACKAGER} -y install --nodocs  \
 		libicu \
 		dumb-init \
 		jq \
-	&& ${PACKAGER} -y clean all; 
+	&& ${PACKAGER} -y clean all;
 
 # Install postgres-server
 RUN ${PACKAGER} -y update \
@@ -154,7 +154,6 @@ RUN mkdir /.ssh && chown postgres:postgres /.ssh && chmod o+rwx /.ssh
 RUN chown -R postgres:postgres /opt/pgbackrest  \
 	/backrestrepo /home/postgres/pgdata
 
-#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 COPY launcher/pgbackrest/launch.sh /
 	
 VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]

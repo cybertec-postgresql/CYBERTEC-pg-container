@@ -15,7 +15,7 @@ RUN ${PACKAGER} -y install --nodocs  \
 		make \
 		&& ${PACKAGER} -y clean all ;
 
-RUN wget https://go.dev/dl/go1.25.5.linux-amd64.tar.gz  && tar -xzf go1.25.5.linux-amd64.tar.gz && mv go /usr/local 
+RUN wget https://go.dev/dl/go1.25.7.linux-amd64.tar.gz  && tar -xzf go1.25.5.linux-amd64.tar.gz && mv go /usr/local 
 ENV PATH=$PATH:/usr/local/go/bin
 
 RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build;

@@ -1225,19 +1225,25 @@ def main():
     placeholders['PGVERSION'] = get_binary_version(config['postgresql'].get('bin_dir'))
     version = float(placeholders['PGVERSION'])
     if 'shared_preload_libraries' not in user_config.get('postgresql', {}).get('parameters', {}):
-        config['postgresql']['parameters']['shared_preload_libraries'] =\
-                append_extensions(config['postgresql']['parameters']['shared_preload_libraries'], version)
+            config['postgresql']['parameters']['shared_preload_libraries'] =\
+                    append_extensions(config['postgresql']['parameters']['shared_preload_libraries'], version)
+    
     if 'extwlist.extensions' not in user_config.get('postgresql', {}).get('parameters', {}):
         config['postgresql']['parameters']['extwlist.extensions'] =\
                 append_extensions(config['postgresql']['parameters']['extwlist.extensions'], version, True)
-    
+        
+    current_libs_str = config['postgresql']['parameters'].get('shared_preload_libraries', '')
+    libs_list = [lib.strip() for lib in current_libs_str.split(',') if lib.strip()]
+
+    if 'pg_stat_statements' not in libs_list:
+        libs_list.append('pg_stat_statements')
+
     # Check if cpo_monitoring is enabled
-    if placeholders['cpo_monitoring_stack']:
-        current_libraries = config['postgresql']['parameters'].get('shared_preload_libraries', '')
-        if not current_libraries:
-            config['postgresql']['parameters']['shared_preload_libraries'] = 'pgnodemx'
-        elif current_libraries and 'pgnodemx' not in current_libraries.split(','):
-            config['postgresql']['parameters']['shared_preload_libraries'] = current_libraries + ',' + 'pgnodemx'     
+    if placeholders.get('cpo_monitoring_stack'):
+        if 'pgnodemx' not in libs_list:
+            libs_list.append('pgnodemx')
+
+    config['postgresql']['parameters']['shared_preload_libraries'] = ','.join(libs_list)  
 
     # Ensure replication is available
     if 'pg_hba' in config['bootstrap'] and not any(['replication' in i for i in config['bootstrap']['pg_hba']]):

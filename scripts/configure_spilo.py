@@ -1225,8 +1225,8 @@ def main():
     placeholders['PGVERSION'] = get_binary_version(config['postgresql'].get('bin_dir'))
     version = float(placeholders['PGVERSION'])
     if 'shared_preload_libraries' not in user_config.get('postgresql', {}).get('parameters', {}):
-            config['postgresql']['parameters']['shared_preload_libraries'] =\
-                    append_extensions(config['postgresql']['parameters']['shared_preload_libraries'], version)
+        config['postgresql']['parameters']['shared_preload_libraries'] =\
+                append_extensions(config['postgresql']['parameters']['shared_preload_libraries'], version)
     
     if 'extwlist.extensions' not in user_config.get('postgresql', {}).get('parameters', {}):
         config['postgresql']['parameters']['extwlist.extensions'] =\

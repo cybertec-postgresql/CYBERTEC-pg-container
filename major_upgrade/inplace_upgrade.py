@@ -187,8 +187,9 @@ class InplaceUpgrade(object):
             if not self.check_patroni_api(member):
                 return logger.error('Patroni on %s is not healthy', member.name)
 
-            conn_kwargs = member.conn_kwargs(self.postgresql.config.superuser)
+            conn_kwargs = member.conn_kwargs(self.postgresql.config.rewind_credentials)
             conn_kwargs['options'] = '-c statement_timeout=0 -c search_path='
+            conn_kwargs['dbname'] = self.postgresql.database
             conn_kwargs.pop('connect_timeout', None)
 
             conn = psycopg2.connect(**conn_kwargs)

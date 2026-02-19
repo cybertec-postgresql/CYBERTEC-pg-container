@@ -169,7 +169,6 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
     && chmod +r /etc/motd \
     && ln -snf $RW_DIR/service /etc/service \
     #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
-    && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
     && ln -s $RW_DIR/.bash_history /root/.bash_history \
     && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history \
     && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history \
@@ -177,7 +176,7 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
     && for d in $PGHOME /root; do \
         d=$d/.config/patroni \
         && mkdir -p $d \
-        && ln -s $PGHOME/postgres.yml $d/patronictl.yaml; \
+        && ln -s $RW_DIR/postgres.yml $d/patronictl.yaml; \
     done \
     && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
     && echo "PATH=\"$PATH\"" > /etc/environment \

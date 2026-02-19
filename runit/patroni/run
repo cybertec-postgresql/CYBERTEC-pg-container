@@ -26,4 +26,4 @@ for E in $(printenv -0 | tr '\n' ' ' | sed 's/\x00/\n/g' | grep -vE '^(KUBERNETE
 done
 
 exec 2>&1
-exec $CHRT $CHPST env HOME=/home/postgres patroni /home/postgres/postgres.yml
+exec $CHRT $CHPST env HOME=/home/postgres patroni "$RW_DIR/postgres.yml"

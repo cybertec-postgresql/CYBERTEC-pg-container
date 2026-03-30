@@ -27,6 +27,7 @@ LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - Metric-Expor
 LABEL org.opencontainers.image.licenses=Apache-2.0
 
 COPY --from=builder /usr/bin/dumb-init /usr/bin/dumb-init
+COPY --from=builder /bin/sed /bin/sed
 COPY --from=builder ./postgres_exporter/postgres_exporter /bin/postgres_exporter
 
 COPY launcher/exporter/launch.sh /

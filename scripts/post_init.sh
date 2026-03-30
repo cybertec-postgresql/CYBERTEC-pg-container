@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Remove the recovery.signal that was generated in error by create-replica-method, provided the pod is the primary. - just temporary to keep it kompatible
+patronictl list -f json | jq -e --arg h "$(hostname)" '.[] | select(.Member == $h and (.Role | ascii_downcase) == "leader")' >/dev/null && [ -f "${PGDATA}/recovery.signal" ] && rm "${PGDATA}/recovery.signal" && echo "INFO: Unneeded recovery.signal detected and removed"
+
 cd "$(dirname "${BASH_SOURCE[0]}")" || exit 1
 
 PGVER=$(psql -d "$2" -XtAc "SELECT pg_catalog.current_setting('server_version_num')::int/10000")

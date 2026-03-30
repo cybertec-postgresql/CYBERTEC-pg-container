@@ -395,7 +395,7 @@ hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefun
     - basebackup_fast_xlog
   {{#USE_PGBACKREST}}
   pgbackrest:
-    command: pgbackrest --stanza=db --delta restore
+    command: pgbackrest --stanza=db --delta --type=standby restore
     keep_data: True
     no_params: True
     no_leader: True

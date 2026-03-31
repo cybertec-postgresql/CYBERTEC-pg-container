@@ -67,7 +67,7 @@ ENV PATHBACKUP = $PATH
 RUN wget https://smarden.org/runit/runit-2.3.0.tar.gz -P /package/
 COPY cron_unprivileged.c /package/
 
-RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd psutil requests cdiff ydiff==1.4.2 --upgrade \
+RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd psutil requests cdiff ydiff==1.4.2 python-json-logger --upgrade \
     && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
         git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
         pip3 install ./patroni[kubernetes,etcd,etcd3]; \

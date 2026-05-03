@@ -6,6 +6,7 @@ ARG CONTAINERIMAGE
 FROM ${IMAGE_PATH}/base:${BASEOS}-${BUILD} AS builder
 
 ARG PACKAGER
+ARG GO_VERSION
 
 RUN ${PACKAGER} -y install --nodocs  \
 		--setopt=skip_missing_names_on_install=False \
@@ -15,7 +16,7 @@ RUN ${PACKAGER} -y install --nodocs  \
 		make \
 		&& ${PACKAGER} -y clean all ;
 
-RUN wget https://go.dev/dl/go1.26.1.linux-amd64.tar.gz  && tar -xzf go1.26.1.linux-amd64.tar.gz && mv go /usr/local 
+RUN wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz  && tar -xzf go${GO_VERSION}.linux-amd64.tar.gz && mv go /usr/local 
 ENV PATH=$PATH:/usr/local/go/bin
 
 RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build;

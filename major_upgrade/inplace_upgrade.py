@@ -636,6 +636,11 @@ hosts deny = *
         except Exception as e:
             logger.error('Failed to update extensions: %r', e)
 
+        try:
+            self.postgresql.recreate_extensions()
+        except Exception as e:
+            logger.error('Failed to recreate extensions: %r', e)
+
         # start analyze early
         analyze_thread = Thread(target=self.analyze)
         analyze_thread.start()

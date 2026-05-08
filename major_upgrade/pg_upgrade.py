@@ -84,6 +84,9 @@ class _PostgresqlUpgrade(Postgresql):
         logger.info('Dropping objects from the cluster which could be incompatible')
         conn_kwargs = self.local_conn_kwargs
 
+        # remember databases where pgaudit was installed, to recreate it after the upgrade
+        self._extensions_to_recreate = {}
+
         for d in self._get_all_databases():
             conn_kwargs['dbname'] = d
             with get_connection_cursor(**conn_kwargs) as cur:
@@ -95,7 +98,11 @@ class _PostgresqlUpgrade(Postgresql):
                 logger.info('Executing "DROP FUNCTION metric_helpers.pg_stat_statements" in the database="%s"', d)
                 cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
 
-                for ext in ('pg_stat_kcache', 'pg_stat_statements') + self._INCOMPATIBLE_EXTENSIONS:
+                cur.execute("SELECT 1 FROM pg_catalog.pg_extension WHERE extname = 'pgaudit'")
+                if cur.fetchone():
+                    self._extensions_to_recreate.setdefault(d, []).append('pgaudit')
+
+                for ext in ('pg_stat_kcache', 'pg_stat_statements', 'pgaudit') + self._INCOMPATIBLE_EXTENSIONS:
                     logger.info('Executing "DROP EXTENSION IF EXISTS %s" in the database="%s"', ext, d)
                     cur.execute("DROP EXTENSION IF EXISTS {0}".format(ext))
 
@@ -119,6 +126,14 @@ class _PostgresqlUpgrade(Postgresql):
                 cur.execute('SELECT quote_ident(extname) FROM pg_catalog.pg_extension')
                 for extname in cur.fetchall():
                     query = 'ALTER EXTENSION {0} UPDATE'.format(extname[0])
+                    logger.info("Executing '%s' in the database=%s", query, d)
+                    try:
+                        cur.execute(query)
+                    except Exception as e:
+                        logger.error('Failed: %r', e)
+
+                for ext in getattr(self, '_extensions_to_recreate', {}).get(d, []):
+                    query = 'CREATE EXTENSION IF NOT EXISTS {0}'.format(ext)
                     logger.info("Executing '%s' in the database=%s", query, d)
                     try:
                         cur.execute(query)

@@ -96,7 +96,7 @@ class _PostgresqlUpgrade(Postgresql):
                 logger.info('Executing "DROP FUNCTION metric_helpers.pg_stat_statements" in the database="%s"', d)
                 cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
 
-                cur.execute("SELECT e.extname, n.nspname, pg_catalog.pg_get_userbyid(e.extowner)"
+                cur.execute("SELECT e.extname, n.nspname"
                             " FROM pg_catalog.pg_extension e"
                             " JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace"
                             " WHERE e.extname = ANY(%s)",
@@ -146,20 +146,11 @@ class _PostgresqlUpgrade(Postgresql):
         for d, extensions in getattr(self, '_extensions_to_recreate', {}).items():
             conn_kwargs['dbname'] = d
             with get_connection_cursor(**conn_kwargs) as cur:
-                for extname, schema, owner in extensions:
-                    cur.execute('SELECT quote_ident(%s), quote_ident(%s), quote_ident(%s)',
-                                (extname, schema, owner))
-                    qext, qschema, qowner = cur.fetchone()
+                for extname, schema in extensions:
+                    cur.execute('SELECT quote_ident(%s), quote_ident(%s)', (extname, schema))
+                    qext, qschema = cur.fetchone()
 
                     query = 'CREATE EXTENSION IF NOT EXISTS {0} SCHEMA {1}'.format(qext, qschema)
-                    logger.info("Executing '%s' in the database=%s", query, d)
-                    try:
-                        cur.execute(query)
-                    except Exception as e:
-                        logger.error('Failed: %r', e)
-                        continue
-
-                    query = 'ALTER EXTENSION {0} OWNER TO {1}'.format(qext, qowner)
                     logger.info("Executing '%s' in the database=%s", query, d)
                     try:
                         cur.execute(query)

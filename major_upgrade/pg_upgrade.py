@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 class _PostgresqlUpgrade(Postgresql):
 
     _INCOMPATIBLE_EXTENSIONS = ('pg_repack',)
+    _EXTENSIONS_TO_RECREATE = ('pgaudit',)
     
     def adjust_shared_preload_libraries(self, version):
         from spilo_commons import adjust_extensions
@@ -95,7 +96,19 @@ class _PostgresqlUpgrade(Postgresql):
                 logger.info('Executing "DROP FUNCTION metric_helpers.pg_stat_statements" in the database="%s"', d)
                 cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
 
-                for ext in ('pg_stat_kcache', 'pg_stat_statements') + self._INCOMPATIBLE_EXTENSIONS:
+                cur.execute("SELECT e.extname, n.nspname"
+                            " FROM pg_catalog.pg_extension e"
+                            " JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace"
+                            " WHERE e.extname = ANY(%s)",
+                            (list(self._EXTENSIONS_TO_RECREATE),))
+                installed = cur.fetchall()
+                if installed:
+                    if not hasattr(self, '_extensions_to_recreate'):
+                        self._extensions_to_recreate = {}
+                    self._extensions_to_recreate[d] = installed
+
+                for ext in ('pg_stat_kcache', 'pg_stat_statements') \
+                        + self._INCOMPATIBLE_EXTENSIONS + self._EXTENSIONS_TO_RECREATE:
                     logger.info('Executing "DROP EXTENSION IF EXISTS %s" in the database="%s"', ext, d)
                     cur.execute("DROP EXTENSION IF EXISTS {0}".format(ext))
 
@@ -119,6 +132,25 @@ class _PostgresqlUpgrade(Postgresql):
                 cur.execute('SELECT quote_ident(extname) FROM pg_catalog.pg_extension')
                 for extname in cur.fetchall():
                     query = 'ALTER EXTENSION {0} UPDATE'.format(extname[0])
+                    logger.info("Executing '%s' in the database=%s", query, d)
+                    try:
+                        cur.execute(query)
+                    except Exception as e:
+                        logger.error('Failed: %r', e)
+
+    def recreate_extensions(self):
+        from patroni.postgresql.connection import get_connection_cursor
+
+        conn_kwargs = self.local_conn_kwargs
+
+        for d, extensions in getattr(self, '_extensions_to_recreate', {}).items():
+            conn_kwargs['dbname'] = d
+            with get_connection_cursor(**conn_kwargs) as cur:
+                for extname, schema in extensions:
+                    cur.execute('SELECT quote_ident(%s), quote_ident(%s)', (extname, schema))
+                    qext, qschema = cur.fetchone()
+
+                    query = 'CREATE EXTENSION IF NOT EXISTS {0} SCHEMA {1}'.format(qext, qschema)
                     logger.info("Executing '%s' in the database=%s", query, d)
                     try:
                         cur.execute(query)

@@ -11,7 +11,6 @@ ARG PGBACKREST_VERSION
 ARG PATRONI_VERSION
 ARG PGVERSION
 ARG OLD_PG_VERSIONS
-ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG ETCD_VERSION
 
@@ -31,9 +30,9 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         tar \
         bzip2 \
         lz4 \
-        python3 \
-        python3-pip \
-        python3-psycopg2 \
+        python3.12 \
+        python3.12-pip \
+        python3.12-psycopg2 \
         git \
         patchutils \
         binutils \
@@ -54,22 +53,31 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         rsync \
         dumb-init \ 
         libicu \
-        pgbackrest-${PGBACKREST_VERSION} \
         cronie \
         libcurl-devel \
 		&& ${PACKAGER} -y clean all;
+
+# create links for python to ensure correct version is used everywhere
+RUN ln -sf /usr/bin/python3.12 /usr/local/bin/python3 && ln -sf /usr/bin/python3.12 /usr/local/bin/python \
+    && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip3 && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip;
+
 
 # install etcdctl
 RUN curl -L "https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-$(uname -m | sed 's/aarch64/arm64/; s/x86_64/amd64/').tar.gz" | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH
 
-RUN wget https://smarden.org/runit/runit-2.1.2.tar.gz -P /package/
+RUN wget https://smarden.org/runit/runit-2.3.0.tar.gz -P /package/
 COPY cron_unprivileged.c /package/
+COPY patches/*.patch /
 
-RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python-etcd psutil requests cdiff ydiff==1.4.2 --upgrade \
+RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd psutil requests cdiff ydiff==1.4.2 python-json-logger --upgrade \
     && if [[ $PATRONI_VERSION == "multisite-"* ]]; then \
         git clone -b $PATRONI_VERSION https://github.com/cybertec-postgresql/patroni; \
+        cd patroni; \
+        patch -p1 < ../patroni.patch; \
+        cd .. ; \
+        rm -f patroni.patch; \
         pip3 install ./patroni[kubernetes,etcd,etcd3]; \
     else \
         pip3 install patroni[kubernetes$EXTRAS]==$PATRONI_VERSION --upgrade; \
@@ -77,12 +85,9 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && mkdir /usr/lib/postgresql \
     # Install pam_oauth2.so
     && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
-\    
+\
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all \
-\
-    # forbid creation of a main cluster when package is installed
-    #&& sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \
 \
 # Install PostgreSQL
     && for version in $PG_SUPPORTED_VERSIONS; do \
@@ -90,37 +95,40 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
         ${PACKAGER} -y install postgresql${version}-pltcl \
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
-                    postgresql${version}-devel \
+                     postgresql${version}-plpython3 postgresql${version}-devel \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin; \
     done \
+    && ${PACKAGER} -y install pgbackrest-${PGBACKREST_VERSION} \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
     && ${PACKAGER} -y clean all;
     RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
-    RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
-    && cd admin/runit-2.1.2 && package/install \
+    RUN cd /package && tar -xvzf runit-2.3.0.tar.gz && rm runit-2.3.0.tar.gz \
+    && cd admin/runit-2.3.0 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf  /pam-oauth2 \
+    && rm -rf /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
-    && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
+    && ${PACKAGER} -y remove $(rpm -qa "*devel*") "python3*-pip" "python3*-dev" "python3*-setuptools" git patchutils flatpak glibc-static gcc glibc-devel \
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;
 
-FROM scratch 
+FROM scratch
 
 ARG PGVERSION
 
 LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
 LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - HA-Postgres-Container with Patroni and pgBackRest (public-beta)"
 LABEL org.opencontainers.image.licenses=Apache-2.0
+
 COPY --from=builder / /
 
 EXPOSE 5432 8008 8080
 ENV LC_ALL=en_US.utf-8 \
     PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
+    HOME=/home/postgres \
     PGHOME=/home/postgres \
     RW_DIR=/run \
     DEMO=$DEMO
@@ -152,7 +160,6 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
     && chmod +r /etc/motd \
     && ln -snf $RW_DIR/service /etc/service \
     #&& ln -s $RW_DIR/pam.d-postgresql /etc/pam.d/postgresql \
-    && ln -s $RW_DIR/postgres.yml $PGHOME/postgres.yml \
     && ln -s $RW_DIR/.bash_history /root/.bash_history \
     && ln -s $RW_DIR/postgresql/.bash_history $PGHOME/.bash_history \
     && ln -s $RW_DIR/postgresql/.psql_history $PGHOME/.psql_history \
@@ -160,9 +167,8 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
     && for d in $PGHOME /root; do \
         d=$d/.config/patroni \
         && mkdir -p $d \
-        && ln -s $PGHOME/postgres.yml $d/patronictl.yaml; \
+        && ln -s $RW_DIR/postgres.yml $d/patronictl.yaml; \
     done \
-    && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
     && echo "PATH=\"$PATH\"" > /etc/environment \
     && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor; \
         do echo "export $e" >> /etc/bash.bashrc; \
@@ -183,6 +189,10 @@ COPY scripts bootstrap major_upgrade /scripts/
 COPY launcher/postgres/launch.sh /
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
+
+ENV LD_PRELOAD=/usr/lib64/libnss_wrapper.so \
+    NSS_WRAPPER_PASSWD=/tmp/nss_wrapper/passwd \
+    NSS_WRAPPER_GROUP=/tmp/nss_wrapper/group
 
 USER postgres
 

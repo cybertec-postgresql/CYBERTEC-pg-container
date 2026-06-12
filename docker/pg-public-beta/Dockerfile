@@ -21,8 +21,7 @@ RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
     && ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing-source;
 
 # Spilo-specific
-ENV PAM_OAUTH2=v1.0.1 \
-    PG_PERMISSIONS=REL_1_3
+ENV PAM_OAUTH2=v1.0.1
 
 # Get some Standard-Stuff
 RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
@@ -79,9 +78,6 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     && mkdir /usr/lib/postgresql \
     # Install pam_oauth2.so
     && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
-    && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
-    && git clone https://github.com/dimitri/pgextwlist.git \
-    && git clone https://github.com/crunchydata/pgnodemx \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all \
@@ -107,7 +103,7 @@ RUN pip3 install 'PyYAML<6.0' setuptools pystache loader kazoo meld3 boto python
     RUN cd /package && tar -xvzf runit-2.1.2.tar.gz && rm runit-2.1.2.tar.gz \
     && cd admin/runit-2.1.2 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /pam-oauth2 \
+    && rm -rf  /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
     && ${PACKAGER} -y remove $(rpm -qa "*devel*") python3-pip python3-wheel python3-dev python3-setuptools git patchutils flatpak glibc-static gcc glibc-devel \
     && ${PACKAGER} -y autoremove \
@@ -128,7 +124,6 @@ ENV LC_ALL=en_US.utf-8 \
     PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
     PGHOME=/home/postgres \
     RW_DIR=/run \
-    TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \

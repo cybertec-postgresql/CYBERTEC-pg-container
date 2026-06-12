@@ -16,8 +16,7 @@ ARG ETCD_VERSION
 ARG ARCH
 
 # Spilo-specific
-ENV PAM_OAUTH2=v1.0.1 \
-    PG_PERMISSIONS=REL_1_3
+ENV PAM_OAUTH2=v1.0.1
 
 # Get some Standard-Stuff
 RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 \
@@ -77,8 +76,6 @@ RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd
     && mkdir /usr/lib/postgresql \
     # Install pam_oauth2.so
     && git clone -b $PAM_OAUTH2 --recurse-submodules https://github.com/zalando-pg/pam-oauth2.git && make -C pam-oauth2 install \
-    && git clone -b $PG_PERMISSIONS https://github.com/cybertec-postgresql/pg_permissions.git \
-    && git clone https://github.com/dimitri/pgextwlist.git \
 \    
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 postgresql${PGVERSION} libevent-devel brotli-devel libbrotli \
     && ${PACKAGER} -y clean all \
@@ -93,16 +90,12 @@ RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
                     postgresql${version}-plpython3 postgresql${version}-devel \
                     pg_cron_${version} pgvector_${version} set_user_${version} pgnodemx_${version} \
+                    pg_permissions_${version} pgextwlist_${version} \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \
             && export PATH=$PATHBACKUP:/usr/pgsql-${version}/bin \
             # Install TimescaleDB  
-            && ${PACKAGER} -y install timescaledb_${version} \       
-            && cd / \
-            && for n in pg_permissions $EXTRA_EXTENSIONS; do \ 
-                make -C $n USE_PGXS=1 clean install-strip; \ 
-            done \
-            && cd /pgextwlist && make clean && make && make install; \
+            && ${PACKAGER} -y install timescaledb_${version}; \
     done \
     && ${PACKAGER} -y install pgbackrest-${PGBACKREST_VERSION} \
     && ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0 glibc-static \
@@ -112,7 +105,7 @@ RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd
     RUN cd /package && tar -xvzf runit-2.3.0.tar.gz && rm runit-2.3.0.tar.gz \
     && cd admin/runit-2.3.0 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
-    && rm -rf /pg_permissions /pgextwlist /pg_stat_kcache /pgnodemx /timescaledb /pam-oauth2 \
+    && rm -rf /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
     && ${PACKAGER} -y remove $(rpm -qa "*devel*") "python3*-pip" "python3*-dev" "python3*-setuptools" git patchutils flatpak glibc-static gcc glibc-devel \
     && ${PACKAGER} -y autoremove \
@@ -135,7 +128,6 @@ ENV LC_ALL=en_US.utf-8 \
     HOME=/home/postgres \
     PGHOME=/home/postgres \
     RW_DIR=/run \
-    TIMESCALEDB=$TIMESCALEDB \
     DEMO=$DEMO
 
 ENV LOG_ENV_DIR=$RW_DIR/etc/log.d/env \

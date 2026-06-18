@@ -16,7 +16,6 @@ PGBOUNCER_VERSION ?= 1.25
 GO_VERSION ?= 1.26.2
 PACKAGER ?= dnf
 BUILD ?= 2
-ARCH ?= amd64
 IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(BUILD)
 POSTGIS_IMAGE_TAG ?= $(BASEOS)-$(PGVERSION_FULL)-$(POSTGIS_VERSION)-$(BUILD)
 PGBOUNCER_IMAGE_TAG ?= $(BASEOS)-$(PGBOUNCER_VERSION)-$(BUILD)
@@ -69,8 +68,7 @@ pgbackrest-build:
 			--build-arg BUILD=$(BUILD)										\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)			\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"				\
-			--build-arg PGVERSION=$(PGVERSION)								\
-			--build-arg ARCH=$(ARCH)
+			--build-arg PGVERSION=$(PGVERSION)
 
 pgbackrest: pgbackrest-build;
 			
@@ -89,9 +87,7 @@ postgres-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 						\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"					\
 			--build-arg PGVERSION=$(PGVERSION)									\
-			--build-arg ETCD_VERSION=$(ETCD_VERSION)							\
-			--build-arg ARCH=$(ARCH) 											
-
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)
 postgres: postgres-build
 
 postgres-gis-build:
@@ -110,8 +106,7 @@ postgres-gis-build:
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(PGVERSION)										\
 			--build-arg POSTGIS_VERSION=$(POSTGIS_VERSION)							\
-			--build-arg ETCD_VERSION=$(ETCD_VERSION)								\
-			--build-arg ARCH=$(ARCH)	
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)
 
 postgres-gis: postgres-gis-build
 
@@ -130,8 +125,7 @@ postgres-oracle-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 								\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"							\
 			--build-arg PGVERSION=$(PGVERSION)											\
-			--build-arg ETCD_VERSION=$(ETCD_VERSION)									\
-			--build-arg ARCH=$(ARCH)
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)
 
 postgres-oracle: postgres-oracle-build
 
@@ -183,8 +177,7 @@ publicbeta-pg-build:
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(BETAVERSION)									\
-			--build-arg ETCD_VERSION=$(ETCD_VERSION)								\
-			--build-arg ARCH=$(ARCH)	
+			--build-arg ETCD_VERSION=$(ETCD_VERSION)
 
 publicbeta-pg: publicbeta-pg-build
 
@@ -201,7 +194,6 @@ publicbeta-pgbackrest-build:
 			--build-arg BUILD=$(BUILD)												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)					\
 			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
-			--build-arg PGVERSION=$(BETAVERSION)									\
-			--build-arg ARCH=$(ARCH)	
+			--build-arg PGVERSION=$(BETAVERSION)
 
 publicbeta-pgbackrest: publicbeta-pgbackrest-build;

@@ -13,7 +13,6 @@ ARG PGVERSION
 ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG ETCD_VERSION
-ARG ARCH
 
 # Spilo-specific
 ENV PAM_OAUTH2=v1.0.1
@@ -52,6 +51,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         libicu \
         cronie \
         libcurl-devel \
+        dpkg \
 		&& ${PACKAGER} -y clean all;
 
 # create links for python to ensure correct version is used everywhere
@@ -59,7 +59,7 @@ RUN ln -sf /usr/bin/python3.12 /usr/local/bin/python3 && ln -sf /usr/bin/python3
     && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip3 && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip;
 
 # install etcdctl
-RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+RUN curl -L "https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-$(dpkg --print-architecture).tar.gz" | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH
 

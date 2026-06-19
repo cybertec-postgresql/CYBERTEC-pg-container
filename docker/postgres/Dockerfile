@@ -51,7 +51,6 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
         libicu \
         cronie \
         libcurl-devel \
-        dpkg \
 		&& ${PACKAGER} -y clean all;
 
 # create links for python to ensure correct version is used everywhere
@@ -59,7 +58,7 @@ RUN ln -sf /usr/bin/python3.12 /usr/local/bin/python3 && ln -sf /usr/bin/python3
     && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip3 && ln -sf /usr/bin/pip3.12 /usr/local/bin/pip;
 
 # install etcdctl
-RUN curl -L "https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-$(dpkg --print-architecture).tar.gz" | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+RUN curl -L "https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-$(uname -m | sed 's/aarch64/arm64/; s/x86_64/amd64/').tar.gz" | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH
 

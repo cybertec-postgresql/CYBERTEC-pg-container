@@ -22,7 +22,6 @@ RUN ${PACKAGER} -y install --nodocs  \
 		libicu \
 		dumb-init \
 		jq \
-		dpkg \
 	&& ${PACKAGER} -y clean all;
 
 # Install postgres-server
@@ -38,7 +37,7 @@ RUN rm /etc/pgbackrest.conf
 RUN rm -rf /var/spool/pgbackrest
 
 # Add kubectl
-RUN ARCH=$(dpkg --print-architecture) && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl" && chmod +x kubectl
+RUN ARCH=$(uname -m | sed 's/aarch64/arm64/; s/x86_64/amd64/') && curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl" && chmod +x kubectl
 
 RUN mkdir -p /tmp/pgsql && cp -r /usr/pgsql* /tmp/pgsql
 RUN mkdir -p /tmp/pg && cp -r /usr/bin/pg* /tmp/pg

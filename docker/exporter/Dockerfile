@@ -14,10 +14,9 @@ RUN ${PACKAGER} -y install --nodocs  \
 		dumb-init \ 
 		wget \
 		make \
-		dpkg \
 		&& ${PACKAGER} -y clean all ;
 
-RUN ARCH=$(dpkg --print-architecture) && wget https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz  && tar -xzf go${GO_VERSION}.linux-${ARCH}.tar.gz && mv go /usr/local
+RUN ARCH=$(uname -m | sed 's/aarch64/arm64/; s/x86_64/amd64/') && wget https://go.dev/dl/go${GO_VERSION}.linux-${ARCH}.tar.gz  && tar -xzf go${GO_VERSION}.linux-${ARCH}.tar.gz && mv go /usr/local
 ENV PATH=$PATH:/usr/local/go/bin
 
 RUN git clone https://github.com/prometheus-community/postgres_exporter.git && cd postgres_exporter && make build;

@@ -14,7 +14,6 @@ ARG OLD_PG_VERSIONS
 ARG PG_SUPPORTED_VERSIONS="$PGVERSION"
 ARG PG_SUPPORTED_VERSIONS="$OLD_PG_VERSIONS $PGVERSION"
 ARG ETCD_VERSION
-ARG ARCH
 
 # Enable Beta-Repo
 RUN ${PACKAGER} config-manager --set-enabled pgdg${PGVERSION}-updates-testing \
@@ -61,7 +60,7 @@ RUN ${PACKAGER} -y update && ${PACKAGER} -y install --nodocs --noplugins --setop
 		&& ${PACKAGER} -y clean all;
 
 # install etcdctl
-RUN curl -L https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ARCH}.tar.gz | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
+RUN curl -L "https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-$(uname -m | sed 's/aarch64/arm64/; s/x86_64/amd64/').tar.gz" | tar xz -C /bin --strip=1 --wildcards --no-anchored --no-same-owner etcdctl etcd;
 
 ENV PATHBACKUP = $PATH
 

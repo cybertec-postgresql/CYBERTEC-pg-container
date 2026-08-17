@@ -62,7 +62,7 @@ RUN curl -L "https://github.com/coreos/etcd/releases/download/v${ETCD_VERSION}/e
 
 ENV PATHBACKUP = $PATH
 
-RUN wget https://smarden.org/runit/runit-2.3.0.tar.gz -P /package/
+RUN wget https://smarden.org/runit/runit-2.3.1.tar.gz -P /package/
 COPY cron_unprivileged.c /package/
 
 RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd psutil requests cdiff ydiff==1.4.2 python-json-logger --upgrade \
@@ -101,8 +101,8 @@ RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd
     && ${PACKAGER} -y clean all;
     RUN gcc -s -shared -fPIC -o /usr/local/lib/cron_unprivileged.so /package/cron_unprivileged.c
     
-    RUN cd /package && tar -xvzf runit-2.3.0.tar.gz && rm runit-2.3.0.tar.gz \
-    && cd admin/runit-2.3.0 && package/install \
+    RUN cd /package && tar -xvzf runit-2.3.1.tar.gz && rm runit-2.3.1.tar.gz \
+    && cd admin/runit-2.3.1 && package/install \
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
     && rm -rf /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \

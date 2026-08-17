@@ -165,7 +165,6 @@ RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:post
         && mkdir -p $d \
         && ln -s $RW_DIR/postgres.yml $d/patronictl.yaml; \
     done \
-    && sed -i 's/set compatible/set nocompatible/' /etc/vimrc \
     && echo "PATH=\"$PATH\"" > /etc/environment \
     && for e in TERM=linux LC_ALL=C.UTF-8 LANG=C.UTF-8 EDITOR=editor; \
         do echo "export $e" >> /etc/bash.bashrc; \

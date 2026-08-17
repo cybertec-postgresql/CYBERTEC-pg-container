@@ -19,7 +19,6 @@ RUN ${PACKAGER} -y install --nodocs --noplugins --setopt=install_weak_deps=0  \
         nss_wrapper \
         less \
         openssl \
-        vim \
         glibc-langpack-en \
         openssh-clients \
         openssh-server \
@@ -35,3 +34,5 @@ RUN ${PACKAGER} --nodocs --noplugins --setopt=install_weak_deps=0 install -y htt
 RUN if [ "$BASEOS" = "rocky9" ]; then \
         ${PACKAGER} -qy module disable postgresql; \
     fi
+
+RUN ${PACKAGER} -y remove vim && ${PACKAGER} -y clean all ;

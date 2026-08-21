@@ -337,8 +337,7 @@ postgresql:
     ssl_key_file: {{SSL_PRIVATE_KEY_FILE}}
     shared_preload_libraries: 'pg_stat_statements'
     pg_stat_statements.track_utility: 'off'
-    extwlist.extensions: 'btree_gin,btree_gist,citext,extra_window_functions,first_last_agg,hll,\
-hstore,hypopg,intarray,ltree,pgcrypto,pgq,pgq_node,pg_trgm,postgres_fdw,tablefunc,uuid-ossp'
+    extwlist.extensions: 'btree_gin,btree_gist,citext,hstore,intarray,ltree,pgcrypto,pg_trgm,postgres_fdw,tablefunc,uuid-ossp'
     extwlist.custom_path: /scripts
   pg_hba:
     - local   all             all                                   trust
@@ -608,7 +607,6 @@ def get_placeholders(provider):
     placeholders.setdefault('PGUSER_SUPERUSER', 'postgres')
     placeholders.setdefault('PGPASSWORD_SUPERUSER', 'cpo_defaultAdminPg')
     placeholders.setdefault('ALLOW_NOSSL', '')
-    placeholders.setdefault('BGMON_LISTEN_IP', '0.0.0.0')
     placeholders.setdefault('PGPORT', '5432')
     placeholders.setdefault('SCOPE', 'dummy')
     placeholders.setdefault('RW_DIR', RW_DIR)
@@ -766,8 +764,6 @@ def get_placeholders(provider):
 
     placeholders['instance_data'] = get_instance_metadata(provider)
     placeholders.setdefault('RESTAPI_CONNECT_ADDRESS', placeholders['instance_data']['ip'])
-
-    placeholders['BGMON_LISTEN_IP'] = get_listen_ip()
 
     if 'SSL_CA' in placeholders and placeholders['SSL_CA_FILE'] == '':
         placeholders['SSL_CA_FILE'] = os.path.join(placeholders['RW_DIR'], 'certs', 'ca.crt')
@@ -1262,8 +1258,6 @@ def main():
                 os.makedirs(pg_socket_dir)
                 os.chmod(pg_socket_dir, 0o2775)
                 adjust_owner(pg_socket_dir)
-        elif section == 'pgqd':
-            link_runit_service(placeholders, 'pgqd')
         elif section == 'log':
             if bool(placeholders.get('LOG_S3_BUCKET')):
                 write_log_environment(placeholders)

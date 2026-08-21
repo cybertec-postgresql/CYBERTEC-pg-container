@@ -24,12 +24,6 @@ class _PostgresqlUpgrade(Postgresql):
             self.config.get('parameters')['shared_preload_libraries'] =\
                     adjust_extensions(shared_preload_libraries, version)
 
-    def no_bg_mon(self):
-        shared_preload_libraries = self.config.get('parameters').get('shared_preload_libraries')
-        if shared_preload_libraries:
-            tmp = filter(lambda a: a != "bg_mon", map(lambda a: a.strip(), shared_preload_libraries.split(",")))
-            self.config.get('parameters')['shared_preload_libraries'] = ",".join(tmp)
-
     def restore_shared_preload_libraries(self):
         if getattr(self, '_old_shared_preload_libraries'):
             self.config.get('parameters')['shared_preload_libraries'] = self._old_shared_preload_libraries
@@ -88,14 +82,6 @@ class _PostgresqlUpgrade(Postgresql):
         for d in self._get_all_databases():
             conn_kwargs['dbname'] = d
             with get_connection_cursor(**conn_kwargs) as cur:
-
-                # cmd = "REVOKE EXECUTE ON FUNCTION pg_catalog.pg_switch_{0}() FROM admin".format(self.wal_name)
-                # logger.info('Executing "%s" in the database="%s"', cmd, d)
-                # cur.execute(cmd)
-
-                logger.info('Executing "DROP FUNCTION metric_helpers.pg_stat_statements" in the database="%s"', d)
-                cur.execute("DROP FUNCTION IF EXISTS metric_helpers.pg_stat_statements(boolean) CASCADE")
-
                 cur.execute("SELECT e.extname, n.nspname"
                             " FROM pg_catalog.pg_extension e"
                             " JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace"
@@ -107,7 +93,7 @@ class _PostgresqlUpgrade(Postgresql):
                         self._extensions_to_recreate = {}
                     self._extensions_to_recreate[d] = installed
 
-                for ext in ('pg_stat_kcache', 'pg_stat_statements') \
+                for ext in ('pg_stat_statements') \
                         + self._INCOMPATIBLE_EXTENSIONS + self._EXTENSIONS_TO_RECREATE:
                     logger.info('Executing "DROP EXTENSION IF EXISTS %s" in the database="%s"', ext, d)
                     cur.execute("DROP EXTENSION IF EXISTS {0}".format(ext))
@@ -259,7 +245,6 @@ class _PostgresqlUpgrade(Postgresql):
         if shared_preload_libraries:
             self._old_shared_preload_libraries = self.config.get('parameters')['shared_preload_libraries'] =\
                 append_extensions(shared_preload_libraries, float(version))
-            self.no_bg_mon()
 
         if not self.bootstrap._initdb(initdb_config):
             return False
@@ -277,7 +262,6 @@ class _PostgresqlUpgrade(Postgresql):
 
         if old_shared_preload_libraries:
             self.config.get('parameters')['shared_preload_libraries'] = old_shared_preload_libraries
-            self.no_bg_mon()
         self.configure_server_parameters()
         return True
 

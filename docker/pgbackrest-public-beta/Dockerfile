@@ -115,7 +115,7 @@ COPY --from=builder /usr/bin/trust /usr/bin/
 
 # libraries
 COPY --from=builder /usr/bin/nss_wrapper.pl /usr/bin/nss_wrapper.pl 
-# COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
+COPY --from=builder /usr/lib64/libnss_wrapper.so /usr/lib64/libnss_wrapper.so
 COPY --from=builder /usr/share/man/man1 /usr/share/man/man1
 COPY --from=builder /usr/bin/envsubst /usr/bin/envsubst
 
@@ -138,6 +138,13 @@ COPY --from=micro / /
 
 ARG PGVERSION
 
+ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin \
+	LD_LIBRARY_PATH=/usr/pgsql-$PGVERSION/lib:$LD_LIBRARY_PATH
+
+LABEL org.opencontainers.image.source=https://github.com/cybertec-postgresql/CYBERTEC-pg-container
+LABEL org.opencontainers.image.description="CYBERTEC-PG-Container - pgBackRest-Container for restore-Container and as Repo-Host"
+LABEL org.opencontainers.image.licenses=Apache-2.0
+
 # set user and group ownership
 RUN chown -R postgres:postgres /opt/pgbackrest  \
 	/backrestrepo /home/postgres/pgdata/pgbackrest /home/postgres/pgdata
@@ -154,12 +161,15 @@ RUN mkdir /.ssh && chown postgres:postgres /.ssh && chmod o+rwx /.ssh
 RUN chown -R postgres:postgres /opt/pgbackrest  \
 	/backrestrepo /home/postgres/pgdata
 
-#ENV PATH=$PATH:/usr/pgsql-$PGVERSION/bin
 COPY launcher/pgbackrest/launch.sh /
 	
 VOLUME ["sshd", "/home/postgres/pgdata", "/backrestrepo"]
 
 ENTRYPOINT ["/scripts/nss_wrapper/nss_wrapper.sh"]
+
+ENV LD_PRELOAD=/usr/lib64/libnss_wrapper.so \
+    NSS_WRAPPER_PASSWD=/tmp/nss_wrapper/passwd \
+    NSS_WRAPPER_GROUP=/tmp/nss_wrapper/group
 
 USER postgres
 

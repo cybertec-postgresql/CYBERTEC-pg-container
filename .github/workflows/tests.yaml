@@ -1,0 +1,79 @@
+name: Run tests
+
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+    - 'pg*-beta'
+
+env:
+  ROOTPATH: /home/runner/work/CYBERTEC-pg-container/CYBERTEC-pg-container
+  IMAGE_TAG: gh-test
+  PGBOUNCER_IMAGE_TAG: gh-test
+  POSTGIS_IMAGE_TAG: gh-test
+  BETA_IMAGE_TAG: gh-test-beta
+  IMAGE_PATH: cybertec-pg-container
+  REPOSITORY: containers.cybertec.at
+  TARGET_VERSION: 18
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up packages
+        run: sudo apt-get install -y docker-compose
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Determine run mode
+        id: mode
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" =~ ^pg([0-9]+)-beta$ ]]; then
+            IS_BETA="true"
+            TARGET_VERSION=${BASH_REMATCH[1]}
+            PG_IMAGE_TAG="${{ env.BETA_IMAGE_TAG }}"
+            PGBACKREST_IMAGE_TAG="${{ env.BETA_IMAGE_TAG }}"
+          else
+            IS_BETA="false"
+            TARGET_VERSION="${{ env.TARGET_VERSION }}"
+            PG_IMAGE_TAG="${{ env.IMAGE_TAG }}"
+            PGBACKREST_IMAGE_TAG="${{ env.IMAGE_TAG }}"
+          fi
+          INIT_VERSION=$((TARGET_VERSION - 4))
+          echo "IS_BETA=${IS_BETA}" >> $GITHUB_OUTPUT
+          echo "TARGET_VERSION=${TARGET_VERSION}" >> $GITHUB_OUTPUT
+          echo "INIT_VERSION=${INIT_VERSION}" >> $GITHUB_OUTPUT
+          echo "PG_IMAGE_TAG=${PG_IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "PGBACKREST_IMAGE_TAG=${PGBACKREST_IMAGE_TAG}" >> $GITHUB_OUTPUT
+      - name: Build docker images
+        shell: bash
+        run: |
+          if [[ "${{ steps.mode.outputs.IS_BETA }}" == "true" ]]; then
+            make base publicbeta-pg-build pgbouncer exporter publicbeta-pgbackrest
+          else
+            make postgres pgbouncer exporter postgres-gis pgbackrest
+          fi
+      - name: Test postgres image
+        run: cd tests && bash ./run_tests.sh
+        env:
+          PG_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/postgres:${{ steps.mode.outputs.PG_IMAGE_TAG }}"
+          PGBOUNCER_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/pgbouncer:${{ env.PGBOUNCER_IMAGE_TAG }}"
+          EXPORTER_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/exporter:${{ env.IMAGE_TAG }}"
+          PGBACKREST_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/pgbackrest:${{ steps.mode.outputs.PG_IMAGE_TAG }}"
+          TARGET_VERSION: ${{ steps.mode.outputs.TARGET_VERSION }}
+          INIT_VERSION: ${{ steps.mode.outputs.INIT_VERSION }}
+      - name: Test postgres-gis image
+        if: steps.mode.outputs.IS_BETA != 'true'
+        run: cd tests && bash ./run_tests.sh
+        env:
+          PG_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/postgres-gis:${{ env.POSTGIS_IMAGE_TAG }}"
+          PGBOUNCER_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/pgbouncer:${{ env.PGBOUNCER_IMAGE_TAG }}"
+          EXPORTER_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/exporter:${{ env.IMAGE_TAG }}"
+          PGBACKREST_IMAGE: "${{ env.REPOSITORY }}/${{ env.IMAGE_PATH }}/pgbackrest:${{ env.IMAGE_TAG }}"
+          EXTRA_EXT: postgis
+          TARGET_VERSION: ${{ steps.mode.outputs.TARGET_VERSION }}
+          INIT_VERSION: ${{ steps.mode.outputs.INIT_VERSION }}

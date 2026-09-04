@@ -35,4 +35,4 @@ RUN if [ "$BASEOS" = "rocky9" ]; then \
         ${PACKAGER} -qy module disable postgresql; \
     fi
 
-RUN ${PACKAGER} -y remove vim && ${PACKAGER} -y clean all ;
+RUN ${PACKAGER} -y remove vim*  && ${PACKAGER} -y clean all ;

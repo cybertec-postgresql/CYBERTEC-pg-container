@@ -110,7 +110,7 @@ RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd
     && ln -s /usr/local/bin/runsvdir /usr/bin/runsvdir \
     && rm -rf /pam-oauth2 \
     && rm /etc/pgbackrest.conf && rm -rf /var/spool/pgbackrest \
-    && ${PACKAGER} -y remove $(rpm -qa "*devel*") "python3*-pip" "python3*-dev" "python3*-setuptools" git patchutils flatpak glibc-static gcc glibc-devel --exclude libgeotiff17-devel --exclude libtiff-devel --exclude libspatialite50-devel \
+    && ${PACKAGER} -y remove $(rpm -qa "*devel*") "python3*-pip" "python3*-dev" "python3*-setuptools" cmake vim* git patchutils flatpak glibc-static gcc glibc-devel --exclude libgeotiff17-devel --exclude libtiff-devel --exclude libspatialite50-devel \
     && ${PACKAGER} -y autoremove \
     && ${PACKAGER} -y clean dbcache \
     && ${PACKAGER} -y clean all;

@@ -16,11 +16,21 @@ fi
 pg_version=$(psql -t -A -c "SELECT substring(setting FROM '^[0-9]+') FROM pg_settings WHERE name = 'server_version'")
 
 # Get current stanza version from pgbackrest info
-stanza_version=$(pgbackrest info --stanza=db --output=json | jq -r '.[0].db | sort_by(.id) | last | .version')
-if [[ -z "$stanza_version" ]]; then
-  echo "ERROR: Not able to recieve stanza-version. Abort stanza-upgrade attempt"
-  exit 1
-fi
+count=0
+while true; do
+  stanza_version=$(pgbackrest info --stanza=db --output=json 2>/dev/null | jq -r '.[0].db | sort_by(.id) | last | .version // empty' 2>/dev/null)
+  if [[ -n "$stanza_version" ]]; then
+    break
+  fi
+
+  ((count++))
+  if [ $count -gt 30 ]; then
+    pgbackrest info  --stanza=db --output=json
+    echo "ERROR: pgBackRest stanza metadata unavailable after 60 seconds. Abort stanza-upgrade attempt"
+    exit 1
+  fi
+  sleep 2
+done
 
 echo "INFO: PG-Version: $pg_version | stanza-Version: $stanza_version"
 # Check if current postgresql versions mapped to current stanza version. If not do a stanza upgrade 

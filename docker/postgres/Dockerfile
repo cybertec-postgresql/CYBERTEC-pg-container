@@ -141,7 +141,6 @@ COPY motd /etc/
 #COPY runit /etc/service/
 
 COPY runit /etc/runit/runsvdir/default/
-COPY pgq_ticker.ini $PGHOME/
 RUN rm -rf /etc/service && mkdir /home/postgres/pgdata && chown -R postgres:postgres /home/postgres/pgdata &&  chmod -R g=u /home/postgres/pgdata \
     && sed -i "s|/var/lib/pgsql.*|$PGHOME:/bin/bash|" /etc/passwd \
     && chown -R postgres:postgres $PGHOME $PGHOME/pgdata $RW_DIR \

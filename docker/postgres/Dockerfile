@@ -88,7 +88,7 @@ RUN pip3 install PyYAML setuptools pystache loader kazoo meld3 boto3 python-etcd
         # Install PostgreSQL binaries, contrib, plproxy and multiple pl's
             && ${PACKAGER} -y install -y postgresql${version}-contrib \
                     postgresql${version}-plpython3 postgresql${version}-devel \
-                    pg_cron_${version} pgvector_${version} set_user_${version} pgnodemx_${version} \
+                    pg_cron_${version} pgvector_${version} set_user_${version} pg_partman_${version} pgnodemx_${version} \
                     pg_permissions_${version} pgextwlist_${version} \
             # Modify for using origial-spilo scripts
             && ln -s /usr/pgsql-${version} /usr/lib/postgresql/${version} \

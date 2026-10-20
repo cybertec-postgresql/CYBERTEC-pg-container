@@ -6,6 +6,9 @@ docker/benchmark
 docker/pgbackrest-old
 setup/helm/pgcluster
 
+tests/tls/certs/
+tests/tls/repo-host/
+
 #FerretDB
 docker/ferretdb
 ferretdb

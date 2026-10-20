@@ -24,6 +24,8 @@ REPOSITORY ?= containers.cybertec.at
 # Public-Beta
 PUBLICBETA ?= 3
 BETAVERSION ?= 18
+BETA_IMAGE_TAG ?= $(IMAGE_TAG)-beta${PUBLICBETA}
+BETA_OLD_PG_VERSIONS ?= 14 15 16 17 18
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
@@ -165,7 +167,7 @@ exporter: exporter-build
 publicbeta-pg-build:
 		docker build $(ROOTPATH)													\
 			--file $(ROOTPATH)/docker/pg-public-beta/Dockerfile 					\
-			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres:$(IMAGE_TAG)-beta${PUBLICBETA}		\
+			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres:$(BETA_IMAGE_TAG)			\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
 			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 							\
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
@@ -175,7 +177,7 @@ publicbeta-pg-build:
 			--build-arg BUILD=$(BUILD) 												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION) 					\
 			--build-arg PATRONI_VERSION=$(PATRONI_VERSION) 							\
-			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
+			--build-arg OLD_PG_VERSIONS="$(BETA_OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(BETAVERSION)									\
 			--build-arg ETCD_VERSION=$(ETCD_VERSION)
 
@@ -184,7 +186,7 @@ publicbeta-pg: publicbeta-pg-build
 publicbeta-pgbackrest-build:
 		docker build $(ROOTPATH)													\
 			--file $(ROOTPATH)/docker/pgbackrest-public-beta/Dockerfile 			\
-			--tag $(REPOSITORY)/$(IMAGE_PATH)/pgbackrest:$(IMAGE_TAG)-beta${PUBLICBETA} 	\
+			--tag $(REPOSITORY)/$(IMAGE_PATH)/pgbackrest:$(BETA_IMAGE_TAG)		 	\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
 			--build-arg CONTAINERIMAGE=${CONTAINERIMAGE} 							\
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)						\
@@ -193,7 +195,7 @@ publicbeta-pgbackrest-build:
 			--build-arg IMAGE_PATH=$(IMAGE_PATH)									\
 			--build-arg BUILD=$(BUILD)												\
 			--build-arg PGBACKREST_VERSION=$(PGBACKREST_VERSION)					\
-			--build-arg OLD_PG_VERSIONS="$(OLD_PG_VERSIONS)"						\
+			--build-arg OLD_PG_VERSIONS="$(BETA_OLD_PG_VERSIONS)"						\
 			--build-arg PGVERSION=$(BETAVERSION)
 
 publicbeta-pgbackrest: publicbeta-pgbackrest-build;

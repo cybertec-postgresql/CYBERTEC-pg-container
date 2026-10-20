@@ -1,0 +1,121 @@
+x-pg-common-env: &pg_common_env
+    ETCDCTL_ENDPOINTS: http://etcd:2379
+    ETCD3_HOST: "etcd:2379"
+    SCOPE: demo
+    PGVERSION: "$INIT_VERSION"
+    USE_PGBACKREST: 'true'
+    HUMAN_ROLE: 'foobar'
+
+networks:
+    demo:
+
+services:
+    minio:
+        profiles: [ s3 ]
+        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+        networks: [ demo ]
+        environment:
+            MINIO_ACCESS_KEY: &access_key Eeghei0uVej1Wea8mato
+            MINIO_SECRET_KEY: &secret_key lecheidohbah7aThohziezah3iev7ima4eeXu9gu
+        hostname: minio
+        container_name: demo-minio
+        entrypoint: sh
+        command: -c 'mkdir -p /export/testbucket && /usr/bin/minio server /export'
+
+    etcd:
+        image: "$PG_IMAGE"
+        networks: [ demo ]
+        container_name: demo-etcd
+        hostname: etcd
+        command:  "sh -c 'export ETCD_UNSUPPORTED_ARCH=arm64 && exec etcd -name etcd1 -listen-client-urls http://0.0.0.0:2379 -advertise-client-urls http://$$(hostname --ip-address):2379'"
+
+    pg1: &pg_container
+        profiles: [ s3 ]
+        depends_on: [ minio, etcd ]
+        image: "$PG_IMAGE"
+        networks: [ demo ]
+        hostname: ${NEW_HOSTNAME:-pgcontainer1}
+        container_name: demo-pgcontainer1
+        environment:
+            <<: *pg_common_env
+            SPILO_PROVIDER: 'local'
+        volumes:
+            - ./s3/pgbackrest.conf:/etc/pgbackrest/conf.d/pgbackrest.conf:ro
+
+    pg2:
+        <<: *pg_container
+        hostname: pgcontainer2
+        container_name: demo-pgcontainer2
+
+    pg1-repo: &pg_repo_container
+        profiles: [ repo-host ]
+        depends_on: [ etcd ]
+        image: "$PG_IMAGE"
+        networks: [ demo ]
+        hostname: ${NEW_HOSTNAME:-pgcontainer1}
+        container_name: demo-pgcontainer1
+        environment:
+            <<: *pg_common_env
+            REPO_HOST: 'true'
+        volumes:
+            - ./tls/pgbackrest-client.conf:/etc/pgbackrest/conf.d/pgbackrest.conf:ro
+            - ./tls/certs/client/client.crt:/etc/pgbackrest/certs/client.crt:ro
+            - ./tls/certs/client/client.key:/etc/pgbackrest/certs/client.key:ro
+            - ./tls/certs/ca/ca.crt:/etc/pgbackrest/certs/ca.crt:ro
+            - ./tls/certs/server/server.crt:/etc/pgbackrest/certs/server.crt:ro
+            - ./tls/certs/server/server.key:/etc/pgbackrest/certs/server.key:ro
+
+    pg2-repo:
+        <<: *pg_repo_container
+        hostname: pgcontainer2
+        container_name: demo-pgcontainer2
+
+    pgbackrest:
+        profiles: [ repo-host ]
+        image: "$PGBACKREST_IMAGE"
+        networks: [ demo ]
+        hostname: pgbackrest
+        container_name: demo-pgbackrest
+        environment:
+            USE_PGBACKREST: 'true'
+            MODE: repo
+            PGUSER: postgres
+            PGPASSWORD: password
+        volumes:
+            - ./tls/pgbackrest-repo-host.conf:/etc/pgbackrest/conf.d/pgbackrest.conf:ro
+            - ./tls/repo-host:/data/pgbackrest
+            - ./tls/certs/server/server.crt:/etc/pgbackrest/certs/server.crt:ro
+            - ./tls/certs/server/server.key:/etc/pgbackrest/certs/server.key:ro
+            - ./tls/certs/ca/ca.crt:/etc/pgbackrest/certs/ca.crt:ro
+            - ./tls/certs/client/client.crt:/etc/pgbackrest/certs/client.crt:ro
+            - ./tls/certs/client/client.key:/etc/pgbackrest/certs/client.key:ro
+
+    pgbouncer:
+        image: "$PGBOUNCER_IMAGE"
+        hostname: pgbouncer
+        networks: [ demo ]
+        container_name: demo-pgbouncer
+        environment:
+            PGUSER: pgbouncer
+            PGPASSWORD: 'cpo_defaultPGBouncerPW'
+            PGPORT: 5432
+            PGHOST: 'pgcontainer1,pgcontainer2'
+            PGSCHEMA: 'pgbouncer'
+            CONNECTION_POOLER_MODE: 'session'
+            CONNECTION_POOLER_PORT: 6432
+            CONNECTION_POOLER_DEFAULT_SIZE: 20
+            CONNECTION_POOLER_MIN_SIZE: 0
+            CONNECTION_POOLER_RESERVE_SIZE: 0
+            CONNECTION_POOLER_MAX_CLIENT_CONN: 20
+            CONNECTION_POOLER_MAX_DB_CONN: 0
+
+    exporter:
+        depends_on: [ pgbouncer ]
+        image: "$EXPORTER_IMAGE"
+        networks: [ demo ]
+        hostname: exporter
+        container_name: demo-exporter
+        environment:
+            DATA_SOURCE_URI: "pgbouncer:5432/postgres?sslmode=require"
+            DATA_SOURCE_USER: app_user
+            DATA_SOURCE_PASS: password

@@ -29,6 +29,8 @@ BETA_OLD_PG_VERSIONS ?= 14 15 16 17 18
 
 # Settings for the Build-Process
 BUILDWITH ?= docker
+DOCKER_BUILD ?= docker build
+BASE_IMAGE_REF ?= $(IMAGE_PATH)/base:$(BASEOS)-$(BUILD)
 BASEPATH ?= $(HOME)
 ROOTPATH ?= $(BASEPATH)/src/github.com/cybertec/cybertec-pg-container
 
@@ -46,9 +48,9 @@ exporter: exporter
 publicbeta: publicbeta-pg publicbeta-pgbackrest
 
 base-build:
-		docker build $(ROOTPATH)								\
+		$(DOCKER_BUILD) $(ROOTPATH)								\
 			--file $(ROOTPATH)/docker/base/Dockerfile 		 	\
-			--tag $(IMAGE_PATH)/base:$(BASEOS)-$(BUILD) \
+			--tag $(BASE_IMAGE_REF) \
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)				\
 			--build-arg IMAGE_REPOSITORY=$(IMAGE_REPOSITORY)	\
 			--build-arg BASEOS=$(BASEOS) 						\
@@ -58,7 +60,7 @@ base-build:
 base: base-build;		
 
 pgbackrest-build:
-		docker build $(ROOTPATH)											\
+		$(DOCKER_BUILD) $(ROOTPATH)											\
 			--file $(ROOTPATH)/docker/pgbackrest/Dockerfile 				\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/pgbackrest:$(IMAGE_TAG) 			\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)							\
@@ -75,7 +77,7 @@ pgbackrest-build:
 pgbackrest: pgbackrest-build;
 			
 postgres-build:
-		docker build $(ROOTPATH)												\
+		$(DOCKER_BUILD) $(ROOTPATH)												\
 			--file $(ROOTPATH)/docker/postgres/Dockerfile 						\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres:$(IMAGE_TAG)	\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)								\
@@ -93,7 +95,7 @@ postgres-build:
 postgres: postgres-build
 
 postgres-gis-build:
-		docker build $(ROOTPATH)													\
+		$(DOCKER_BUILD) $(ROOTPATH)													\
 			--file $(ROOTPATH)/docker/postgres-gis/Dockerfile 						\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres-gis:$(POSTGIS_IMAGE_TAG)		\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
@@ -113,7 +115,7 @@ postgres-gis-build:
 postgres-gis: postgres-gis-build
 
 postgres-oracle-build:
-		docker build $(ROOTPATH)														\
+		$(DOCKER_BUILD) $(ROOTPATH)														\
 			--file $(ROOTPATH)/docker/postgres-oracle/Dockerfile 						\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres-oracle:$(IMAGE_TAG)					\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\
@@ -132,7 +134,7 @@ postgres-oracle-build:
 postgres-oracle: postgres-oracle-build
 
 pgbouncer-build:
-		docker build $(ROOTPATH)	--no-cache											\
+		$(DOCKER_BUILD) $(ROOTPATH)	--no-cache											\
 			--file $(ROOTPATH)/docker/pgbouncer/Dockerfile 								\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/pgbouncer:$(PGBOUNCER_IMAGE_TAG)							\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\
@@ -148,7 +150,7 @@ pgbouncer-build:
 pgbouncer: pgbouncer-build
 
 exporter-build:
-		docker build $(ROOTPATH)	 --no-cache											\
+		$(DOCKER_BUILD) $(ROOTPATH)	 --no-cache											\
 			--file $(ROOTPATH)/docker/exporter/Dockerfile 								\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/exporter:$(IMAGE_TAG)						\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)										\
@@ -165,7 +167,7 @@ exporter-build:
 exporter: exporter-build
 
 publicbeta-pg-build:
-		docker build $(ROOTPATH)													\
+		$(DOCKER_BUILD) $(ROOTPATH)													\
 			--file $(ROOTPATH)/docker/pg-public-beta/Dockerfile 					\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/postgres:$(BETA_IMAGE_TAG)			\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\
@@ -184,7 +186,7 @@ publicbeta-pg-build:
 publicbeta-pg: publicbeta-pg-build
 
 publicbeta-pgbackrest-build:
-		docker build $(ROOTPATH)													\
+		$(DOCKER_BUILD) $(ROOTPATH)													\
 			--file $(ROOTPATH)/docker/pgbackrest-public-beta/Dockerfile 			\
 			--tag $(REPOSITORY)/$(IMAGE_PATH)/pgbackrest:$(BETA_IMAGE_TAG)		 	\
 			--build-arg BASE_IMAGE=$(BASE_IMAGE)									\

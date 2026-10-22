@@ -13,62 +13,27 @@ on:
         required: true
 
 env:
-  REF: ${{ github.event.release.tag_name || inputs.ref }}
+  PLATFORMS: linux/amd64,linux/arm64
+  LOCAL_REGISTRY: localhost:5000
 
 jobs:
   build:
-    name: Build ${{ matrix.arch }}
-    strategy:
-      fail-fast: true
-      matrix:
-        include:
-          - arch: amd64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.REF }}
-
-      - uses: docker/login-action@v3
-        with:
-          registry: containers.cybertec.at
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - name: Build
-        run: |
-          make ROOTPATH="$GITHUB_WORKSPACE" \
-            base-build postgres-build postgres-gis-build \
-            pgbackrest-build pgbouncer-build exporter-build
-
-      - name: Push arch-specific tags
-        run: |
-          repo="$(make -s print-REPOSITORY)/$(make -s print-IMAGE_PATH)"
-          while read -r name var; do
-            tag="$(make -s print-${var})"
-            docker tag  "${repo}/${name}:${tag}" "${repo}/${name}:${tag}-${{ matrix.arch }}"
-            docker push "${repo}/${name}:${tag}-${{ matrix.arch }}"
-          done <<'LIST'
-          postgres IMAGE_TAG
-          postgres-gis POSTGIS_IMAGE_TAG
-          pgbackrest IMAGE_TAG
-          exporter IMAGE_TAG
-          pgbouncer PGBOUNCER_IMAGE_TAG
-          LIST
-
-  merge:
-    name: Multi-arch manifests
     runs-on: ubuntu-24.04
-    needs: build
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.REF }}
+          ref: ${{ github.event.release.tag_name || inputs.ref }}
+
+      - uses: docker/setup-qemu-action@v3
 
       - uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
 
       - uses: docker/login-action@v3
         with:
@@ -76,18 +41,25 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
-      - name: Create manifest lists
+      # The base image only lives in the local registry; the final images
+      # resolve it from there via a named build context.
+      - name: Build base (multi-arch)
+        run: |
+          base="${LOCAL_REGISTRY}/$(make -s print-IMAGE_PATH)/base:$(make -s print-BASEOS)-$(make -s print-BUILD)"
+          echo "BASE_LOCAL=${base}" >> "$GITHUB_ENV"
+          make ROOTPATH="$GITHUB_WORKSPACE" base-build \
+            BASE_IMAGE_REF="${base}" \
+            DOCKER_BUILD="docker buildx build --platform ${PLATFORMS} --push"
+
+      - name: Build and push images (multi-arch)
+        run: |
+          ctx="$(make -s print-IMAGE_PATH)/base:$(make -s print-BASEOS)-$(make -s print-BUILD)"
+          make ROOTPATH="$GITHUB_WORKSPACE" \
+            postgres-build postgres-gis-build pgbackrest-build pgbouncer-build exporter-build \
+            DOCKER_BUILD="docker buildx build --platform ${PLATFORMS} --push --build-context ${ctx}=docker-image://${BASE_LOCAL}"
+
+      - name: Inspect
         run: |
           repo="$(make -s print-REPOSITORY)/$(make -s print-IMAGE_PATH)"
-          while read -r name var; do
-            tag="$(make -s print-${var})"
-            docker buildx imagetools create -t "${repo}/${name}:${tag}" \
-              "${repo}/${name}:${tag}-amd64" "${repo}/${name}:${tag}-arm64"
-            docker buildx imagetools inspect "${repo}/${name}:${tag}"
-          done <<'LIST'
-          postgres IMAGE_TAG
-          postgres-gis POSTGIS_IMAGE_TAG
-          pgbackrest IMAGE_TAG
-          exporter IMAGE_TAG
-          pgbouncer PGBOUNCER_IMAGE_TAG
-          LIST
+          docker buildx imagetools inspect "${repo}/postgres:$(make -s print-IMAGE_TAG)"
+          docker buildx imagetools inspect "${repo}/pgbouncer:$(make -s print-PGBOUNCER_IMAGE_TAG)"

@@ -199,3 +199,7 @@ publicbeta-pgbackrest-build:
 			--build-arg PGVERSION=$(BETAVERSION)
 
 publicbeta-pgbackrest: publicbeta-pgbackrest-build;
+
+# Print a variable, e.g. `make print-IMAGE_TAG`
+print-%:
+		@echo '$($*)'

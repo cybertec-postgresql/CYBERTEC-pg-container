@@ -11,10 +11,15 @@ on:
       ref:
         description: "Tag or branch to build"
         required: true
+      dev:
+        description: "Build as dev (-dev repository)"
+        type: boolean
+        default: false
 
 env:
   PLATFORMS: linux/amd64,linux/arm64
   LOCAL_REGISTRY: localhost:5000
+  IMAGE_PATH: ${{ (github.event.release.prerelease || inputs.dev) && 'cybertec-pg-container-dev' || 'cybertec-pg-container' }}
 
 jobs:
   build:

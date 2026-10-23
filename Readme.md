@@ -169,3 +169,4 @@ In addition, there is an additional postgis-image. It contains all of the extens
 - **CONNECTION_POOLER_RESERVE_SIZE**: Number of reserve connections that are additionally available during high load.
 - **CONNECTION_POOLER_MAX_CLIENT_CONN**: Maximum number of simultaneous client connections that pgBouncer accepts
 - **CONNECTION_POOLER_MAX_DB_CONN**: Maximum number of connections that can be established to a single database.
+- **CONNECTION_POOLER_PARAMETERS**: Optional JSON object with additional pgBouncer settings, e.g. `{"query_timeout":"60","max_client_conn":"5000"}`. The settings are applied to the `[pgbouncer]` section of the generated `pgbouncer.ini` and replace values generated from the other `CONNECTION_POOLER_*` variables. Ignored if `ADDITIONAL_PGBOUNCER_CONFIG` is set.

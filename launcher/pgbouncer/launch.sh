@@ -36,9 +36,13 @@ fi
 
 if [ "$ADDITIONAL_PGBOUNCER_CONFIG" ]; then
     bouncerConfigPath="$ADDITIONAL_PGBOUNCER_CONFIG"
+    if [ -n "${CONNECTION_POOLER_PARAMETERS}" ]; then
+        echo "WARNING: ADDITIONAL_PGBOUNCER_CONFIG is set, CONNECTION_POOLER_PARAMETERS is ignored"
+    fi
 else
     envsubst < /etc/pgbouncer/pgbouncer.ini.tmpl > /tmp/pgbouncer/pgbouncer.ini
     envsubst < /etc/pgbouncer/auth_file.txt.tmpl > /tmp/pgbouncer/auth_file.txt
+    /bin/bash /etc/pgbouncer/merge_parameters.sh /tmp/pgbouncer/pgbouncer.ini
     bouncerConfigPath="/tmp/pgbouncer/pgbouncer.ini"
 fi
 

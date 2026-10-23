@@ -13,5 +13,5 @@ BEGIN
     END IF;
 END;$$;
 GRANT USAGE ON SCHEMA @extschema@ TO part_man;
-GRANT ALL ON ALL TABLES IN SCHEMA @extschema@ TO part_man;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA @extschema@ TO part_man;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA @extschema@ TO part_man;

@@ -147,9 +147,14 @@ In addition, there is an additional postgis-image. It contains all of the extens
 
 ### pgBackRest-Container
 - **USE_PGBACKREST**: Set to true if you want to use pgBackRest
-- **MODE**: Set to repo if you want to use the container as repo-host for you cluster. Set to restore if you want to use it as a restore container. 
+- **MODE**: Set to repo if you want to use the container as repo-host for your cluster. Set to restore if you want to use it as a restore container, or backup to run a backup job.
 - **RESTORE_COMMAND**: Add your restore parameters (needs Mode set to restore) example: ' --repo=1 --set=20251009-085046F --type=immediate'
 - **RESTORE_ENABLE**: Set to true if you want to do a restore (needs Mode set to restore)
+- **PGBACKREST_LOCK_WAIT_SECONDS**: Maximum time spent waiting for a pgBackRest repository lock. Defaults to 600. Set to 0 to disable lock retries.
+- **PGBACKREST_LOCK_RETRY_SECONDS**: Delay between lock retries. Defaults to 10.
+- **PGBACKREST_TARGET_WAIT_SECONDS**: Maximum time spent waiting for a valid target Pod. Defaults to 150.
+- **PGBACKREST_TARGET_RETRY_SECONDS**: Delay while waiting for a target Pod. Defaults to 5.
+- **PGBACKREST_CHECK_PRIMARY**: Verify that the target is a PostgreSQL primary before each attempt. Defaults to auto, which enables the check for the postgres container and disables it for a repository host.
 
 ### Exporter-Container
 - **DATA_SOURCE_URI**:  Specify the full URI of the database to be monitored. Example: `localhost:5432/postgres?sslmode=require`

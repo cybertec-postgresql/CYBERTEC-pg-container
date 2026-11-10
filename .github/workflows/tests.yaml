@@ -28,6 +28,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.14'
+      - name: Test pgBackRest backup launcher
+        run: bash tests/test_pgbackrest_backup.sh
       - name: Determine run mode
         id: mode
         shell: bash

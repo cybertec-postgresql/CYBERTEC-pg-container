@@ -1,0 +1,4 @@
+#!/bin/bash
+set -u
+
+printf '%s\n' "${1:?}" >> "${MOCK_STATE_DIR:?}/sleeps"

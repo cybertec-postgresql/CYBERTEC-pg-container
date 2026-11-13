@@ -1,0 +1,71 @@
+#!/bin/bash
+set -u
+
+state_dir="${MOCK_STATE_DIR:?}"
+scenario="${MOCK_SCENARIO:-success}"
+
+function next_count() {
+    local name="$1"
+    local file="${state_dir}/${name}"
+    local count=0
+
+    if [ -f "$file" ]; then
+        count=$(<"$file")
+    fi
+    count=$((count + 1))
+    printf '%s' "$count" > "$file"
+    printf '%s' "$count"
+}
+
+command_name="${1:-}"
+shift || true
+
+case "$command_name" in
+    get)
+        next_count get >/dev/null
+        case "$scenario" in
+            api_error)
+                exit 9
+                ;;
+            no_target)
+                exit 0
+                ;;
+        esac
+        printf '%s' "${MOCK_TARGET_POD:-acid-test-0}"
+        ;;
+    exec)
+        is_role_query=false
+        for argument in "$@"; do
+            if [[ "$argument" == *"psql "* ]]; then
+                is_role_query=true
+                break
+            fi
+        done
+
+        if [ "$is_role_query" = "true" ]; then
+            count=$(next_count role)
+            IFS=',' read -r -a roles <<< "${MOCK_ROLE_RESULTS:-f}"
+            index=$((count - 1))
+            if [ "$index" -ge "${#roles[@]}" ]; then
+                index=$((${#roles[@]} - 1))
+            fi
+            role="${roles[$index]}"
+            if [ "$role" = "error" ]; then
+                exit 2
+            fi
+            printf '%s\n' "$role"
+            exit 0
+        fi
+
+        count=$(next_count backup)
+        IFS=',' read -r -a codes <<< "${MOCK_BACKUP_CODES:-0}"
+        index=$((count - 1))
+        if [ "$index" -ge "${#codes[@]}" ]; then
+            index=$((${#codes[@]} - 1))
+        fi
+        exit "${codes[$index]}"
+        ;;
+    *)
+        exit 3
+        ;;
+esac
